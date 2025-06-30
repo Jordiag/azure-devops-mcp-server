@@ -1,6 +1,19 @@
+<picture>
 <img src="https://github.com/user-attachments/assets/bd900648-5763-454d-b29f-fb41bab05d02" alt="azure_devops_mcp_server_logo" width="300"/>
+</picture>
+
+# Azure DevOps MCP Server for .NET
 
 This repository will host a set of .NET libraries and a Model Context Protocol (MCP) server that expose Azure DevOps operations. The goal is to make Azure DevOps automation accessible to AI agents by surfacing common tasks—creating work items, managing pull requests, queuing builds, working with artifacts, and more—through a uniform MCP endpoint.
+
+## Status
+
+Currently in [pre-alpha](https://en.wikipedia.org/wiki/Software_release_life_cycle#Pre-alpha) release stage, soon will be deployed to this repo.
+
+| Build | Unit Tests | SonarCloud static analisys | Nuget |  
+|-------|------------|-----------------|-------|
+|   [![.NET Build](https://github.com/Jordiag/delta-dotnet/actions/workflows/build.yml/badge.svg?branch=initial-research)](https://github.com/Jordiag/delta-dotnet/actions/workflows/build.yml)| [![.NET Test](https://github.com/Jordiag/delta-dotnet/actions/workflows/test.yml/badge.svg?branch=initial-research)](https://github.com/Jordiag/delta-dotnet/actions/workflows/test.yml)    |        [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Jordiag_DeltaLake.Net&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Jordiag_DeltaLake.Net)  [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Jordiag_DeltaLake.Net&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Jordiag_DeltaLake.Net)   [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Jordiag_DeltaLake.Net&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Jordiag_DeltaLake.Net) <br>   [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Jordiag_DeltaLake.Net&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Jordiag_DeltaLake.Net)  [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Jordiag_DeltaLake.Net&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Jordiag_DeltaLake.Net)    [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Jordiag_DeltaLake.Net&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=Jordiag_DeltaLake.Net) | <img src="https://user-images.githubusercontent.com/8865104/208910828-d9a283f0-d8f4-4fc2-ac45-a8b5ac65b2e7.svg" alt="not-available" width="20" height="20" align="center" /> N/A yet  |
+
 
 ## Overview
 
@@ -21,3 +34,13 @@ Integration tests exercise each client against a real Azure DevOps organization.
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Code of Conduct
+
+This project has adopted the  
+[Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).  
+For more information see the  
+[Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)  
+or contact [opencode@microsoft.com](mailto:opencode@microsoft.com)  
+with any additional questions or comments.  
+
