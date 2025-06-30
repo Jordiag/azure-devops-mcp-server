@@ -15,35 +15,6 @@ The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and 
 
 Integration tests exercise each client against a real Azure DevOps organization. Another test suite validates end‑to‑end agent interactions using [Semantic Kernel](https://github.com/microsoft/semantic-kernel), demonstrating that an LLM can automatically invoke the published tools.
 
-## Building
-
-```bash
-# Restore and build the entire solution
-dotnet build Code/Dotnet.AzureDevOps.sln
-```
-
-To run the MCP server locally:
-
-```bash
-dotnet run --project Code/src/Dotnet.AzureDevOps.Mcp.Server
-```
-
-The server writes JSON‑RPC messages to STDOUT and listens on STDIN. Tools are discovered automatically from the assembly (see [`Boards.cs`](Code/src/Dotnet.AzureDevOps.Mcp.Server/Boards.cs)).
-
-## Testing
-
-Unit and integration tests are located under the `tests` and `integration.tests` folders. Execute all tests with:
-
-```bash
-dotnet test Code/Dotnet.AzureDevOps.sln
-```
-
-Some integration tests require Azure DevOps credentials and may be skipped in CI if the necessary environment variables are not set.
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or pull requests for new features, bug fixes, or improvements to the documentation.
-
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
