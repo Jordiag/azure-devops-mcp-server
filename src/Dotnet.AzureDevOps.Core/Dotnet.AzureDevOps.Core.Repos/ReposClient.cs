@@ -1,4 +1,4 @@
-﻿using Dotnet.AzureDevOps.Core.Repos.Options;
+using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -193,10 +193,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             await _gitHttpClient.CreatePullRequestReviewerAsync(
-                reviewer: reviewerUpdate, 
-                repositoryId: repositoryId, 
-                reviewerId: reviewerId, 
-                pullRequestId: pullRequestId, 
+                reviewer: reviewerUpdate,
+                repositoryId: repositoryId,
+                reviewerId: reviewerId,
+                pullRequestId: pullRequestId,
                 project: _projectName);
         }
 
@@ -313,7 +313,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return webApiTagDefinitions;
         }
 
-        public async Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label) => 
+        public async Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label) =>
             await _gitHttpClient.DeletePullRequestLabelsAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -388,7 +388,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 _projectName, repositoryId, pullRequestId);
 
         public async Task<GitPullRequestIterationChanges> GetIterationChangesAsync(
-            string repositoryId, int pullRequestId, int iteration) => 
+            string repositoryId, int pullRequestId, int iteration) =>
             await _gitHttpClient.GetPullRequestIterationChangesAsync(
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -467,7 +467,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return repo.Id;
         }
 
-        public async Task DeleteRepositoryAsync(Guid repositoryId) => 
+        public async Task DeleteRepositoryAsync(Guid repositoryId) =>
             await _gitHttpClient.DeleteRepositoryAsync(
                 repositoryId: repositoryId,
                 project: _projectName);
@@ -486,7 +486,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 project: _projectName);
         }
 
-        public async Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) => 
+        public async Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) =>
             await _gitHttpClient.DeleteCommentAsync(
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -528,7 +528,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<GitAnnotatedTag> GetTagAsync(
-            string repositoryId, string objectId) => 
+            string repositoryId, string objectId) =>
             await _gitHttpClient.GetAnnotatedTagAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -542,8 +542,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                 project: _projectName,
                 repositoryId: repositoryId);
-            
-            GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ?? 
+
+            GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ??
                 throw new InvalidOperationException($"Tag '{tagName}' does not exist in repositoryId '{repositoryId}'.");
 
             var refUpdate = new GitRefUpdate

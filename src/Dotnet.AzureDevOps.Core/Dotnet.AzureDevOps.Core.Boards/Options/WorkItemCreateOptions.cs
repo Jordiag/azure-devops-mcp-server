@@ -1,4 +1,4 @@
-﻿namespace Dotnet.AzureDevOps.Core.Boards.Options
+namespace Dotnet.AzureDevOps.Core.Boards.Options
 {
     /// <summary>
     /// Defines all the optional/required fields for creating a work item in Azure DevOps.

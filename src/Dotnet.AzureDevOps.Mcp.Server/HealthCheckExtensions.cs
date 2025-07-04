@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -12,7 +12,7 @@ public static class HealthCheckExtensions
     /// </summary>
     public static IServiceCollection AddMcpHealthChecks(this IServiceCollection services)
     {
-        services.AddHealthChecks();          // add real checks later if you like
+        services.AddHealthChecks();
         return services;
     }
 

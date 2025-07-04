@@ -18,14 +18,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _workItemsClient = new WorkItemsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.OrganizationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
 
-        /// <summary>
-        /// Test creating an Epic on its own.
-        /// </summary>
         [Fact]
         public async Task CreateEpic_SucceedsAsync()
         {
@@ -45,9 +42,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             _createdWorkItemIds.Add(epicId.Value);
         }
 
-        /// <summary>
-        /// Test creating a Feature that references a newly created Epic.
-        /// </summary>
         [Fact]
         public async Task CreateFeature_SucceedsAsync()
         {
@@ -74,9 +68,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             _createdWorkItemIds.Add(featureId.Value);
         }
 
-        /// <summary>
-        /// Test creating a User Story that references a newly created Feature (which references an Epic).
-        /// </summary>
         [Fact]
         public async Task CreateUserStory_SucceedsAsync()
         {
@@ -114,9 +105,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             _createdWorkItemIds.Add(storyId.Value);
         }
 
-        /// <summary>
-        /// Test creating a Task that references a newly created User Story (which references a Feature, which references an Epic).
-        /// </summary>
         [Fact]
         public async Task CreateTask_SucceedsAsync()
         {
@@ -165,9 +153,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             _createdWorkItemIds.Add(taskId.Value);
         }
 
-        /// <summary>
-        /// Update an Epic: create it first, then modify fields and confirm update succeeded.
-        /// </summary>
         [Fact]
         public async Task UpdateEpic_SucceedsAsync()
         {
@@ -194,9 +179,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             // updatedId should be the same as epicId, but we only store epicId in the list once
         }
 
-        /// <summary>
-        /// Update a Feature: create a parent Epic and the Feature, then modify fields on the Feature.
-        /// </summary>
         [Fact]
         public async Task UpdateFeature_SucceedsAsync()
         {
@@ -232,9 +214,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(updatedId.HasValue, "Failed to update Feature. ID was null.");
         }
 
-        /// <summary>
-        /// Update a User Story: create an Epic, Feature, then a Story, then update the Story's fields.
-        /// </summary>
         [Fact]
         public async Task UpdateUserStory_SucceedsAsync()
         {
@@ -281,10 +260,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(updatedId.HasValue, "Failed to update Story. ID was null.");
         }
 
-        /// <summary>
-        /// Update a Task: create the chain (Epic -> Feature -> Story -> Task),
-        /// then modify fields on the Task.
-        /// </summary>
         [Fact]
         public async Task UpdateTask_SucceedsAsync()
         {
@@ -342,9 +317,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(updatedId.HasValue, "Failed to update Task. ID was null.");
         }
 
-        /// <summary>
-        /// Creates an Epic, then reads it back to verify fields.
-        /// </summary>
         [Fact]
         public async Task ReadEpic_SucceedsAsync()
         {
@@ -379,18 +351,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
 
-        #region xUnit Lifetime
-
-        /// <summary>
-        /// xUnit method for async initialization before any tests run.
-        /// Not needed here, so we return a completed task.
-        /// </summary>
+        // xUnit initialization
         public Task InitializeAsync() => Task.CompletedTask;
 
-        /// <summary>
-        /// xUnit method for async cleanup after all tests have finished.
-        /// We delete all created work items in reverse order.
-        /// </summary>
+        // xUnit cleanup
         public async Task DisposeAsync()
         {
             foreach(int id in _createdWorkItemIds.AsEnumerable().Reverse())
@@ -398,7 +362,5 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 await _workItemsClient.DeleteWorkItemAsync(id);
             }
         }
-
-        #endregion
     }
 }

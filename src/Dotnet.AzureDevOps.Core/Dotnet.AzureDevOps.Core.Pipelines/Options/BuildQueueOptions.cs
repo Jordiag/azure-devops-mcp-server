@@ -1,4 +1,4 @@
-﻿namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
+namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
 
 public record BuildQueueOptions
 {

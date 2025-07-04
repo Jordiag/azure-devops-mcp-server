@@ -96,8 +96,8 @@ public class TestPlansClient : ITestPlansClient
         IReadOnlyList<TestSuite> suites = await ListTestSuitesAsync(planId);
 
         // Root suite is the one without a parent, or sometimes has parent ID == -1
-        TestSuite? root = 
-            suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id == -1) ?? 
+        TestSuite? root =
+            suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id == -1) ??
                 throw new InvalidOperationException($"No root suite found for test plan {planId}.");
 
         return root;

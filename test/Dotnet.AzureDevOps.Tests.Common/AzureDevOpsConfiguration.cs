@@ -2,7 +2,7 @@
 {
     public class AzureDevOpsConfiguration
     {
-        public string OrganisationUrl { get; }
+        public string OrganizationUrl { get; }
         public string ProjectName { get; }
         public string PersonalAccessToken { get; }
         public string ProjectId { get; }
@@ -19,7 +19,7 @@
 
         public AzureDevOpsConfiguration()
         {
-            OrganisationUrl = GetEnv("AZURE_DEVOPS_ORG_URL");
+            OrganizationUrl = GetEnv("AZURE_DEVOPS_ORG_URL");
             ProjectName = GetEnv("AZURE_DEVOPS_PROJECT_NAME");
             PersonalAccessToken = GetEnv("AZURE_DEVOPS_PAT");
             ProjectId = GetEnv("AZURE_DEVOPS_PROJECT_ID");

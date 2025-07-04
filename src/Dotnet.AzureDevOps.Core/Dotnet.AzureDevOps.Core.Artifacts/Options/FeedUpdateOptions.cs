@@ -1,4 +1,4 @@
-﻿namespace Dotnet.AzureDevOps.Core.Artifacts.Options;
+namespace Dotnet.AzureDevOps.Core.Artifacts.Options;
 
 /// <summary>Optional fields for updating an existing feed.</summary>
 public record FeedUpdateOptions

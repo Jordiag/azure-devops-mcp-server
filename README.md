@@ -2,19 +2,25 @@
 
 # Azure DevOps MCP Server for .NET
 
-This repository will host a set of .NET libraries and a Model Context Protocol (MCP) server that expose Azure DevOps operations. The goal is to make Azure DevOps automation accessible to AI agents by surfacing common tasks—creating work items, managing pull requests, queuing builds, working with artifacts, and more—through a uniform MCP endpoint.
+This repository contains a set of .NET libraries and a Model Context Protocol (MCP) server that expose Azure DevOps operations. The goal is to make Azure DevOps automation accessible to AI agents by surfacing common tasks—creating work items, managing pull requests, queuing builds, working with artifacts, and more—through a uniform MCP endpoint.
 
 ## Status
 
 Currently in [pre-alpha](https://en.wikipedia.org/wiki/Software_release_life_cycle#Pre-alpha) release stage, soon will be deployed to this repo.
 
-| Build | Integration Tests | SonarCloud static analisys | Nuget |  
+> **Preview Notice**
+
+This repository is being released as a public preview to gather feedback from the community. The API surface and overall structure are still taking shape and may change substantially as development continues. Future updates might introduce breaking changes without prior notice, and functionality available today could be refactored or removed.
+
+If you choose to build on top of this project during the preview phase, be prepared to regularly sync with the repository and adjust your code to accommodate these changes.
+| Build | Integration Tests | SonarCloud static analysis | Nuget |  
 |-------|------------|-----------------|-------|
 |  [![Build Status](https://dev.azure.com/Chanlabs/Dotnet.AzureDevOps/_apis/build/status%2FBuild?branchName=main)](https://github.com/Jordiag/azure-devops-mcp-server)|[![Build Status](https://dev.azure.com/Chanlabs/Dotnet.AzureDevOps/_apis/build/status%2FIntegration%20Tests?branchName=main)](https://github.com/Jordiag/azure-devops-mcp-server)   |       [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Chanlabs_Dotnet.AzureDevOps&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Chanlabs_Dotnet.AzureDevOps) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Chanlabs_Dotnet.AzureDevOps&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Chanlabs_Dotnet.AzureDevOps)[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Chanlabs_Dotnet.AzureDevOps&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Chanlabs_Dotnet.AzureDevOps)<br> [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Chanlabs_Dotnet.AzureDevOps&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Chanlabs_Dotnet.AzureDevOps) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Chanlabs_Dotnet.AzureDevOps&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Chanlabs_Dotnet.AzureDevOps) [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Chanlabs_Dotnet.AzureDevOps&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=Chanlabs_Dotnet.AzureDevOps) | <img src="https://user-images.githubusercontent.com/8865104/208910828-d9a283f0-d8f4-4fc2-ac45-a8b5ac65b2e7.svg" alt="not-available" width="20" height="20" align="center" /> N/A yet  |
 
 
 ## Overview
 
+The repository contains multiple C# projects that wrap the Microsoft Azure DevOps SDK and REST APIs. Each Azure DevOps tab—Boards, Repos, Pipelines, Artifacts and others—has a project under `/src/` exposing a simplified client interface. These thin wrappers are consumed by `Dotnet.AzureDevOps.Mcp.Server` to surface Model Context Protocol (MCP) tools. While most calls forward to the official SDKs or, when necessary, the REST endpoints, this layer keeps the MCP server decoupled from Azure DevOps so it can evolve independently or swap implementations in the future.
 The solution is organized as a multi‑project workspace targeting **.NET 9**. Each service area of Azure DevOps has its own client library:
 
 * **Boards** – CRUD 
@@ -29,6 +35,93 @@ The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and 
 
 Integration tests exercise each client against a real Azure DevOps organization. Another test suite validates end‑to‑end agent interactions using [Semantic Kernel](https://github.com/microsoft/semantic-kernel), demonstrating that an LLM can automatically invoke the published tools.
 
+
+## Repository structure
+
+- **src** – source projects implementing the client libraries and MCP server.
+- **test** – unit, integration and end-to-end tests.
+- **Pipelines** – Azure DevOps YAML pipeline definitions.
+- `Dotnet.AzureDevOps.sln` – solution file linking all projects.
+
+## Getting started
+
+1. Install the latest [.NET 9](https://dotnet.microsoft.com/) preview.
+2. Clone this repository.
+3. Restore dependencies and build:
+   ```bash
+   dotnet build
+   ```
+4. Run the tests:
+   ```bash
+   dotnet test
+   ```
+
+## Example: Using the MCP server with Semantic Kernel
+
+The [end‑to‑end tests](test/end2end.tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests)
+show how a Semantic Kernel agent can call tools published by the MCP server. A
+new console application can reproduce the same workflow:
+
+### Prerequisites
+
+- .NET 9 SDK installed
+- A running MCP server accessible via URL
+- An OpenAI API key and model name
+- Environment variables configured:
+  - `MCP_SERVER_URL`
+  - `OPENAI_API_KEY`
+  - `OPENAI_MODEL`
+
+```bash
+dotnet new console -n MyMcpClient
+cd MyMcpClient
+dotnet add package Microsoft.SemanticKernel --version 1.59.0
+dotnet add package Microsoft.SemanticKernel.Agents.Core --version 1.59.0
+dotnet add package ModelContextProtocol-SemanticKernel --version 0.3.0-preview-01
+```
+
+Replace `Program.cs` with the following and configure your MCP server URL and
+OpenAI credentials as environment variables:
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using ModelContextProtocol.SemanticKernel.Extensions;
+
+var serverUrl = Environment.GetEnvironmentVariable("MCP_SERVER_URL")!;
+var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!;
+var model = Environment.GetEnvironmentVariable("OPENAI_MODEL")!;
+
+IKernelBuilder builder = Kernel.CreateBuilder();
+builder.Services.AddOpenAIChatCompletion("openai", model, openAiKey);
+var kernel = builder.Build();
+
+await kernel.Plugins.AddMcpFunctionsFromSseServerAsync("MyMcpServer", serverUrl);
+
+var settings = new OpenAIPromptExecutionSettings
+{
+    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+};
+
+var agent = new ChatCompletionAgent
+{
+    Name = "McpTester",
+    Kernel = kernel,
+    Instructions = "Use available tools to answer the user's question.",
+    Arguments = new KernelArguments(settings)
+};
+
+await foreach (var update in agent.InvokeAsync(
+    "Call the echo tool with the text \"Hello MCP!\" and return the raw output."))
+{
+    Console.WriteLine(update.Message);
+}
+```
+
+Running this program prints `Hello MCP!` once the agent invokes the `echo` tool
+exposed by your MCP server.
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

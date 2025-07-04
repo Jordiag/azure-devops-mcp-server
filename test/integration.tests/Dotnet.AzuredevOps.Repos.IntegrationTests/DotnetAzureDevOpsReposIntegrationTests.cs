@@ -31,12 +31,11 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             _userEmail = _azureDevOpsConfiguration.BotUserEmail;
 
             _reposClient = new ReposClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.OrganizationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
 
-        /*─────────────────────────  Tier-1 sanity test  ─────────────────────────*/
 
         [Fact]
         public async Task CreateReadCompletePullRequest_SucceedsAsync()
@@ -65,7 +64,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.Equal(PullRequestStatus.Completed, completed!.Status);
         }
 
-        /*─────────────────────────  Reviewers + List  ───────────────────────────*/
 
         [Fact(Skip = "API is in preview, // PREVIEW  https://learn.microsoft.com/en-us/dotnet/api/microsoft." +
             "teamfoundation.sourcecontrol.webapi.githttpclientbase.createpullrequestreviewersasync?view=azure-devops-dotnet")]
@@ -86,7 +84,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             if(!string.IsNullOrWhiteSpace(_userEmail))
             {
                 (string guid, string name) reviewer = await ReviewersClient.GetUserIdFromEmailAsync(
-                    _azureDevOpsConfiguration.OrganisationUrl,
+                    _azureDevOpsConfiguration.OrganizationUrl,
                     _azureDevOpsConfiguration.PersonalAccessToken,
                     _userEmail);
 
@@ -112,7 +110,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.Contains(list, p => p.PullRequestId == pullRequestId);
         }
 
-        /*─────────────────────────  Tier-2: labels + comments  ──────────────────*/
 
         [Fact]
         public async Task LabelsAndCommentsWorkflow_SucceedsAsync()
@@ -130,7 +127,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             int pullRequestId = (await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions)).Value;
             _createdPrIds.Add(pullRequestId);
 
-            /* ---------- LABELS ---------- */
             await _reposClient.AddLabelsAsync(_repoName, pullRequestId, "docs", "ready");
 
             IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
@@ -142,7 +138,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions2 = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
             Assert.DoesNotContain("docs", webApiTagDefinitions2!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
 
-            /* ---------- COMMENT THREAD ---------- */
             int commentThreadId = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
             {
                 RepositoryId = _repoName,
@@ -164,12 +159,10 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         }
 
 
-        /*─────────────────────  Git “Repos ▸ Tags” workflow  ───────────────────────*/
 
         [Fact]
         public async Task Tags_CreateListDelete_Workflow_SucceedsAsync()
         {
-            /* ---------- Arrange ---------- */
 
             string? latestCommitSha = (await _reposClient.GetLatestCommitsAsync(
                 _azureDevOpsConfiguration.ProjectName,
@@ -192,23 +185,19 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 TaggerEmail = "bot@example.com"
             });
 
-            /* ---------- Assert – list finds annotated tag ---------- */
             GitAnnotatedTag tag =
                 await _reposClient.GetTagAsync(_repoName, gitAnnotatedTag.ObjectId);
 
             Assert.True(tag.Name == annTag);
 
-            /* ---------- Act – delete both tags ---------- */
             GitRefUpdateResult? result = await _reposClient.DeleteTagAsync(_repoName, annTag);
 
-            /* ---------- Assert – annotated tag no longer returned ---------- */
 
             Assert.NotNull(result);
             Assert.True(result.Success);
 
         }
 
-        /*──────────────────  xUnit lifetime / clean-up  ─────────────────────────*/
 
         public Task InitializeAsync() => Task.CompletedTask;
 

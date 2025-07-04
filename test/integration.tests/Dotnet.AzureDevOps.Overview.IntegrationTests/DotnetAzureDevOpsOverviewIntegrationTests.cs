@@ -17,7 +17,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _wikiClient = new WikiClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.OrganizationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }

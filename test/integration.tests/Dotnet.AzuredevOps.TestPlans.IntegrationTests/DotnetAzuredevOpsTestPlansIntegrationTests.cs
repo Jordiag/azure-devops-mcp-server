@@ -18,7 +18,7 @@ namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _testPlansClient = new TestPlansClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.OrganizationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }

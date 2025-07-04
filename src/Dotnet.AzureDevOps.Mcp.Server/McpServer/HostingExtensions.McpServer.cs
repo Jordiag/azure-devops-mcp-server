@@ -1,4 +1,4 @@
-﻿using Dotnet.AzureDevOps.Mcp.Server.Tools;
+using Dotnet.AzureDevOps.Mcp.Server.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;

@@ -1,4 +1,4 @@
-﻿using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.TeamFoundation.Build.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
 

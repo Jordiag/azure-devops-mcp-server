@@ -1,4 +1,4 @@
-﻿using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Boards.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -51,7 +51,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task DeleteWorkItemAsync(int workItemId, CancellationToken cancellationToken = default) =>
             await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
 
-        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options,bool validateOnly = false, bool bypassRules = false, 
+        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options,bool validateOnly = false, bool bypassRules = false,
             bool suppressNotifications = false,  WorkItemExpand? expand = null, CancellationToken cancellationToken = default)
         {
             JsonPatchDocument patchDocument = BuildPatchDocument(options);

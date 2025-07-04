@@ -1,4 +1,4 @@
-﻿using Microsoft.TeamFoundation.SourceControl.WebApi;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos.Options;
 

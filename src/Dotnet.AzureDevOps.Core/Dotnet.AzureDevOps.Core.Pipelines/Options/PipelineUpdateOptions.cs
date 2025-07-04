@@ -1,4 +1,4 @@
-﻿namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
+namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
 
 /// <summary>Fields you may update after creation.</summary>
 public record PipelineUpdateOptions

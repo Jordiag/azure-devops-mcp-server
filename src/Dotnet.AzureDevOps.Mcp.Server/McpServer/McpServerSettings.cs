@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
@@ -8,5 +8,5 @@ public sealed record McpServerSettings
 
     public bool EnableOpenTelemetry { get; init; } = true;
 
-    public int Port{ get; init; } = 5050;
+    public int Port { get; init; } = 5050;
 }
