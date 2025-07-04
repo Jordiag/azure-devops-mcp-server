@@ -1,0 +1,221 @@
+using System.ComponentModel;
+using Dotnet.AzureDevOps.Core.Repos;
+using Dotnet.AzureDevOps.Core.Repos.Options;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
+using ModelContextProtocol.Server;
+
+namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
+
+/// <summary>
+/// Exposes Git and pull request operations through Model Context Protocol.
+/// </summary>
+[McpServerToolType]
+public class ReposTools
+{
+    private ReposClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
+        => new(organizationUrl, projectName, personalAccessToken);
+
+    [McpServerTool, Description("Creates a pull request.")]
+    public Task<int?> CreatePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, PullRequestCreateOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreatePullRequestAsync(options);
+    }
+
+    [McpServerTool, Description("Retrieves a pull request.")]
+    public Task<GitPullRequest?> GetPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetPullRequestAsync(repositoryId, pullRequestId);
+    }
+
+    [McpServerTool, Description("Updates a pull request.")]
+    public Task UpdatePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, PullRequestUpdateOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.UpdatePullRequestAsync(repositoryId, pullRequestId, options);
+    }
+
+    [McpServerTool, Description("Completes a pull request.")]
+    public Task CompletePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, bool squashMerge = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CompletePullRequestAsync(repositoryId, pullRequestId, squashMerge, lastMergeSourceCommit, commitMessage);
+    }
+
+    [McpServerTool, Description("Abandons a pull request.")]
+    public Task AbandonPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.AbandonPullRequestAsync(repositoryId, pullRequestId);
+    }
+
+    [McpServerTool, Description("Lists pull requests.")]
+    public Task<IReadOnlyList<GitPullRequest>> ListPullRequestsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, PullRequestSearchOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPullRequestsAsync(repositoryId, options);
+    }
+
+    [McpServerTool, Description("Adds reviewers to a pull request.")]
+    public Task AddReviewersAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, (string guid, string name)[] reviewers)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.AddReviewersAsync(repositoryId, pullRequestId, reviewers);
+    }
+
+    [McpServerTool, Description("Sets a reviewer vote.")]
+    public Task SetReviewerVoteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string reviewerId, short vote)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SetReviewerVoteAsync(repositoryId, pullRequestId, reviewerId, vote);
+    }
+
+    [McpServerTool, Description("Creates a comment thread on a pull request.")]
+    public Task<int> CreateCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, CommentThreadOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreateCommentThreadAsync(options);
+    }
+
+    [McpServerTool, Description("Replies to a pull request comment thread.")]
+    public Task<int?> ReplyToCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, CommentReplyOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ReplyToCommentThreadAsync(options);
+    }
+
+    [McpServerTool, Description("Adds labels to a pull request.")]
+    public Task<IList<WebApiTagDefinition>> AddLabelsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, params string[] labels)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.AddLabelsAsync(repositoryId, pullRequestId, labels);
+    }
+
+    [McpServerTool, Description("Removes a label from a pull request.")]
+    public Task RemoveLabelAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string label)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.RemoveLabelAsync(repositoryId, pullRequestId, label);
+    }
+
+    [McpServerTool, Description("Retrieves labels for a pull request.")]
+    public Task<IReadOnlyList<WebApiTagDefinition>> GetPullRequestLabelsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetPullRequestLabelsAsync(repositoryId, pullRequestId);
+    }
+
+    [McpServerTool, Description("Removes reviewers from a pull request.")]
+    public Task RemoveReviewersAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, params string[] reviewerIds)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.RemoveReviewersAsync(repositoryId, pullRequestId, reviewerIds);
+    }
+
+    [McpServerTool, Description("Sets pull request status.")]
+    public Task SetPullRequestStatusAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, PullRequestStatusOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SetPullRequestStatusAsync(repositoryId, pullRequestId, options);
+    }
+
+    [McpServerTool, Description("Enables auto-complete on a pull request.")]
+    public Task EnableAutoCompleteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, GitPullRequestCompletionOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.EnableAutoCompleteAsync(repositoryId, pullRequestId, options);
+    }
+
+    [McpServerTool, Description("Lists pull request iterations.")]
+    public Task<IReadOnlyList<GitPullRequestIteration>> ListIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListIterationsAsync(repositoryId, pullRequestId);
+    }
+
+    [McpServerTool, Description("Gets changes for a pull request iteration.")]
+    public Task<GitPullRequestIterationChanges> GetIterationChangesAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int iteration)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetIterationChangesAsync(repositoryId, pullRequestId, iteration);
+    }
+
+    [McpServerTool, Description("Lists pull requests filtered by label.")]
+    public Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByLabelAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string labelName, PullRequestStatus status)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPullRequestsByLabelAsync(repositoryId, labelName, status);
+    }
+
+    [McpServerTool, Description("Creates a branch in a repository.")]
+    public Task CreateBranchAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string newRefName, string baseCommitSha)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreateBranchAsync(repositoryId, newRefName, baseCommitSha);
+    }
+
+    [McpServerTool, Description("Gets the diff between two commits.")]
+    public Task<GitCommitDiffs> GetCommitDiffAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string baseSha, string targetSha)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetCommitDiffAsync(repositoryId, baseSha, targetSha);
+    }
+
+    [McpServerTool, Description("Creates a new repository.")]
+    public Task<Guid> CreateRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, string newRepoName)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreateRepositoryAsync(newRepoName);
+    }
+
+    [McpServerTool, Description("Deletes a repository.")]
+    public Task DeleteRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, Guid repositoryId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.DeleteRepositoryAsync(repositoryId);
+    }
+
+    [McpServerTool, Description("Edits a pull request comment.")]
+    public Task EditCommentAsync(string organizationUrl, string projectName, string personalAccessToken, CommentEditOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.EditCommentAsync(options);
+    }
+
+    [McpServerTool, Description("Deletes a pull request comment.")]
+    public Task DeleteCommentAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId, int commentId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.DeleteCommentAsync(repositoryId, pullRequestId, threadId, commentId);
+    }
+
+    [McpServerTool, Description("Creates an annotated tag in a repository.")]
+    public Task<GitAnnotatedTag> CreateTagAsync(string organizationUrl, string projectName, string personalAccessToken, TagCreateOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreateTagAsync(options);
+    }
+
+    [McpServerTool, Description("Gets an annotated tag by object id.")]
+    public Task<GitAnnotatedTag> GetTagAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string objectId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetTagAsync(repositoryId, objectId);
+    }
+
+    [McpServerTool, Description("Deletes a tag from a repository.")]
+    public Task<GitRefUpdateResult?> DeleteTagAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string tagName)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.DeleteTagAsync(repositoryId, tagName);
+    }
+
+    [McpServerTool, Description("Gets the latest commits from a branch.")]
+    public Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repoName, string branchName, int top = 1)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetLatestCommitsAsync(projectName, repoName, branchName, top);
+    }
+}

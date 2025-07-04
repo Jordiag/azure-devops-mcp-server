@@ -1,0 +1,69 @@
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: buildPipeline
+      source: Build
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  - group: 'Integration tests'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: solution
+    value: 'Dotnet.AzureDevOps.sln'
+  - name: sonarProjectKey
+    value: 'Chanlabs_Dotnet.AzureDevOps'
+  - name: sonarOrganization
+    value: 'chanlabs-1'
+
+steps:
+- checkout: self
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    configuration: '$(buildConfiguration)'
+    clean: true
+    maximumCpuCount: true
+
+- script: |
+    nohup dotnet run --project src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj --urls "http://localhost:5050" > mcp.log 2>&1 &#    echo $! > mcpserver.pid
+  displayName: "Start MCP Server (background)"
+  workingDirectory: $(Build.SourcesDirectory)
+
+- script: |
+    for i in {1..30}; do
+      curl -s http://localhost:5050/mcp && echo "Server is up" && exit 0
+      sleep 2
+    done
+    echo "MCP server did not start in time"
+    exit 1
+  displayName: "Wait for MCP Server to be ready"
+
+- task: VSTest@2
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: |
+      **/test/end2end.Tests/**/*Tests*.dll
+      !**/obj/**
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+    runSettingsFile: ''
+    codeCoverageEnabled: true
+    testRunTitle: 'End2end Tests'
+  env:
+    AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_PAT)
+    AZURE_DEVOPS_PIPELINE_ID: $(AZURE_DEVOPS_PIPELINE_ID)
+    AZURE_DEVOPS_PROJECT_ID: $(AZURE_DEVOPS_PROJECT_ID)
+    AZURE_DEVOPS_REPO_ID: $(AZURE_DEVOPS_REPO_ID)
+    AZURE_DEVOPS_REPOSITORY_ID: $(AZURE_DEVOPS_REPOSITORY_ID)
+    OPENAI_API_KEY: $(OPENAI_API_KEY)
+    AZURE_OPENAI_DEPLOYMENT: $(AZURE_OPENAI_DEPLOYMENT)
+    AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+    AZURE_OPENAI_KEY: $(AZURE_OPENAI_KEY)

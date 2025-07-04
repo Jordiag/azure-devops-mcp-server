@@ -1,0 +1,75 @@
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: buildPipeline
+      source: Build
+      trigger:
+        branches:
+          include: [ main ]
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  - group: 'Integration tests'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: solution
+    value: 'Dotnet.AzureDevOps.sln'
+  - name: sonarProjectKey
+    value: 'Chanlabs_Dotnet.AzureDevOps'
+  - name: sonarOrganization
+    value: 'chanlabs-1'
+
+steps:
+- checkout: self
+
+# SonarCloud Begin (latest version)
+- task: SonarCloudPrepare@3
+  inputs:
+    SonarCloud: 'SonarQube'
+    organization: '$(sonarOrganization)'
+    scannerMode: 'dotnet'
+    projectKey: '$(sonarProjectKey)'
+    projectName: 'Dotnet.AzureDevOps'
+    extraProperties: |
+      sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/**/coverage.opencover.xml
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    configuration: '$(buildConfiguration)'
+    clean: true
+    maximumCpuCount: true
+
+- task: VSTest@2
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: |
+      **/test/integration.Tests/**/*Tests*.dll
+      !**/obj/**
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+    runSettingsFile: ''
+    codeCoverageEnabled: true
+    testRunTitle: 'Integration Tests'
+  env:
+    AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_PAT)
+    AZURE_DEVOPS_PIPELINE_ID: $(AZURE_DEVOPS_PIPELINE_ID)
+    AZURE_DEVOPS_PROJECT_ID: $(AZURE_DEVOPS_PROJECT_ID)
+    AZURE_DEVOPS_REPO_ID: $(AZURE_DEVOPS_REPO_ID)
+    AZURE_DEVOPS_REPOSITORY_ID: $(AZURE_DEVOPS_REPOSITORY_ID)
+    OPENAI_API_KEY: $(OPENAI_API_KEY)
+    AZURE_OPENAI_DEPLOYMENT: $(AZURE_OPENAI_DEPLOYMENT)
+    AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+    AZURE_OPENAI_KEY: $(AZURE_OPENAI_KEY)
+
+- task: SonarCloudAnalyze@3
+
+- task: SonarCloudPublish@3
+  inputs:
+    pollingTimeoutSec: '300'

@@ -1,6 +1,4 @@
-<picture>
 <img src="https://github.com/user-attachments/assets/bd900648-5763-454d-b29f-fb41bab05d02" alt="azure_devops_mcp_server_logo" width="200"/>
-</picture>
 
 # Azure DevOps MCP Server for .NET
 
