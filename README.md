@@ -6,7 +6,7 @@ This repository contains a set of .NET libraries and a Model Context Protocol (M
 
 ## Status
 
-Currently in [pre-alpha](https://en.wikipedia.org/wiki/Software_release_life_cycle#Pre-alpha) release stage, soon will be deployed to this repo.
+Currently in [pre-alpha](https://en.wikipedia.org/wiki/Software_release_life_cycle#Pre-alpha) release stage.
 
 > **Preview Notice**
 
