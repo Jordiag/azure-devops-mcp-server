@@ -7,6 +7,7 @@ using Microsoft.TeamFoundation.Build.WebApi;
 namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 {
     [ExcludeFromCodeCoverage]
+    public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
     {
         private readonly PipelinesClient _pipelines;
         private readonly List<int> _queuedBuildIds = [];
@@ -32,7 +33,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
 
-        
+
         [Fact]
         public async Task QueueAndCancelBuild_SucceedsAsync()
         {
@@ -60,7 +61,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Equal(BuildStatus.Cancelling, run!.Status);
         }
 
-        
+
         [Fact]
         public async Task RetryBuild_SucceedsAsync()
         {
@@ -81,7 +82,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Equal(_branch, retried!.SourceBranch);
         }
 
-        
+
         [Fact]
         public async Task ListBuilds_Filter_WorksAsync()
         {
@@ -103,7 +104,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Contains(list, b => b.Id == buildId);
         }
 
-        
+
         [Fact]
         public async Task DownloadConsoleLog_SucceedsAsync()
         {
