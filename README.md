@@ -45,7 +45,7 @@ Integration tests exercise each client against a real Azure DevOps organization.
 
 ## Getting started
 
-1. Install the latest [.NET 9](https://dotnet.microsoft.com/) preview.
+1. Install the latest [.NET 9](https://dotnet.microsoft.com/) release.
 2. Clone this repository.
 3. Restore dependencies and build:
    ```bash
