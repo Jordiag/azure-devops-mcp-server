@@ -2,34 +2,41 @@ name: Build on main
 
 on:
   push:
-    branches: [main]          # run only when commits land on main
+    branches: [main]
 
 jobs:
   build:
-    runs-on: windows-latest   # same image you used in Azure DevOps
+    runs-on: windows-latest
     env:
       buildConfiguration: Release
       solution: Dotnet.AzureDevOps.sln
 
     steps:
-    # ────────────────────────────── Checkout source ─────────────────────────────
-    - name: Checkout
-      uses: actions/checkout@v4
+      # ─────────────────────────── Checkout source ────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # ────────────────────────────── .NET toolchain ─────────────────────────────
-    - name: Set up .NET SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'      # change if your project targets a different SDK
+      # ─────────────────────────── .NET SDK (optional) ─────────────────────────
+      # Keep this if you have any SDK-style projects or global.json constraints.
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
-    # ────────────────────────────── Restore packages ───────────────────────────
-    - name: Restore packages
-      run: dotnet restore "${{ env.solution }}"
+      # ─────────────────────────── MSBuild in PATH  ← NEW  ─────────────────────
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2           # adds MSBuild.exe to PATH
+        with:
+          vs-version: '17.0'                      # 17 = VS 2022 (default); 16 = VS 2019
 
-    # ────────────────────────────── Build solution ─────────────────────────────
-    - name: Build solution (MSBuild)
-      run: >
-        msbuild "${{ env.solution }}"
-        /p:Configuration=${{ env.buildConfiguration }}
-        /p:ExcludePath="test/integration.tests;test/end2end.tests"
-        /m /restore
+      # ─────────────────────────── Restore packages ───────────────────────────
+      - name: Restore packages
+        run: msbuild "${{ env.solution }}" /t:Restore
+
+      # ─────────────────────────── Build solution ─────────────────────────────
+      - name: Build solution
+        run: >
+          msbuild "${{ env.solution }}"
+          /p:Configuration=${{ env.buildConfiguration }}
+          /p:ExcludePath="test/integration.tests;test/end2end.tests"
+          /m
