@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Artifacts.Options;
+﻿namespace Dotnet.AzureDevOps.Core.Artifacts.Options;
 
 /// <summary>Parameters required to create a new feed.</summary>
 public record FeedCreateOptions

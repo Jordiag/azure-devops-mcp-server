@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Repos.Options;
+﻿namespace Dotnet.AzureDevOps.Core.Repos.Options;
 
 public record TagCreateOptions
 {

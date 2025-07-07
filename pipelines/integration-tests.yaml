@@ -25,6 +25,13 @@ variables:
 steps:
 - checkout: self
 
+# Ensure .NET 9 SDK is available
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '9.0.x'
+    includePreviewVersions: true
+
 # SonarCloud Begin (latest version)
 - task: SonarCloudPrepare@3
   inputs:
@@ -40,23 +47,17 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
-- task: VSBuild@1
+- task: DotNetCoreCLI@2
   inputs:
-    solution: '$(solution)'
-    configuration: '$(buildConfiguration)'
-    clean: true
-    maximumCpuCount: true
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration)'
 
-- task: VSTest@2
+- task: DotNetCoreCLI@2
   inputs:
-    testSelector: 'testAssemblies'
-    testAssemblyVer2: |
-      **/test/integration.Tests/**/*Tests*.dll
-      !**/obj/**
-    searchFolder: '$(System.DefaultWorkingDirectory)'
-    runSettingsFile: ''
-    codeCoverageEnabled: true
-    testRunTitle: 'Integration Tests'
+    command: 'test'
+    projects: '**/test/integration.tests/**/*.csproj'
+    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --logger:"trx"'
   env:
     AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_PAT)
     AZURE_DEVOPS_PIPELINE_ID: $(AZURE_DEVOPS_PIPELINE_ID)

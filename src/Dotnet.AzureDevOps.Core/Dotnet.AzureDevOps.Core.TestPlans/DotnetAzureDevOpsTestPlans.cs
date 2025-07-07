@@ -1,10 +1,10 @@
-namespace Dotnet.AzureDevOps.Core.TestPlans
+﻿namespace Dotnet.AzureDevOps.Core.TestPlans
 {
     public class DotnetAzureDevOpsTestPlans
     {
         public DotnetAzureDevOpsTestPlans()
         {
-
+                
         }
     }
 }

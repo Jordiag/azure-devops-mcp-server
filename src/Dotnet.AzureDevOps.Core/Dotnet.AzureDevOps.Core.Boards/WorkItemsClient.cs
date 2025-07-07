@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Core.Boards.Options;
+﻿using Dotnet.AzureDevOps.Core.Boards.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -25,33 +25,57 @@ namespace Dotnet.AzureDevOps.Core.Boards
         }
 
         public Task<int?> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync("Epic", workItemCreateOptions, cancellationToken: cancellationToken);
+            CreateWorkItemAsync(
+                workItemType: "Epic",
+                options: workItemCreateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> CreateFeatureAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync("Feature", workItemCreateOptions, cancellationToken: cancellationToken);
+            CreateWorkItemAsync(
+                workItemType: "Feature",
+                options: workItemCreateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> CreateUserStoryAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync("User Story", workItemCreateOptions, cancellationToken:cancellationToken);
+            CreateWorkItemAsync(
+                workItemType: "User Story",
+                options: workItemCreateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> CreateTaskAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync("Task", workItemCreateOptions, cancellationToken:cancellationToken);
+            CreateWorkItemAsync(
+                workItemType: "Task",
+                options: workItemCreateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(epicId, updateOptions, cancellationToken);
+            UpdateWorkItemAsync(
+                workItemId: epicId,
+                options: updateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(featureId, updateOptions, cancellationToken);
+            UpdateWorkItemAsync(
+                workItemId: featureId,
+                options: updateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(userStoryId, updateOptions, cancellationToken);
+            UpdateWorkItemAsync(
+                workItemId: userStoryId,
+                options: updateOptions,
+                cancellationToken: cancellationToken);
 
         public Task<int?> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(taskId, updateOptions, cancellationToken);
+            UpdateWorkItemAsync(
+                workItemId: taskId,
+                options: updateOptions,
+                cancellationToken: cancellationToken);
 
         public async Task DeleteWorkItemAsync(int workItemId, CancellationToken cancellationToken = default) =>
             await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
 
-        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options,bool validateOnly = false, bool bypassRules = false,
+        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options,bool validateOnly = false, bool bypassRules = false, 
             bool suppressNotifications = false,  WorkItemExpand? expand = null, CancellationToken cancellationToken = default)
         {
             JsonPatchDocument patchDocument = BuildPatchDocument(options);

@@ -31,11 +31,10 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             _userEmail = _azureDevOpsConfiguration.BotUserEmail;
 
             _reposClient = new ReposClient(
-                _azureDevOpsConfiguration.OrganizationUrl,
+                _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
-
 
         [Fact]
         public async Task CreateReadCompletePullRequest_SucceedsAsync()
@@ -64,7 +63,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.Equal(PullRequestStatus.Completed, completed!.Status);
         }
 
-
         [Fact(Skip = "API is in preview, // PREVIEW  https://learn.microsoft.com/en-us/dotnet/api/microsoft." +
             "teamfoundation.sourcecontrol.webapi.githttpclientbase.createpullrequestreviewersasync?view=azure-devops-dotnet")]
         public async Task ListAndReviewers_Workflow_SucceedsAsync()
@@ -84,7 +82,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             if(!string.IsNullOrWhiteSpace(_userEmail))
             {
                 (string guid, string name) reviewer = await ReviewersClient.GetUserIdFromEmailAsync(
-                    _azureDevOpsConfiguration.OrganizationUrl,
+                    _azureDevOpsConfiguration.OrganisationUrl,
                     _azureDevOpsConfiguration.PersonalAccessToken,
                     _userEmail);
 
@@ -110,7 +108,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.Contains(list, p => p.PullRequestId == pullRequestId);
         }
 
-
         [Fact]
         public async Task LabelsAndCommentsWorkflow_SucceedsAsync()
         {
@@ -127,6 +124,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             int pullRequestId = (await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions)).Value;
             _createdPrIds.Add(pullRequestId);
 
+            /* ---------- LABELS ---------- */
             await _reposClient.AddLabelsAsync(_repoName, pullRequestId, "docs", "ready");
 
             IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
@@ -138,6 +136,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions2 = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
             Assert.DoesNotContain("docs", webApiTagDefinitions2!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
 
+            /* ---------- COMMENT THREAD ---------- */
             int commentThreadId = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
             {
                 RepositoryId = _repoName,
@@ -159,10 +158,10 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         }
 
 
-
         [Fact]
         public async Task Tags_CreateListDelete_Workflow_SucceedsAsync()
         {
+            /* ---------- Arrange ---------- */
 
             string? latestCommitSha = (await _reposClient.GetLatestCommitsAsync(
                 _azureDevOpsConfiguration.ProjectName,
@@ -185,19 +184,83 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 TaggerEmail = "bot@example.com"
             });
 
+            /* ---------- Assert – list finds annotated tag ---------- */
             GitAnnotatedTag tag =
                 await _reposClient.GetTagAsync(_repoName, gitAnnotatedTag.ObjectId);
 
             Assert.True(tag.Name == annTag);
 
+            /* ---------- Act – delete both tags ---------- */
             GitRefUpdateResult? result = await _reposClient.DeleteTagAsync(_repoName, annTag);
 
+            /* ---------- Assert – annotated tag no longer returned ---------- */
 
             Assert.NotNull(result);
             Assert.True(result.Success);
 
         }
 
+        [Fact(Skip = "API is in preview, // PREVIEW  https://learn.microsoft.com/en-us/dotnet/api/microsoft." +
+            "teamfoundation.sourcecontrol.webapi.githttpclientbase.createpullrequestreviewersasync?view=azure-devops-dotnet")]
+        public async Task AdvancedPullRequestWorkflow_SucceedsAsync()
+        {
+            var createOptions = new PullRequestCreateOptions
+            {
+                RepositoryIdOrName = _repoName,
+                Title = $"Advanced PR {UtcStamp()}",
+                Description = "PR exercising advanced APIs",
+                SourceBranch = _srcBranch,
+                TargetBranch = _targetBranch
+            };
+
+            int prId = (await _reposClient.CreatePullRequestAsync(createOptions)).Value;
+            _createdPrIds.Add(prId);
+
+            (string guid, string name) reviewer = await ReviewersClient.GetUserIdFromEmailAsync(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.PersonalAccessToken,
+                _userEmail);
+
+            await _reposClient.AddReviewersAsync(_repoName, prId, [reviewer]);
+            GitPullRequest? withReviewer = await _reposClient.GetPullRequestAsync(_repoName, prId);
+            Assert.Contains(withReviewer!.Reviewers, r => r.Id == reviewer.guid);
+
+            await _reposClient.SetReviewerVoteAsync(_repoName, prId, reviewer.guid, 10);
+            await _reposClient.SetPullRequestStatusAsync(_repoName, prId, new PullRequestStatusOptions
+            {
+                ContextName = "ci/test",
+                ContextGenre = "build",
+                Description = "Integration status",
+                State = GitStatusState.Succeeded,
+                TargetUrl = "https://example.com"
+            });
+
+            await _reposClient.EnableAutoCompleteAsync(
+                _repoName,
+                prId,
+                new GitPullRequestCompletionOptions { MergeStrategy = GitPullRequestMergeStrategy.Squash });
+            GitPullRequest? afterAuto = await _reposClient.GetPullRequestAsync(_repoName, prId);
+            Assert.NotNull(afterAuto!.AutoCompleteSetBy);
+
+            await _reposClient.RemoveReviewersAsync(_repoName, prId, reviewer.guid);
+            GitPullRequest? afterRemove = await _reposClient.GetPullRequestAsync(_repoName, prId);
+            Assert.DoesNotContain(afterRemove!.Reviewers, r => r.Id == reviewer.guid);
+        }
+
+        [Fact]
+        public async Task RepositoryCreateDelete_SucceedsAsync()
+        {
+            string repoName = $"it-repo-{UtcStamp()}";
+            Guid newRepoId = await _reposClient.CreateRepositoryAsync(repoName);
+
+            GitRepository? created = await _reposClient.GetRepositoryAsync(newRepoId);
+            Assert.NotNull(created);
+
+            await _reposClient.DeleteRepositoryAsync(newRepoId);
+
+            GitRepository? deleted = await _reposClient.GetRepositoryAsync(newRepoId);
+            Assert.Null(deleted);
+        }
 
         public Task InitializeAsync() => Task.CompletedTask;
 

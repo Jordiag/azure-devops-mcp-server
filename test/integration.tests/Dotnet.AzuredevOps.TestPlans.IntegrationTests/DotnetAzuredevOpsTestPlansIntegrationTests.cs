@@ -18,12 +18,10 @@ namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _testPlansClient = new TestPlansClient(
-                _azureDevOpsConfiguration.OrganizationUrl,
+                _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
-
-        /*──────────────────────────── Plan CRUD ───────────────────────────*/
 
         [Fact]
         public async Task PlanCrud_SucceedsAsync()
@@ -50,8 +48,6 @@ namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
             TestPlan? afterDelete = await _testPlansClient.GetTestPlanAsync(planId);
             Assert.Null(afterDelete);
         }
-
-        /*─────────────────────────── Suite CRUD ───────────────────────────*/
 
         [Fact]
         public async Task SuiteCrud_SucceedsAsync()
@@ -82,8 +78,6 @@ namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
 
         private static string UtcStamp() =>
             DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-
-        /*──────────────────── IAsyncLifetime ───────────────────*/
 
         public Task InitializeAsync() => Task.CompletedTask;
 

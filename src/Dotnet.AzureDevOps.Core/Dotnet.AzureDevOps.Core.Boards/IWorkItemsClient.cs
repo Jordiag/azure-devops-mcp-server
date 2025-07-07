@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Core.Boards.Options;
+﻿using Dotnet.AzureDevOps.Core.Boards.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace Dotnet.AzureDevOps.Core.Boards

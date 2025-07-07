@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Common
+﻿namespace Dotnet.AzureDevOps.Core.Common
 {
     public static class Constants
     {

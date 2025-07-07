@@ -1,4 +1,4 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Threading;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -13,13 +13,13 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
         private readonly string _project;
         private readonly BuildHttpClient _build;
 
-        public PipelinesClient(string organisationUrl, string project, string pat)
+        public PipelinesClient(string organisationUrl, string project, string personalAccessToken)
         {
             _project = project;
 
-            var conn = new VssConnection(new Uri(organisationUrl),
-                          new VssBasicCredential(string.Empty, pat));
-            _build = conn.GetClient<BuildHttpClient>();
+            var connection = new VssConnection(new Uri(organisationUrl),
+                          new VssBasicCredential(string.Empty, personalAccessToken));
+            _build = connection.GetClient<BuildHttpClient>();
         }
 
         public async Task<int> QueueRunAsync(BuildQueueOptions buildQueueOptions, CancellationToken cancellationToken = default)
@@ -36,12 +36,18 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             if(buildQueueOptions.Parameters is { Count: > 0 })
                 build.Parameters = System.Text.Json.JsonSerializer.Serialize(buildQueueOptions.Parameters);
 
-            Build queued = await _build.QueueBuildAsync(build, _project, cancellationToken: cancellationToken);
+            Build queued = await _build.QueueBuildAsync(
+                build: build,
+                project: _project,
+                cancellationToken: cancellationToken);
             return queued.Id;
         }
 
         public Task<Build?> GetRunAsync(int buildId, CancellationToken cancellationToken = default) =>
-            _build.GetBuildAsync(_project, buildId, cancellationToken: cancellationToken);
+            _build.GetBuildAsync(
+                project: _project,
+                buildId: buildId,
+                cancellationToken: cancellationToken);
 
         public async Task<IReadOnlyList<Build>> ListRunsAsync(BuildListOptions buildListOptions, CancellationToken cancellationToken = default)
         {
@@ -60,19 +66,27 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
         public async Task CancelRunAsync(int buildId, TeamProjectReference project, CancellationToken cancellationToken = default)
         {
             // Fetch the existing build using its numeric ID
-            Build build = await _build.GetBuildAsync(project.Id, buildId, cancellationToken: cancellationToken);
+            Build build = await _build.GetBuildAsync(
+                project: project.Id,
+                buildId: buildId,
+                cancellationToken: cancellationToken);
 
             // Set the build status to Cancelling
             build.Status = BuildStatus.Cancelling;
 
             // Update the build
-            await _build.UpdateBuildAsync(build, cancellationToken: cancellationToken);
+            await _build.UpdateBuildAsync(
+                build: build,
+                cancellationToken: cancellationToken);
         }
 
         public async Task<int> RetryRunAsync(int buildId, CancellationToken cancellationToken = default)
         {
             // 1) fetch the source build
-            Build original = await _build.GetBuildAsync(_project, buildId, cancellationToken: cancellationToken);
+            Build original = await _build.GetBuildAsync(
+                project: _project,
+                buildId: buildId,
+                cancellationToken: cancellationToken);
 
             // 2) re-queue with identical definition / branch / commit / parameters
             var clone = new Build
@@ -83,7 +97,10 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 Parameters = original.Parameters          // already JSON
             };
 
-            Build queued = await _build.QueueBuildAsync(clone, _project, cancellationToken: cancellationToken);
+            Build queued = await _build.QueueBuildAsync(
+                build: clone,
+                project: _project,
+                cancellationToken: cancellationToken);
             return queued.Id;
         }
 
@@ -92,13 +109,15 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
         {
             try
             {
-                using Stream ms = await _build.GetBuildLogsZipAsync(_project, buildId);
-                using var zip = new ZipArchive(ms);
-                ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(e => e.FullName.EndsWith(".log"));
-                if(entry == null)
+                using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
+                    project: _project,
+                    buildId: buildId);
+                using var zipArchive = new ZipArchive(buildLogsStream);
+                ZipArchiveEntry? logEntry = zipArchive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".log"));
+                if(logEntry == null)
                     return null;
-                using var reader = new StreamReader(entry.Open());
-                return await reader.ReadToEndAsync();
+                using var logReader = new StreamReader(logEntry.Open());
+                return await logReader.ReadToEndAsync();
             }
             catch
             {
@@ -121,7 +140,7 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             // YAML process
             var yamlProcess = new YamlProcess { YamlFilename = pipelineCreateOptions.YamlPath };
 
-            var def = new BuildDefinition
+            var definition = new BuildDefinition
             {
                 Name = pipelineCreateOptions.Name,
                 Repository = repository,
@@ -131,19 +150,31 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 QueueStatus = DefinitionQueueStatus.Enabled
             };
 
-            BuildDefinition created = await _build.CreateDefinitionAsync(def, _project, cancellationToken: cancellationToken);
+            BuildDefinition created = await _build.CreateDefinitionAsync(
+                definition: definition,
+                project: _project,
+                cancellationToken: cancellationToken);
             return created.Id;
         }
 
         public Task<BuildDefinition?> GetPipelineAsync(int definitionId, CancellationToken cancellationToken = default) =>
-            _build.GetDefinitionAsync(_project, definitionId, cancellationToken: cancellationToken);
+            _build.GetDefinitionAsync(
+                project: _project,
+                definitionId: definitionId,
+                cancellationToken: cancellationToken);
 
         public Task<IReadOnlyList<BuildDefinitionReference>> ListPipelinesAsync(CancellationToken cancellationToken = default) =>
-            _build.GetDefinitionsAsync(_project, cancellationToken: cancellationToken).ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
+            _build.GetDefinitionsAsync(
+                project: _project,
+                cancellationToken: cancellationToken)
+                .ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
 
         public async Task UpdatePipelineAsync(int definitionId, PipelineUpdateOptions pipelineUpdateOptions, CancellationToken cancellationToken = default)
         {
-            BuildDefinition buildDefinition = await _build.GetDefinitionAsync(_project, definitionId,  cancellationToken: cancellationToken);
+            BuildDefinition buildDefinition = await _build.GetDefinitionAsync(
+                project: _project,
+                definitionId: definitionId,
+                cancellationToken: cancellationToken);
 
             if(pipelineUpdateOptions.Name is { Length: > 0 })
                 buildDefinition.Name = pipelineUpdateOptions.Name;
@@ -154,11 +185,18 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             if(pipelineUpdateOptions.YamlPath is { Length: > 0 } && buildDefinition.Process is YamlProcess yp)
                 yp.YamlFilename = pipelineUpdateOptions.YamlPath;
 
-            await _build.UpdateDefinitionAsync(buildDefinition, _project, definitionId, cancellationToken: cancellationToken);
+            await _build.UpdateDefinitionAsync(
+                definition: buildDefinition,
+                project: _project,
+                definitionId: definitionId,
+                cancellationToken: cancellationToken);
         }
 
         public Task DeletePipelineAsync(int definitionId, CancellationToken cancellationToken = default) =>
-            _build.DeleteDefinitionAsync(_project, definitionId, cancellationToken: cancellationToken);
+            _build.DeleteDefinitionAsync(
+                project: _project,
+                definitionId: definitionId,
+                cancellationToken: cancellationToken);
 
         #endregion
     }

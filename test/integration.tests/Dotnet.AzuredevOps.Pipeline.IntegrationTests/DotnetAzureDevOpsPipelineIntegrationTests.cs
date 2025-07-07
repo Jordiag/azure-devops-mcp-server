@@ -23,16 +23,15 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         {
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
-            _definitionId = 24;
+            _definitionId = _azureDevOpsConfiguration.PipelineDefinitionId;
             _branch = _azureDevOpsConfiguration.BuildBranch;
             _commitSha = _azureDevOpsConfiguration.CommitSha;
 
             _pipelines = new PipelinesClient(
-                _azureDevOpsConfiguration.OrganizationUrl,
+                _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
-
 
         [Fact]
         public async Task QueueAndCancelBuild_SucceedsAsync()
@@ -61,7 +60,6 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Equal(BuildStatus.Cancelling, run!.Status);
         }
 
-
         [Fact]
         public async Task RetryBuild_SucceedsAsync()
         {
@@ -81,7 +79,6 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.NotNull(retried);
             Assert.Equal(_branch, retried!.SourceBranch);
         }
-
 
         [Fact]
         public async Task ListBuilds_Filter_WorksAsync()
@@ -104,7 +101,6 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Contains(list, b => b.Id == buildId);
         }
 
-
         [Fact]
         public async Task DownloadConsoleLog_SucceedsAsync()
         {
@@ -119,7 +115,6 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             // Assert – no exception; log either null or contains header line
             Assert.True(string.IsNullOrEmpty(consoleLog) || consoleLog.Length > 0);
         }
-
 
         [Fact]
         public async Task PipelineCrud_SucceedsAsync()
@@ -169,12 +164,11 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             DateTime.UtcNow.ToString("yyyyMMddHHmmss");
 
 
-
         public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync()
         {
-            // delete created pipeline definitions
+            /* delete pipeline definitions created by tests */
             foreach(int defId in _createdDefinitionIds)
             {
                 try
@@ -182,7 +176,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
                 catch { /* ignore if already deleted */ }
             }
 
-            // cancel queued runs
+            /* existing build-run cancellation logic */
             foreach(int id in _queuedBuildIds.AsEnumerable().Reverse())
             {
                 try

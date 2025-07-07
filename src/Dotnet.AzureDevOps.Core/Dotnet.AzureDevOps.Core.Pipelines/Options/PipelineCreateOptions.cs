@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
+﻿namespace Dotnet.AzureDevOps.Core.Pipelines.Options;
 
 /// <summary>Minimal data to create a new YAML pipeline definition.</summary>
 public record PipelineCreateOptions

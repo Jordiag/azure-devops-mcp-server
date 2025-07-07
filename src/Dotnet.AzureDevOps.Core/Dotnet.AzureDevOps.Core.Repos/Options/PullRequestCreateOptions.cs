@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Repos.Options
+﻿namespace Dotnet.AzureDevOps.Core.Repos.Options
 {
     /// <summary>
     /// Encapsulates all required/optional fields for creating a Pull Request in Azure DevOps.

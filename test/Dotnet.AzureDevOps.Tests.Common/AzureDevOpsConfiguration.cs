@@ -2,7 +2,7 @@
 {
     public class AzureDevOpsConfiguration
     {
-        public string OrganizationUrl { get; }
+        public string OrganisationUrl { get; }
         public string ProjectName { get; }
         public string PersonalAccessToken { get; }
         public string ProjectId { get; }
@@ -16,10 +16,11 @@
         public string RepoName { get; }
         public string MainBranchName { get; }
         public string RepoId { get; }
+        public int PipelineDefinitionId { get; }
 
         public AzureDevOpsConfiguration()
         {
-            OrganizationUrl = GetEnv("AZURE_DEVOPS_ORG_URL");
+            OrganisationUrl = GetEnv("AZURE_DEVOPS_ORG_URL");
             ProjectName = GetEnv("AZURE_DEVOPS_PROJECT_NAME");
             PersonalAccessToken = GetEnv("AZURE_DEVOPS_PAT");
             ProjectId = GetEnv("AZURE_DEVOPS_PROJECT_ID");
@@ -33,6 +34,7 @@
             RepoName = GetEnv("AZURE_DEVOPS_REPO_NAME");
             RepoId = GetEnv("AZURE_DEVOPS_REPO_ID");
             MainBranchName = GetEnv("AZURE_DEVOPS_MAIN_BRANCH_NAME");
+            PipelineDefinitionId = 85;
         }
 
         private static string GetEnv(string name) =>

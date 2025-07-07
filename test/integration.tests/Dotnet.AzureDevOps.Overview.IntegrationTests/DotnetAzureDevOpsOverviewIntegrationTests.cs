@@ -17,12 +17,10 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _wikiClient = new WikiClient(
-                _azureDevOpsConfiguration.OrganizationUrl,
+                _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
-
-        /*────────────────────────── Wiki CRUD ─────────────────────────────*/
 
         [Fact]
         public async Task CreateReadDeleteWiki_SucceedsAsync()
@@ -60,8 +58,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             WikiV2? afterDelete = await _wikiClient.GetWikiAsync(id);
             Assert.Null(afterDelete);
         }
-
-        /*─────────────────────── Page operations ──────────────────────────*/
 
         [Fact]
         public async Task CreateUpdateReadDeletePage_SucceedsAsync()
@@ -137,8 +133,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             await _wikiClient.DeletePageAsync(id, path, gitVersionDescriptor);
         }
-
-        /*────────────────────── IAsyncLifetime ───────────────────────────*/
 
         public Task InitializeAsync() => Task.CompletedTask;
 

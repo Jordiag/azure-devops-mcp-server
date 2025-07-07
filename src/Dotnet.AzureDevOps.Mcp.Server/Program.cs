@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Mcp.Server.McpServer;
+﻿using Dotnet.AzureDevOps.Mcp.Server.McpServer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 

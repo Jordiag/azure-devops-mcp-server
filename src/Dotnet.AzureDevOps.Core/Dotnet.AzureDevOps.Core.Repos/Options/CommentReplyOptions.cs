@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Repos.Options
+﻿namespace Dotnet.AzureDevOps.Core.Repos.Options
 {
     /// <summary> Reply to an existing comment thread. </summary>
     public record CommentReplyOptions

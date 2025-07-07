@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Core.Repos.Options;
+﻿using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
@@ -46,7 +46,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
         Task<GitCommitDiffs> GetCommitDiffAsync(string repositoryId, string baseSha, string targetSha);
 
-        Task<Guid> CreateRepositoryAsync(string newRepoName);
+        Task<GitRepository?> GetRepositoryAsync(Guid repositoryId);
+
+        Task<Guid> CreateRepositoryAsync(string newRepositoryName);
 
         Task DeleteRepositoryAsync(Guid repositoryId);
 

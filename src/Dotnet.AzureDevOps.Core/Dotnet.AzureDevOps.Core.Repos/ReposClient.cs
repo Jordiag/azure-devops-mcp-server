@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Core.Repos.Options;
+﻿using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -55,13 +55,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
         /// </summary>
         public async Task AbandonPullRequestAsync(string repositoryIdOrName, int pullRequestId)
         {
-            var prUpdate = new GitPullRequest
+            var pullRequestUpdate = new GitPullRequest
             {
                 Status = PullRequestStatus.Abandoned
             };
 
             await _gitHttpClient.UpdatePullRequestAsync(
-                gitPullRequestToUpdate: prUpdate,
+                gitPullRequestToUpdate: pullRequestUpdate,
                 repositoryId: repositoryIdOrName,
                 pullRequestId: pullRequestId,
                 project: _projectName
@@ -97,7 +97,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             GitCommitRef? lastMergeSourceCommit = null,
             string? commitMessage = null)
         {
-            var prUpdate = new GitPullRequest
+            var pullRequestUpdate = new GitPullRequest
             {
                 LastMergeSourceCommit = lastMergeSourceCommit,
                 Status = PullRequestStatus.Completed,
@@ -111,7 +111,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
 
             await _gitHttpClient.UpdatePullRequestAsync(
-                gitPullRequestToUpdate: prUpdate,
+                gitPullRequestToUpdate: pullRequestUpdate,
                 project: _projectName,
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId
@@ -135,7 +135,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
             if(pullRequestUpdateOptions.ReviewerIds is { } reviewers)
                 pullRequestUpdate.Reviewers = [.. reviewers.Select(id => new IdentityRefWithVote { Id = id })];
 
-            await _gitHttpClient.UpdatePullRequestAsync(pullRequestUpdate, repositoryId, pullRequestId, _projectName);
+            await _gitHttpClient.UpdatePullRequestAsync(
+                gitPullRequestToUpdate: pullRequestUpdate,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId,
+                project: _projectName);
         }
 
 
@@ -152,13 +156,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             // Top: 1000 by default – change if you need paging.
-            List<GitPullRequest> prs = await _gitHttpClient.GetPullRequestsAsync(
+            List<GitPullRequest> pullRequests = await _gitHttpClient.GetPullRequestsAsync(
                 repositoryId: repositoryId,
                 searchCriteria: criteria,
                 top: 1000,
                 project: _projectName);
 
-            return prs;
+            return pullRequests;
         }
 
         #endregion
@@ -193,10 +197,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             await _gitHttpClient.CreatePullRequestReviewerAsync(
-                reviewer: reviewerUpdate,
-                repositoryId: repositoryId,
-                reviewerId: reviewerId,
-                pullRequestId: pullRequestId,
+                reviewer: reviewerUpdate, 
+                repositoryId: repositoryId, 
+                reviewerId: reviewerId, 
+                pullRequestId: pullRequestId, 
                 project: _projectName);
         }
 
@@ -298,10 +302,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
             var webApiTagDefinitions = new List<WebApiTagDefinition>();
             foreach(string label in labels.Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                var tag = new WebApiCreateTagRequestData { Name = label };
+                var tagRequestData = new WebApiCreateTagRequestData { Name = label };
 
                 WebApiTagDefinition webApiTagDefinition = await _gitHttpClient.CreatePullRequestLabelAsync(
-                    label: tag,
+                    label: tagRequestData,
                      project: _projectName,
                     repositoryId: repository,
                     pullRequestId: pullRequestId
@@ -313,7 +317,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return webApiTagDefinitions;
         }
 
-        public async Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label) =>
+        public async Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label) => 
             await _gitHttpClient.DeletePullRequestLabelsAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -356,7 +360,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             await _gitHttpClient.CreatePullRequestStatusAsync(
-                status, repositoryId, pullRequestId, _projectName);
+                status: status,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId,
+                project: _projectName);
         }
         #endregion
 
@@ -368,14 +375,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
             int pullRequestId,
             GitPullRequestCompletionOptions gitPullRequestCompletionOptions)
         {
-            var prUpdate = new GitPullRequest
+            var pullRequestUpdate = new GitPullRequest
             {
                 AutoCompleteSetBy = new IdentityRef { DisplayName = "bot" }, // required non-null
                 CompletionOptions = gitPullRequestCompletionOptions
             };
 
             await _gitHttpClient.UpdatePullRequestAsync(
-                prUpdate, repositoryId, pullRequestId, _projectName);
+                gitPullRequestToUpdate: pullRequestUpdate,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId,
+                project: _projectName);
         }
         #endregion
 
@@ -385,10 +395,12 @@ namespace Dotnet.AzureDevOps.Core.Repos
         public async Task<IReadOnlyList<GitPullRequestIteration>> ListIterationsAsync(
             string repositoryId, int pullRequestId) =>
             await _gitHttpClient.GetPullRequestIterationsAsync(
-                _projectName, repositoryId, pullRequestId);
+                project: _projectName,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId);
 
         public async Task<GitPullRequestIterationChanges> GetIterationChangesAsync(
-            string repositoryId, int pullRequestId, int iteration) =>
+            string repositoryId, int pullRequestId, int iteration) => 
             await _gitHttpClient.GetPullRequestIterationChangesAsync(
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -405,8 +417,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             IReadOnlyList<GitPullRequest> all = await ListPullRequestsAsync(
                 repositoryId, new PullRequestSearchOptions { Status = pullRequestStatus });
 
-            return [.. all.Where(pr => pr.Labels.Any(l =>
-                string.Equals(l.Name, labelName, StringComparison.OrdinalIgnoreCase)))];
+            return [.. all.Where(pullRequest => pullRequest.Labels.Any(label =>
+                string.Equals(label.Name, labelName, StringComparison.OrdinalIgnoreCase)))];
         }
         #endregion
 
@@ -429,7 +441,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 Commits = []
             };
 
-            await _gitHttpClient.CreatePushAsync(push, repositoryId, _projectName);
+            await _gitHttpClient.CreatePushAsync(
+                push: push,
+                repositoryId: repositoryId,
+                project: _projectName);
         }
 
         public async Task<GitCommitDiffs> GetCommitDiffAsync(
@@ -455,13 +470,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
 
-        public async Task<Guid> CreateRepositoryAsync(string newRepoName)
+        public async Task<Guid> CreateRepositoryAsync(string newRepositoryName)
         {
-            var newRepo = new GitRepositoryCreateOptions { Name = newRepoName };
+            var newRepositoryOptions = new GitRepositoryCreateOptions { Name = newRepositoryName };
 
             // Explicitly specify the overload by providing the correct parameter type
             GitRepository repo = await _gitHttpClient.CreateRepositoryAsync(
-                gitRepositoryToCreate: newRepo,
+                gitRepositoryToCreate: newRepositoryOptions,
                 project: _projectName);
 
             return repo.Id;
@@ -471,6 +486,20 @@ namespace Dotnet.AzureDevOps.Core.Repos
             await _gitHttpClient.DeleteRepositoryAsync(
                 repositoryId: repositoryId,
                 project: _projectName);
+
+        public async Task<GitRepository?> GetRepositoryAsync(Guid repositoryId)
+        {
+            try
+            {
+                return await _gitHttpClient.GetRepositoryAsync(
+                    project: _projectName,
+                    repositoryId: repositoryId);
+            }
+            catch (VssServiceException)
+            {
+                return null;
+            }
+        }
         #endregion
 
         #region COMMENT edit / delete
@@ -486,7 +515,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 project: _projectName);
         }
 
-        public async Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) =>
+        public async Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) => 
             await _gitHttpClient.DeleteCommentAsync(
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -500,7 +529,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         public async Task<GitAnnotatedTag> CreateTagAsync(TagCreateOptions tagCreateOptions)
         {
             /* ── annotated tag (shows message & tagger) ───────────────────── */
-            var tag = new GitAnnotatedTag
+            var annotatedTag = new GitAnnotatedTag
             {
                 Name = tagCreateOptions.Name,
                 ObjectId = string.Empty,   // server calculates
@@ -519,7 +548,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             GitAnnotatedTag gitAnnotatedTag = await _gitHttpClient.CreateAnnotatedTagAsync(
-                tagObject: tag,
+                tagObject: annotatedTag,
                 project: _projectName,
                 repositoryId: tagCreateOptions.Repository
                 );
@@ -528,7 +557,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<GitAnnotatedTag> GetTagAsync(
-            string repositoryId, string objectId) =>
+            string repositoryId, string objectId) => 
             await _gitHttpClient.GetAnnotatedTagAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -542,8 +571,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                 project: _projectName,
                 repositoryId: repositoryId);
-
-            GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ??
+            
+            GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ?? 
                 throw new InvalidOperationException($"Tag '{tagName}' does not exist in repositoryId '{repositoryId}'.");
 
             var refUpdate = new GitRefUpdate
@@ -554,15 +583,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             List<GitRefUpdateResult> gitRefUpdateResultList = await _gitHttpClient.UpdateRefsAsync(
-                [refUpdate],
+                refUpdates: [refUpdate],
                 repositoryId: repositoryId,
-                _projectName);
+                project: _projectName);
 
             return gitRefUpdateResultList.First(r => r.OldObjectId == tagRef.ObjectId);
         }
         #endregion
 
-        public async Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string projectName, string repoName, string branchName, int top = 1)
+        public async Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string projectName, string repositoryName, string branchName, int top = 1)
         {
             var criteria = new GitQueryCommitsCriteria
             {
@@ -575,7 +604,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
             return await _gitHttpClient.GetCommitsAsync(
                 project: projectName,
-                repositoryId: repoName,
+                repositoryId: repositoryName,
                 searchCriteria: criteria,
                 top: top
             );

@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Core.Artifacts.Models;
+﻿using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 
 namespace Dotnet.AzureDevOps.Core.Artifacts;

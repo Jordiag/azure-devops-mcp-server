@@ -164,10 +164,10 @@ public class ReposTools
     }
 
     [McpServerTool, Description("Creates a new repository.")]
-    public Task<Guid> CreateRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, string newRepoName)
+    public Task<Guid> CreateRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, string newRepositoryName)
     {
         ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.CreateRepositoryAsync(newRepoName);
+        return client.CreateRepositoryAsync(newRepositoryName);
     }
 
     [McpServerTool, Description("Deletes a repository.")]
@@ -213,9 +213,9 @@ public class ReposTools
     }
 
     [McpServerTool, Description("Gets the latest commits from a branch.")]
-    public Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repoName, string branchName, int top = 1)
+    public Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName, string branchName, int top = 1)
     {
         ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.GetLatestCommitsAsync(projectName, repoName, branchName, top);
+        return client.GetLatestCommitsAsync(projectName, repositoryName, branchName, top);
     }
 }

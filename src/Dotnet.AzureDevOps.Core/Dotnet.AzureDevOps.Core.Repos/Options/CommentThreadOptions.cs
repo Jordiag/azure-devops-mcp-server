@@ -1,4 +1,4 @@
-namespace Dotnet.AzureDevOps.Core.Repos.Options
+﻿namespace Dotnet.AzureDevOps.Core.Repos.Options
 {
     /// <summary> Describes a new top-level comment thread. </summary>
     public record CommentThreadOptions

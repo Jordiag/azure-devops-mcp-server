@@ -18,7 +18,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _artifactsClient = new ArtifactsClient(
-                _azureDevOpsConfiguration.OrganizationUrl,
+                _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
         }
@@ -70,6 +70,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Assert.Empty(packages);
         }
 
+        /*────────── IAsyncLifetime ──────────*/
         public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync()
@@ -82,7 +83,8 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
                 }
                 catch
                 {
-                    // Ignore cleanup errors
+                    // Ignore errors during cleanup, as feeds may have been deleted already  
+                    // or there could be other issues that prevent deletion.  
                 }
             }
         }

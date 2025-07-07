@@ -32,7 +32,10 @@ namespace Dotnet.AzureDevOps.Core.Overview
                 Version = wikiCreateOptions.Version,
             };
 
-            WikiV2 wiki = await _wikiHttpClient.CreateWikiAsync(wikiCreateParameters, _projectName, cancellationToken);
+            WikiV2 wiki = await _wikiHttpClient.CreateWikiAsync(
+                wikiCreateParams: wikiCreateParameters,
+                project: _projectName,
+                cancellationToken: cancellationToken);
             return wiki.Id;
         }
 
@@ -59,13 +62,13 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
         public async Task<int?> CreateOrUpdatePageAsync(Guid wikiId, WikiPageUpdateOptions wikiPageUpdateOptions, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default)
         {
-            var pageParams = new WikiPageCreateOrUpdateParameters
+            var pageParameters = new WikiPageCreateOrUpdateParameters
             {
                 Content = wikiPageUpdateOptions.Content
             };
 
             WikiPageResponse response = await _wikiHttpClient.CreateOrUpdatePageAsync(
-                parameters: pageParams,
+                parameters: pageParameters,
                 project: _projectName,
                 wikiIdentifier: wikiId,
                 path: wikiPageUpdateOptions.Path,
