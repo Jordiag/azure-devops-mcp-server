@@ -11,7 +11,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes pipeline operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public static class PipelinesTools
+public class PipelinesTools
 {
     private static PipelinesClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);

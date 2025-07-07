@@ -11,7 +11,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes Wiki operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public static class OverviewTools
+public class OverviewTools
 {
     private static WikiClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);

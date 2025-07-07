@@ -19,7 +19,12 @@ internal static class HostingExtensionsMcpServer
 
         mcpServerBuilder.WithHttpTransport()
             .WithTools<EchoTool>()
-            .WithTools<BoardsTools>();
+            .WithTools<BoardsTools>()
+            .WithTools <ArtifactsTools>()
+            .WithTools <OverviewTools>()
+            .WithTools <PipelinesTools>()
+            .WithTools <ReposTools>()
+            .WithTools <TestPlansTools>();
 
         if(settings.EnableOpenTelemetry)
             services.AddOpenTelemetry()

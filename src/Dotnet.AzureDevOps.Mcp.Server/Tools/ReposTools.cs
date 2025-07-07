@@ -11,7 +11,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes Git and pull request operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public static class ReposTools
+public class ReposTools
 {
     private static ReposClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);

@@ -10,7 +10,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes Artifacts operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public static class ArtifactsTools
+public class ArtifactsTools
 {
     private static ArtifactsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);

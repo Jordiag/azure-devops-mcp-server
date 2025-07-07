@@ -11,7 +11,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
     /// through Model Context Protocol.
     /// </summary>
     [McpServerToolType()]
-    public static class BoardsTools
+    public class BoardsTools
     {
         private static WorkItemsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
             => new(organizationUrl, projectName, personalAccessToken);
