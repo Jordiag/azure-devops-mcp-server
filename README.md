@@ -31,7 +31,7 @@ operations for Epics, Features, User Stories, and Tasks.
 * **Test Plans** – Manage test plans, suites, and test case assignments.
 * **Wiki** – Wiki creation and page management.
 
-The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server currently runs over STDIO using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. AI assistants can discover available tools at runtime and invoke them using structured function calls.
+The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server currently runs over SSE using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. AI assistants can discover available tools at runtime and invoke them using structured function calls.
 
 Integration tests exercise each client against a real Azure DevOps organization. Another test suite validates end‑to‑end agent interactions using [Semantic Kernel](https://github.com/microsoft/semantic-kernel), demonstrating that an LLM can automatically invoke the published tools.
 
