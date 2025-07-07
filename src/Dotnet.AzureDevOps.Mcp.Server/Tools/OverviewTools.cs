@@ -11,55 +11,55 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes Wiki operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public class OverviewTools
+public static class OverviewTools
 {
-    private WikiClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
+    private static WikiClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);
 
     [McpServerTool, Description("Creates a new wiki.")]
-    public Task<Guid> CreateWikiAsync(string organizationUrl, string projectName, string personalAccessToken, WikiCreateOptions options)
+    public static Task<Guid> CreateWikiAsync(string organizationUrl, string projectName, string personalAccessToken, WikiCreateOptions options)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.CreateWikiAsync(options);
     }
 
     [McpServerTool, Description("Retrieves a wiki by identifier.")]
-    public Task<WikiV2?> GetWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
+    public static Task<WikiV2?> GetWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.GetWikiAsync(wikiId);
     }
 
     [McpServerTool, Description("Lists wikis in the project.")]
-    public Task<IReadOnlyList<WikiV2>> ListWikisAsync(string organizationUrl, string projectName, string personalAccessToken)
+    public static Task<IReadOnlyList<WikiV2>> ListWikisAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.ListWikisAsync();
     }
 
     [McpServerTool, Description("Deletes a wiki.")]
-    public Task DeleteWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
+    public static Task DeleteWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.DeleteWikiAsync(wikiId);
     }
 
     [McpServerTool, Description("Creates or updates a wiki page.")]
-    public Task<int?> CreateOrUpdatePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPageUpdateOptions options, GitVersionDescriptor version)
+    public static Task<int?> CreateOrUpdatePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPageUpdateOptions options, GitVersionDescriptor version)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.CreateOrUpdatePageAsync(wikiId, options, version);
     }
 
     [McpServerTool, Description("Retrieves a wiki page.")]
-    public Task<WikiPageResponse?> GetPageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
+    public static Task<WikiPageResponse?> GetPageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.GetPageAsync(wikiId, path);
     }
 
     [McpServerTool, Description("Deletes a wiki page.")]
-    public Task DeletePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path, GitVersionDescriptor version)
+    public static Task DeletePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path, GitVersionDescriptor version)
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.DeletePageAsync(wikiId, path, version);

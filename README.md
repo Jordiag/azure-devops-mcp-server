@@ -1,5 +1,3 @@
-<img src="https://github.com/user-attachments/assets/bd900648-5763-454d-b29f-fb41bab05d02" alt="azure_devops_mcp_server_logo" width="200"/>
-
 # Azure DevOps MCP Server for .NET
 
 This repository will host a set of .NET libraries and a Model Context Protocol (MCP) server that expose Azure DevOps operations. The goal is to make Azure DevOps automation accessible to AI agents by surfacing common tasks—creating work items, managing pull requests, queuing builds, working with artifacts, and more—through a uniform MCP endpoint.
@@ -26,6 +24,7 @@ operations for Epics, Features, User Stories, and Tasks.
 * **Wiki** – Wiki creation and page management.
 
 The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server currently runs over STDIO using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. AI assistants can discover available tools at runtime and invoke them using structured function calls.
+The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server is implemented as a console application that hosts an ASP.NET Core web server using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. You can run it directly or adapt it to your preferred hosting environment—such as a container image, Azure Functions, or a Windows service. AI assistants can discover available tools at runtime and invoke them using structured function calls.
 
 Integration tests exercise each client against a real Azure DevOps organization. Another test suite validates end‑to‑end agent interactions using [Semantic Kernel](https://github.com/microsoft/semantic-kernel), demonstrating that an LLM can automatically invoke the published tools.
 
@@ -38,4 +37,3 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).  
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)  
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.  
-
