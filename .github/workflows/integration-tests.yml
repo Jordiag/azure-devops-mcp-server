@@ -43,12 +43,12 @@ jobs:
       - name: SonarCloud - Begin Analysis
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          organization: ${{ env.sonarOrganization }}
-          projectKey: ${{ env.sonarProjectKey }}
-          projectName: 'Dotnet.AzureDevOps'
-          projectVersion: '0.1.0'
-          extraProperties: |
-            sonar.cs.vscoveragexml.reportsPaths=${{ runner.temp }}/**/*.coveragexml
+          args: >
+            -Dsonar.projectKey=Chanlabs_Dotnet.AzureDevOps
+            -Dsonar.organization=chanlabs-1
+            -Dsonar.projectName=Dotnet.AzureDevOps
+            -Dsonar.projectVersion=0.1.0
+            -Dsonar.cs.vscoveragexml.reportsPaths=${{ runner.temp }}/**/*.coveragexml
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
