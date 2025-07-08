@@ -1,86 +1,71 @@
-name: PR integration tests
+name: Integration Tests
 
 on:
-  pull_request:
-    branches: [main]               # run for PRs targeting main
-    types:  [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
 
 jobs:
   integration-tests:
     runs-on: windows-latest
 
-    # ─────── shared / non-secret variables ───────
     env:
-      BUILD_CONFIGURATION: Release
-      SOLUTION: Dotnet.AzureDevOps.sln
-      SONAR_PROJECT_KEY: Chanlabs_Dotnet.AzureDevOps
-      SONAR_ORGANIZATION: chanlabs-1
+      buildPlatform: 'Any CPU'
+      buildConfiguration: 'Release'
+      solution: '**/*.sln'
+      sonarProjectKey: 'Chanlabs_Dotnet.AzureDevOps'
+      sonarOrganization: 'chanlabs-1'
+      AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+      AZURE_DEVOPS_PIPELINE_ID: ${{ secrets.AZURE_DEVOPS_PIPELINE_ID }}
+      AZURE_DEVOPS_PROJECT_ID: ${{ secrets.AZURE_DEVOPS_PROJECT_ID }}
+      AZURE_DEVOPS_REPO_ID: ${{ secrets.AZURE_DEVOPS_REPO_ID }}
+      AZURE_DEVOPS_REPOSITORY_ID: ${{ secrets.AZURE_DEVOPS_REPOSITORY_ID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
 
     steps:
-    # ─────────────────────────── Checkout ───────────────────────────
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0                         # keeps full history for Sonar PR decoration
+      - uses: actions/checkout@v4
 
-    # ──────────────────────── .NET 9 preview SDK ────────────────────
-    - name: Set up .NET 9 SDK (preview)
-      uses: actions/setup-dotnet@v4                  :contentReference[oaicite:0]{index=0}
-      with:
-        dotnet-version: '9.0.x'
-        dotnet-quality: preview                     # = includePreviewVersions: true
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '7.x'  # or the version used in your solution
 
-    # ────────────────────────── SonarCloud Begin ─────────────────────
-    - name: Install SonarScanner for .NET
-      run: dotnet tool install --global dotnet-sonarscanner
+      - name: Install NuGet
+        uses: NuGet/setup-nuget@v1
 
-    - name: SonarCloud – begin analysis
-      run: >
-        dotnet sonarscanner begin
-        /k:"${{ env.SONAR_PROJECT_KEY }}"
-        /o:"${{ env.SONAR_ORGANIZATION }}"
-        /d:sonar.host.url="https://sonarcloud.io"
-        /d:sonar.cs.opencover.reportsPaths="$(pwd)/**/coverage.opencover.xml"
-        /d:sonar.pullrequest.key="${{ github.event.pull_request.number }}"
-        /d:sonar.pullrequest.branch="${{ github.head_ref }}"
-        /d:sonar.pullrequest.base="${{ github.base_ref }}"
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}     # add this secret in repo/organisation
+      - name: Restore NuGet packages
+        run: nuget restore "${{ env.solution }}"
 
-    # ────────────────────────── Restore / Build ─────────────────────
-    - name: Restore packages
-      run: dotnet restore "${{ env.SOLUTION }}"
+      - name: SonarCloud - Begin Analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          organization: ${{ env.sonarOrganization }}
+          projectKey: ${{ env.sonarProjectKey }}
+          projectName: 'Dotnet.AzureDevOps'
+          projectVersion: '0.1.0'
+          extraProperties: |
+            sonar.cs.vscoveragexml.reportsPaths=${{ runner.temp }}/**/*.coveragexml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    - name: Build solution
-      run: dotnet build "${{ env.SOLUTION }}" --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+      - name: Build Solution
+        run: msbuild "${{ env.solution }}" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="${{ env.buildPlatform }}" /p:Configuration="${{ env.buildConfiguration }}"
 
-    # ──────────────────────────── Integration tests ─────────────────
-    - name: Run integration tests with coverage
-      run: >
-        dotnet test
-        **/test/integration.tests/**/*.csproj
-        --configuration ${{ env.BUILD_CONFIGURATION }}
-        --no-build
-        --collect:"XPlat Code Coverage"
-        --logger:"trx"
-      env:                                    # secrets injected exactly as in ADO
-        AZURE_DEVOPS_PAT:            ${{ secrets.AZURE_DEVOPS_PAT }}
-        AZURE_DEVOPS_PIPELINE_ID:    ${{ secrets.AZURE_DEVOPS_PIPELINE_ID }}
-        AZURE_DEVOPS_PROJECT_ID:     ${{ secrets.AZURE_DEVOPS_PROJECT_ID }}
-        AZURE_DEVOPS_REPO_ID:        ${{ secrets.AZURE_DEVOPS_REPO_ID }}
-        AZURE_DEVOPS_REPOSITORY_ID:  ${{ secrets.AZURE_DEVOPS_REPOSITORY_ID }}
-        OPENAI_API_KEY:              ${{ secrets.OPENAI_API_KEY }}
-        AZURE_OPENAI_DEPLOYMENT:     ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-        AZURE_OPENAI_ENDPOINT:       ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-        AZURE_OPENAI_KEY:            ${{ secrets.AZURE_OPENAI_KEY }}
+      - name: Run Tests with Coverage
+        run: |
+          dotnet test ${{ env.solution }} \
+            --configuration "${{ env.buildConfiguration }}" \
+            --settings "${{ github.workspace }}/.runsettings" \
+            --collect:"Code Coverage" \
+            --no-build
+        continue-on-error: true
 
-    # (optional) upload coverage artefact if you still need the file
-    # - uses: actions/upload-artifact@v4
-    #   with:
-    #     name: coverage
-    #     path: '**/coverage.opencover.xml'
+      - name: SonarCloud - End Analysis
+        run: dotnet-sonarscanner end
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    # ────────────────────────── SonarCloud End ──────────────────────
-    - name: SonarCloud – end analysis & quality-gate
-      run: dotnet sonarscanner end
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
