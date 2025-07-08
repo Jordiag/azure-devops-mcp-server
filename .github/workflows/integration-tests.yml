@@ -2,7 +2,7 @@ name: Integration Tests
 
 on:
   workflow_run:
-    workflows: ["Build"]
+    workflows: ["Build on main"]
     types:
       - completed
 
