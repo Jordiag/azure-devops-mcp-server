@@ -59,12 +59,5 @@ jobs:
       - name: Build with MSBuild
         run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
 
-
       - name: Run Tests with Coverage
-        run: |
-          dotnet test ${{ env.solution }} \
-            --configuration "${{ env.buildConfiguration }}" \
-            --settings "${{ github.workspace }}/.runsettings" \
-            --collect:"Code Coverage" \
-            --no-build
-        continue-on-error: true
+        run: dotnet test Dotnet.AzureDevOps.sln --configuration "Release" --settings "${{ github.workspace }}/.runsettings" --collect:"Code Coverage" --no-build
