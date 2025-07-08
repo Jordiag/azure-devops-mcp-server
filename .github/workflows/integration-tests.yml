@@ -40,8 +40,8 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
 
-      - name: SonarCloud - Begin Analysis
-        uses: SonarSource/sonarcloud-github-action@master
+      - name: SonarCloud Analysis
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         with:
           args: >
             -Dsonar.projectKey=Chanlabs_Dotnet.AzureDevOps
@@ -51,6 +51,7 @@ jobs:
             -Dsonar.cs.vscoveragexml.reportsPaths=${{ runner.temp }}/**/*.coveragexml
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
