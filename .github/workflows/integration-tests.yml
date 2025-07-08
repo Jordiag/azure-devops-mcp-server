@@ -4,6 +4,8 @@ on:
     workflows: ["Build on main"]
     types:
       - completed
+  pull_request:
+    branches: [ main ]
 jobs:
   integration-tests:
     runs-on: windows-latest
