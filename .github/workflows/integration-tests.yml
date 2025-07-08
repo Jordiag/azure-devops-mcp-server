@@ -1,15 +1,12 @@
 name: Integration Tests
-
 on:
   workflow_run:
     workflows: ["Build on main"]
     types:
       - completed
-
 jobs:
   integration-tests:
     runs-on: windows-latest
-
     env:
       buildPlatform: 'Any CPU'
       buildConfiguration: 'Release'
@@ -25,7 +22,6 @@ jobs:
       AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
       AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
-
       AZURE_DEVOPS_BOT_USER_EMAIL: ${{ vars.AZURE_DEVOPS_BOT_USER_EMAIL }}
       AZURE_DEVOPS_BUILD_BRANCH: ${{ vars.AZURE_DEVOPS_BUILD_BRANCH }}
       AZURE_DEVOPS_COMMIT_SHA: ${{ vars.AZURE_DEVOPS_COMMIT_SHA }}
@@ -38,44 +34,28 @@ jobs:
       MCP_SERVER_URL: ${{ vars.MCP_SERVER_URL }}
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
       USE_AZURE_OPENAI: ${{ vars.USE_AZURE_OPENAI }}
-
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'  # or the version used in your solution
-
+          dotnet-version: '9.x'
+      
       - name: Install NuGet
         uses: NuGet/setup-nuget@v1
-
+      
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
-
-      - name: SonarCloud Analysis
-        uses: SonarSource/sonarqube-scan-action@v5.0.0
-        with:
-          args: >
-            -Dsonar.projectKey=Chanlabs_Dotnet.AzureDevOps
-            -Dsonar.organization=chanlabs-1
-            -Dsonar.projectName=Dotnet.AzureDevOps
-            -Dsonar.projectVersion=0.1.0
-            -Dsonar.cs.vscoveragexml.reportsPaths=${{ runner.temp }}/**/*.coveragexml
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-
+      
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
       
       - name: Build with MSBuild
         run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
-
-      #- name: Run Tests with Coverage
-      #  run: dotnet test Dotnet.AzureDevOps.sln --configuration "Release" --settings "${{ github.workspace }}/.runsettings" --collect:"Code Coverage" --logger "trx" --no-build
-      #  continue-on-error: true
-
+      
       - name: Run each test project in isolation
         run: |
           $testProjects = Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -like "*Tests*" }
@@ -90,3 +70,29 @@ jobs:
           }
         continue-on-error: true
         shell: pwsh
+      
+      - name: Convert Coverage to XML
+        run: |
+          # Install the coverage converter
+          dotnet tool install --global dotnet-coverage
+          
+          # Find all .coverage files and convert them to XML
+          $coverageFiles = Get-ChildItem -Recurse -Filter "*.coverage"
+          foreach ($file in $coverageFiles) {
+            $outputPath = $file.FullName.Replace(".coverage", ".coveragexml")
+            dotnet-coverage merge $file.FullName --output $outputPath --output-format xml
+          }
+        shell: pwsh
+        continue-on-error: true
+      
+      - name: SonarCloud Analysis
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
+        with:
+          args: >
+            -Dsonar.projectKey=Chanlabs_Dotnet.AzureDevOps
+            -Dsonar.organization=chanlabs-1
+            -Dsonar.projectName=Dotnet.AzureDevOps
+            -Dsonar.projectVersion=0.1.0
+            -Dsonar.cs.vscoveragexml.reportsPaths=**/*.coveragexml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
