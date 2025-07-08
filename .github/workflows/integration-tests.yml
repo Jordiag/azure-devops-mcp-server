@@ -73,4 +73,4 @@ jobs:
         run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
 
       - name: Run Tests with Coverage
-        run: dotnet test Dotnet.AzureDevOps.sln --configuration "Release" --settings "${{ github.workspace }}/.runsettings" --collect:"Code Coverage" --no-build
+        run: dotnet test Dotnet.AzureDevOps.sln --configuration "Release" --settings "${{ github.workspace }}/.runsettings" --collect:"Code Coverage" --logger "trx" --no-build
