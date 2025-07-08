@@ -13,7 +13,7 @@ jobs:
     env:
       buildPlatform: 'Any CPU'
       buildConfiguration: 'Release'
-      solution: '**/*.sln'
+      solution: 'Dotnet.AzureDevOps.sln'
       sonarProjectKey: 'Chanlabs_Dotnet.AzureDevOps'
       sonarOrganization: 'chanlabs-1'
       AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
@@ -32,7 +32,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '7.x'  # or the version used in your solution
+          dotnet-version: '9.x'  # or the version used in your solution
 
       - name: Install NuGet
         uses: NuGet/setup-nuget@v1
