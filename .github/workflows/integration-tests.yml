@@ -52,8 +52,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Build Solution
-        run: msbuild "${{ env.solution }}" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="${{ env.buildPlatform }}" /p:Configuration="${{ env.buildConfiguration }}"
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+      
+      - name: Build with MSBuild
+        run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
+
 
       - name: Run Tests with Coverage
         run: |
