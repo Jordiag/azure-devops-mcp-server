@@ -68,15 +68,3 @@ jobs:
             --collect:"Code Coverage" \
             --no-build
         continue-on-error: true
-
-      - name: Install SonarScanner for .NET
-        run: dotnet tool install --global dotnet-sonarscanner
-      
-      - name: Add .NET tools to PATH
-        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-      
-      - name: End SonarCloud Analysis
-        run: dotnet-sonarscanner end
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
