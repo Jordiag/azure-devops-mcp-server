@@ -23,3 +23,4 @@ jobs:
 
       - name: Build solution
         run: dotnet build Dotnet.AzureDevOps.sln --configuration Release --no-restore
+
