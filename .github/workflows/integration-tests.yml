@@ -47,52 +47,53 @@ jobs:
       - name: Install NuGet
         uses: NuGet/setup-nuget@v1
       
+      - name: Install SonarCloud Scanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+      
+      - name: Install Coverage Tool
+        run: dotnet tool install --global dotnet-coverage
+      
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
       
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
       
+      - name: Begin SonarCloud Analysis
+        run: |
+          dotnet sonarscanner begin `
+            /k:"${{ env.sonarProjectKey }}" `
+            /o:"${{ env.sonarOrganization }}" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+        shell: pwsh
+      
       - name: Build with MSBuild
         run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
       
-      - name: Run each test project in isolation
+      - name: Run Tests with Coverage
         run: |
-          $testProjects = Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -like "*Tests*" }
-          foreach ($proj in $testProjects) {
-            echo "Running tests in $($proj.FullName)"
-            dotnet test "$($proj.FullName)" `
-              --configuration "Release" `
-              --settings "${{ github.workspace }}/.runsettings" `
-              --collect:"Code Coverage" `
-              --logger "trx" `
-              --no-build
-          }
-        continue-on-error: true
+          dotnet test "${{ env.solution }}" `
+            --configuration "Release" `
+            --settings "${{ github.workspace }}/.runsettings" `
+            --collect:"Code Coverage" `
+            --results-directory ./TestResults/ `
+            --logger "trx" `
+            --no-build
         shell: pwsh
+        continue-on-error: true
       
       - name: Convert Coverage to XML
         run: |
-          # Install the coverage converter
-          dotnet tool install --global dotnet-coverage
-          
-          # Find all .coverage files and convert them to XML
-          $coverageFiles = Get-ChildItem -Recurse -Filter "*.coverage"
-          foreach ($file in $coverageFiles) {
-            $outputPath = $file.FullName.Replace(".coverage", ".coveragexml")
-            dotnet-coverage merge $file.FullName --output $outputPath --output-format xml
-          }
+          # Merge all coverage files and convert to XML
+          dotnet-coverage merge ./TestResults/**/*.coverage --output coverage.xml --output-format xml
         shell: pwsh
         continue-on-error: true
       
-      - name: SonarCloud Analysis
-        uses: SonarSource/sonarqube-scan-action@v5.0.0
-        with:
-          args: >
-            -Dsonar.projectKey=Chanlabs_Dotnet.AzureDevOps
-            -Dsonar.organization=chanlabs-1
-            -Dsonar.projectName=Dotnet.AzureDevOps
-            -Dsonar.projectVersion=0.1.0
-            -Dsonar.cs.vscoveragexml.reportsPaths=**/*.coveragexml
+      - name: End SonarCloud Analysis
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        shell: pwsh
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
