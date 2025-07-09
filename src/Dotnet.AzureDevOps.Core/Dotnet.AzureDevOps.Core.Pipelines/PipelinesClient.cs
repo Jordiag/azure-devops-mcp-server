@@ -10,14 +10,14 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
 {
     public class PipelinesClient : IPipelinesClient
     {
-        private readonly string _project;
+        private readonly string _projectName;
         private readonly BuildHttpClient _build;
 
-        public PipelinesClient(string organisationUrl, string project, string personalAccessToken)
+        public PipelinesClient(string organizationUrl, string projectName, string personalAccessToken)
         {
-            _project = project;
+            _projectName = projectName;
 
-            var connection = new VssConnection(new Uri(organisationUrl),
+            var connection = new VssConnection(new Uri(organizationUrl),
                           new VssBasicCredential(string.Empty, personalAccessToken));
             _build = connection.GetClient<BuildHttpClient>();
         }
@@ -38,21 +38,21 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
 
             Build queued = await _build.QueueBuildAsync(
                 build: build,
-                project: _project,
+                project: _projectName,
                 cancellationToken: cancellationToken);
             return queued.Id;
         }
 
         public Task<Build?> GetRunAsync(int buildId, CancellationToken cancellationToken = default) =>
             _build.GetBuildAsync(
-                project: _project,
+                project: _projectName,
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
         public async Task<IReadOnlyList<Build>> ListRunsAsync(BuildListOptions buildListOptions, CancellationToken cancellationToken = default)
         {
             List<Build> builds = await _build.GetBuildsAsync(
-                project: _project,
+                project: _projectName,
                 definitions: buildListOptions.DefinitionId is int d ? new[] { d } : null,
                 branchName: buildListOptions.Branch,
                 statusFilter: buildListOptions.Status,
@@ -84,7 +84,7 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
         {
             // 1) fetch the source build
             Build original = await _build.GetBuildAsync(
-                project: _project,
+                project: _projectName,
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
@@ -99,7 +99,7 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
 
             Build queued = await _build.QueueBuildAsync(
                 build: clone,
-                project: _project,
+                project: _projectName,
                 cancellationToken: cancellationToken);
             return queued.Id;
         }
@@ -110,7 +110,7 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             try
             {
                 using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
-                    project: _project,
+                    project: _projectName,
                     buildId: buildId);
                 using var zipArchive = new ZipArchive(buildLogsStream);
                 ZipArchiveEntry? logEntry = zipArchive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".log"));
@@ -152,27 +152,27 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
 
             BuildDefinition created = await _build.CreateDefinitionAsync(
                 definition: definition,
-                project: _project,
+                project: _projectName,
                 cancellationToken: cancellationToken);
             return created.Id;
         }
 
         public Task<BuildDefinition?> GetPipelineAsync(int definitionId, CancellationToken cancellationToken = default) =>
             _build.GetDefinitionAsync(
-                project: _project,
+                project: _projectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
         public Task<IReadOnlyList<BuildDefinitionReference>> ListPipelinesAsync(CancellationToken cancellationToken = default) =>
             _build.GetDefinitionsAsync(
-                project: _project,
+                project: _projectName,
                 cancellationToken: cancellationToken)
                 .ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
 
         public async Task UpdatePipelineAsync(int definitionId, PipelineUpdateOptions pipelineUpdateOptions, CancellationToken cancellationToken = default)
         {
             BuildDefinition buildDefinition = await _build.GetDefinitionAsync(
-                project: _project,
+                project: _projectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
@@ -187,14 +187,14 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
 
             await _build.UpdateDefinitionAsync(
                 definition: buildDefinition,
-                project: _project,
+                project: _projectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
         }
 
         public Task DeletePipelineAsync(int definitionId, CancellationToken cancellationToken = default) =>
             _build.DeleteDefinitionAsync(
-                project: _project,
+                project: _projectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 

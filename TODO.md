@@ -1,0 +1,21 @@
+- optional parameters in methods
+- e2e in azure devops?
+- asp.net app, container, azure function, aws versions
+- actions completeness per ADO tab
+- methods described well with optional and mandatory list of parameters
+- code linting exhaustive no short names, no abbreviations
+- prefix in all parameters of methods 
+- unit tests?
+- how chatgpt know parameters priority and methods order because sometimes to do an action you need to call an extract parameter from first call then 2nd call
+- compare repo with https://github.com/modelcontextprotocol/csharp-sdk
+- compare repo with https://github.com/microsoft/semantic-kernel/tree/main
+- list of refactoring in wiki
+- lack of integrartion tests in functionality
+- soar cloud notes
+- extract dev rules for pre-promt
+- - pipelines to github 
+- fix warnings in azure devops pipelines
+- docfx
+- github pipelines
+- boards has methods related to project management, clean
+- ojo metodos generados por chatgpt con exit to console

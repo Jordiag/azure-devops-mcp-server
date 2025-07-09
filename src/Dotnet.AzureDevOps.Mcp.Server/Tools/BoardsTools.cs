@@ -1,8 +1,14 @@
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
+using System.Threading;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
+using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using ModelContextProtocol.Server;
+using static Microsoft.VisualStudio.Services.Users.User;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools
 {
@@ -84,6 +90,132 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetWorkItemAsync(workItemId);
+        }
+
+        [McpServerTool, Description("Runs a WIQL query and returns matching work items.")]
+        public static Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.QueryWorkItemsAsync(wiql);
+        }
+
+        [McpServerTool, Description("Adds a comment to a work item.")]
+        public static Task AddCommentAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string comment)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.AddCommentAsync(workItemId, projectName, comment);
+        }
+
+        [McpServerTool, Description("Retrieves comments for a work item.")]
+        public static Task<IReadOnlyList<WorkItemComment>> GetCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetCommentsAsync(workItemId);
+        }
+
+        [McpServerTool, Description("Adds an attachment to a work item.")]
+        public static Task<Guid?> AddAttachmentAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string filePath)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.AddAttachmentAsync(workItemId, filePath);
+        }
+
+        [McpServerTool, Description("Downloads a work item attachment.")]
+        public static Task<Stream?> GetAttachmentAsync(string organizationUrl, string projectName, string personalAccessToken, Guid attachmentId)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetAttachmentAsync(projectName, attachmentId);
+        }
+
+        [McpServerTool, Description("Gets work item history updates.")]
+        public static Task<IReadOnlyList<WorkItemUpdate>> GetHistoryAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetHistoryAsync(workItemId);
+        }
+
+        [McpServerTool, Description("Creates multiple work items in a batch.")]
+        public static Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType, IEnumerable<WorkItemCreateOptions> items)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CreateWorkItemsBatchAsync(workItemType, items);
+        }
+
+        [McpServerTool, Description("Adds a relation link between two work items.")]
+        public static Task AddLinkAsync(string organizationUrl, string projectName, string personalAccessToken, int fromId, int toId, string linkType)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.AddLinkAsync(fromId, toId, linkType);
+        }
+
+        [McpServerTool, Description("Removes a relation link from a work item.")]
+        public static Task RemoveLinkAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string linkUrl)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.RemoveLinkAsync(workItemId, linkUrl);
+        }
+
+        [McpServerTool, Description("Lists links associated with a work item.")]
+        public static Task<IReadOnlyList<WorkItemRelation>> GetLinksAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetLinksAsync(workItemId);
+        }
+
+        [McpServerTool, Description("Lists boardId columns for a team boardId.")]
+        public static Task<List<BoardColumn>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, string team, string boardId, TeamContext teamContext, object? userState)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListBoardColumnsAsync(teamContext, boardId, userState);
+        }
+
+        [McpServerTool, Description("Lists iterations for a team.")]
+        public static Task<List<TeamSettingsIteration>> ListIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string? timeFrame = null, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListIterationsAsync(teamContext, timeFrame, userState);
+        }
+
+        [McpServerTool, Description("Lists area paths for a team.")]
+        public static Task<TeamFieldValues> ListAreasAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListAreasAsync(teamContext);
+        }
+
+        [McpServerTool, Description("Reads a custom field value from a work item.")]
+        public static Task<object?> GetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetCustomFieldAsync(workItemId, fieldName);
+        }
+
+        [McpServerTool, Description("Sets a custom field on a work item.")]
+        public static Task SetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName, object value)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.SetCustomFieldAsync(workItemId, fieldName, value);
+        }
+
+        [McpServerTool, Description("Exports a team boardId configuration.")]
+        public static Task<Board?> ExportBoardAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string board)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ExportBoardAsync(teamContext, board);
+        }
+
+        [McpServerTool, Description("Gets a count of work items matching a WIQL query.")]
+        public static Task<int> GetWorkItemCountAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetWorkItemCountAsync(wiql);
+        }
+
+        [McpServerTool, Description("Updates multiple work items in bulk.")]
+        public static Task BulkUpdateWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, IEnumerable<(int id, WorkItemCreateOptions options)> updates)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.BulkUpdateWorkItemsAsync(updates);
         }
     }
 }
