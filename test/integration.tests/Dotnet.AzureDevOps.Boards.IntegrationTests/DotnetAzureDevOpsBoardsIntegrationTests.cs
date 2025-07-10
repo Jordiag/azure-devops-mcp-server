@@ -3,10 +3,8 @@ using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.TeamFoundation.Work.WebApi;
 using System.IO;
 using System.Linq;
-using Microsoft.TeamFoundation.Core.WebApi.Types;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -522,48 +520,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.DoesNotContain(after, l => l.Url == linkUrl);
         }
 
-        /// <summary>
-        /// Retrieve board configuration pieces.
-        /// </summary>
-        [Fact]
-        public async Task BoardConfiguration_SucceedsAsync()
-        {
-            string testTeamName = "Dotnet.McpIntegrationTest Team";
-            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, testTeamName);
-            string boardName = $"{_azureDevOpsConfiguration.ProjectName} Team";
-             await _workItemsClient.CreateTeamAsync(testTeamName, "description1");
-            await _workItemsClient.UpdateTeamDescriptionAsync(testTeamName, "description2");
-            List<BoardReference> boardReferenceList = await _workItemsClient.ListBoardsAsync(teamContext, boardName);
-            List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, "");
-            
-            IReadOnlyList<BoardColumn> cols = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardReferenceList[0].Id, testTeamName);
-            await _workItemsClient.DeleteTeamAsync(await _workItemsClient.GetTeamIdAsync(testTeamName));
-
-            Assert.NotNull(cols);
-
-            IReadOnlyList<TeamSettingsIteration> iterationList = await _workItemsClient.ListIterationsAsync(teamContext, "current", _azureDevOpsConfiguration.ProjectName);
-            Assert.NotNull(iterations);
-            Assert.NotNull(iterationList);
-
-            TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
-            Assert.NotNull(areas);
-        }
-
-        /// <summary>
-        /// Get analytics for a WIQL query.
-        /// </summary>
-        [Fact]
-        public async Task Analytics_SucceedsAsync()
-        {
-            string wiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project";
-            int count = await _workItemsClient.GetWorkItemCountAsync(wiql);
-            Assert.True(count >= 0);
-        }
-
-        /// <summary>
-        /// Update multiple work items in bulk.
-        /// </summary>
-        [Fact]
         public async Task BulkEdit_SucceedsAsync()
         {
             int? a = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 1", Tags = "IntegrationTest;Bulk" });

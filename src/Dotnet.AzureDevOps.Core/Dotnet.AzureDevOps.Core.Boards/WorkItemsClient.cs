@@ -4,7 +4,6 @@ using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -22,7 +21,6 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly string _projectName;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
-        private readonly TeamHttpClient _teamClient;
         private readonly string _personalAccessToken;
 
         public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken)
@@ -35,7 +33,6 @@ namespace Dotnet.AzureDevOps.Core.Boards
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _workItemClient = connection.GetClient<WorkItemTrackingHttpClient>();
             _workClient = connection.GetClient<WorkHttpClient>();
-            _teamClient = connection.GetClient<TeamHttpClient>();
         }
 
         public Task<int?> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
@@ -397,143 +394,5 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
         }
 
-        public async Task<bool> CreateTeamAsync(string teamName, string teamDescription)
-        {
-            var newTeam = new WebApiTeam()
-            {
-                Name = teamName,
-                Description = teamDescription
-            };
-
-            try
-            {
-                WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName);
-                return createdTeam.Description == teamDescription && createdTeam.Name == teamName;
-            }
-            catch(Exception)
-            {
-                return false;
-            }
-        }
-
-        public async Task<Guid> GetTeamIdAsync(string teamName)
-        {
-            try
-            {
-                WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
-                return team.Id;
-            }
-            catch(Exception)
-            {
-                return Guid.Empty;
-            }
-        }
-
-        public async Task<bool> UpdateTeamDescriptionAsync(string teamName, string newDescription)
-        {
-            try
-            {
-                WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
-
-                var updatedTeam = new WebApiTeam()
-                {
-                    Description = newDescription
-                };
-
-                WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, _projectName, team.Id.ToString());
-
-                return webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
-            }
-            catch(Exception)
-            {
-                return false;
-            }
-        }
-
-        public async Task<List<BoardReference>> ListBoardsAsync(TeamContext teamContext, object? userState = null, CancellationToken cancellationToken = default) =>
-            await _workClient.GetBoardsAsync(teamContext, userState, cancellationToken);
-
-        public async Task<TeamSettingsIteration> GetTeamIterationAsync(TeamContext teamContext, Guid iterationId, object? userState = null, CancellationToken cancellationToken = default) =>
-            await _workClient.GetTeamIterationAsync(teamContext, iterationId, userState, cancellationToken);
-
-        public async Task<List<TeamSettingsIteration>> GetTeamIterationsAsync(TeamContext teamContext, string timeframe, object? userState = null, CancellationToken cancellationToken = default) =>
-            await _workClient.GetTeamIterationsAsync(teamContext, timeframe, userState, cancellationToken);
-
-        /// <summary>
-        /// Deletes a team from the specified project in the organization. Doesn't work, Gives a 500 so far!!!
-        /// </summary>
-        /// <remarks>This method sends an HTTP DELETE request to the organization's API to remove the
-        /// specified team. Ensure that the provided <paramref name="teamGuid"/> corresponds to an existing
-        /// team.</remarks>
-        /// <param name="teamGuid">The unique identifier of the team to delete.</param>
-        /// <returns><see langword="true"/> if the team was successfully deleted; otherwise, <see langword="false"/>.</returns>
-        public async Task<bool> DeleteTeamAsync(Guid teamGuid)
-        {
-            try
-            {
-                using var client = new HttpClient();
-                string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
-                string url = $"{_organizationUrl}/_apis/projects/{_projectName}/teams/{teamGuid}?api-version={Constants.ApiVersion}";
-
-                HttpResponseMessage response = await client.DeleteAsync(url);
-
-                return response.IsSuccessStatusCode;
-            }
-            catch(Exception)
-            {
-                return false;
-            }
-        }
-
-        public async Task<bool> CreateInheritedProcessAsync(
-            string newProcessName,
-            string description,
-            string baseProcessName // e.g. "Agile", "Scrum", "CMMI"
-            )
-        {
-            string parentProcessId = baseProcessName.ToLower() switch
-            {
-                "agile" => "adcc42ab-9882-485e-a3ed-7678f01f66bc",
-                "scrum" => "6b724908-ef14-45cf-84f8-768b5384da45",
-                "cmmi" => "27450541-8e31-4150-9947-dc59f998fc01",
-                _ => throw new ArgumentException("Unsupported base process name")
-            };
-
-            string url = $"{_organizationUrl}/_apis/work/processes?api-version={Constants.ApiVersion}";
-
-            using var client = new HttpClient();
-
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            var payload = new
-            {
-                name = newProcessName,
-                description = description,
-                parentProcessTypeId = parentProcessId
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-            HttpResponseMessage response = await client.PostAsync(url, content);
-
-            return response.IsSuccessStatusCode;
-        }
-
-        public async Task<bool> DeleteInheritedProcessAsync(string processId)
-        {
-            string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version=7.1-preview.1";
-
-            using var client = new HttpClient();
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
-            HttpResponseMessage response = await client.DeleteAsync(url);
-
-            return response.IsSuccessStatusCode;
-        }
     }
 }
