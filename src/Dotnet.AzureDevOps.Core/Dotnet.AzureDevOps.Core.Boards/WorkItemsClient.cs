@@ -313,11 +313,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default)
         {
             WorkItem? item = await GetWorkItemAsync(workItemId, cancellationToken);
-            if(item?.Relations == null)
+            if (item?.Relations == null)
                 return;
 
-            int index = (item.Relations as List<WorkItemRelation>)?.FindIndex(r => r.Url == linkUrl) ?? -1;
-            if(index < 0)
+            WorkItemRelation? relation = item.Relations.FirstOrDefault(r => r.Url == linkUrl);
+            if (relation == null)
+                return;
+
+            int index = item.Relations.IndexOf(relation);
+            if (index < 0)
                 return;
 
             var patch = new JsonPatchDocument
