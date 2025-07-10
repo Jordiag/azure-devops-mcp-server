@@ -338,6 +338,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
             return (IReadOnlyList<WorkItemRelation>)(item?.Relations ?? []);
         }
 
+        public Task<List<BoardReference>> ListBoardsAsync(TeamContext teamContext, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetBoardsAsync(teamContext, userState, cancellationToken);
+
+        public Task<TeamSettingsIteration> GetTeamIterationAsync(TeamContext teamContext, Guid iterationId, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetTeamIterationAsync(teamContext, iterationId, userState, cancellationToken);
+
+        public Task<List<TeamSettingsIteration>> GetTeamIterationsAsync(TeamContext teamContext, string timeframe, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetTeamIterationsAsync(teamContext, timeframe, userState, cancellationToken);
+
         public Task<List<BoardColumn>> ListBoardColumnsAsync(TeamContext teamContext, Guid board, object? userState = null, CancellationToken cancellationToken = default)
             => _workClient.GetBoardColumnsAsync(teamContext, board.ToString(), userState, cancellationToken: cancellationToken);
 

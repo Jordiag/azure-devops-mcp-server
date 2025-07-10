@@ -23,6 +23,9 @@ namespace Dotnet.AzureDevOps.Core.Boards
         Task<object?> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WorkItemUpdate>> GetHistoryAsync(int workItemId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WorkItemRelation>> GetLinksAsync(int workItemId, CancellationToken cancellationToken = default);
+        Task<List<BoardReference>> ListBoardsAsync(TeamContext teamContext, object? userState = null, CancellationToken cancellationToken = default);
+        Task<TeamSettingsIteration> GetTeamIterationAsync(TeamContext teamContext, Guid iterationId, object? userState = null, CancellationToken cancellationToken = default);
+        Task<List<TeamSettingsIteration>> GetTeamIterationsAsync(TeamContext teamContext, string timeframe, object? userState = null, CancellationToken cancellationToken = default);
         Task<WorkItem?> GetWorkItemAsync(int workItemId, CancellationToken cancellationToken = default);
         Task<int> GetWorkItemCountAsync(string wiql, CancellationToken cancellationToken = default);
         Task<TeamFieldValues> ListAreasAsync(TeamContext teamContext, CancellationToken cancellationToken = default);
