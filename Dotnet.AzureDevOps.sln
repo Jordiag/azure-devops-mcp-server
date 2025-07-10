@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Core.Ove
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Core.Artifacts", "src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Artifacts\Dotnet.AzureDevOps.Core.Artifacts.csproj", "{F5B68A31-3481-468C-859B-6E54EF7938D9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Core.ProjectSettings", "src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.ProjectSettings\Dotnet.AzureDevOps.Core.ProjectSettings.csproj", "{E19DD6B0-5673-460C-98FC-2E4FDE9333AC}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Repos.Tests", "test\unit.tests\Dotnet.AzureDevOps.Repos.Tests\Dotnet.AzureDevOps.Repos.Tests.csproj", "{9233EFFE-7DB8-495E-940F-D8119E2827FA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Boards.Tests", "test\unit.tests\Dotnet.AzureDevOps.Boards.Tests\Dotnet.AzureDevOps.Boards.Tests.csproj", "{77EDDE45-F965-40B4-BA8F-BD6E88F1842C}"
@@ -42,6 +44,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzuredevOps.Pipeline.IntegrationTests", "test\integration.tests\Dotnet.AzuredevOps.Pipeline.IntegrationTests\Dotnet.AzuredevOps.Pipeline.IntegrationTests.csproj", "{30F38FF3-D8AB-4BEB-BC0A-1137C9AE21AC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzuredevOps.TestPlans.IntegrationTests", "test\integration.tests\Dotnet.AzuredevOps.TestPlans.IntegrationTests\Dotnet.AzuredevOps.TestPlans.IntegrationTests.csproj", "{D3BEDBBE-41C8-21C8-14B9-126F9121DF70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Core.ProjectSettingsIntegatioTests", "test\integration.tests\Dotnet.AzureDevOps.Core.ProjectSettingsIntegatioTests\Dotnet.AzureDevOps.Core.ProjectSettingsIntegatioTests.csproj", "{14C7C54E-CA68-4022-B6DE-C57324C8DB89}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration.tests", "integration.tests", "{5A3D3D52-1324-4B57-8CE0-26C7EBC7331A}"
 EndProject
@@ -100,6 +104,10 @@ Global
 		{F5B68A31-3481-468C-859B-6E54EF7938D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5B68A31-3481-468C-859B-6E54EF7938D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5B68A31-3481-468C-859B-6E54EF7938D9}.Release|Any CPU.Build.0 = Release|Any CPU
+                {E19DD6B0-5673-460C-98FC-2E4FDE9333AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {E19DD6B0-5673-460C-98FC-2E4FDE9333AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {E19DD6B0-5673-460C-98FC-2E4FDE9333AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {E19DD6B0-5673-460C-98FC-2E4FDE9333AC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9233EFFE-7DB8-495E-940F-D8119E2827FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9233EFFE-7DB8-495E-940F-D8119E2827FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9233EFFE-7DB8-495E-940F-D8119E2827FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -152,6 +160,10 @@ Global
 		{D3BEDBBE-41C8-21C8-14B9-126F9121DF70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3BEDBBE-41C8-21C8-14B9-126F9121DF70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3BEDBBE-41C8-21C8-14B9-126F9121DF70}.Release|Any CPU.Build.0 = Release|Any CPU
+                {14C7C54E-CA68-4022-B6DE-C57324C8DB89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {14C7C54E-CA68-4022-B6DE-C57324C8DB89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {14C7C54E-CA68-4022-B6DE-C57324C8DB89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {14C7C54E-CA68-4022-B6DE-C57324C8DB89}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CCCA55CA-BB84-FCAF-A594-E83C79EF83DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CCCA55CA-BB84-FCAF-A594-E83C79EF83DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCCA55CA-BB84-FCAF-A594-E83C79EF83DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -172,6 +184,7 @@ Global
 		{35054ABA-FEB8-4FA9-BB59-F281FBB02BE7} = {B43ED0CE-E893-4D77-AD74-6913881416AF}
 		{9F36A7C7-0A82-4F64-82F6-499D0F0E0D36} = {B43ED0CE-E893-4D77-AD74-6913881416AF}
 		{F5B68A31-3481-468C-859B-6E54EF7938D9} = {B43ED0CE-E893-4D77-AD74-6913881416AF}
+                {E19DD6B0-5673-460C-98FC-2E4FDE9333AC} = {B43ED0CE-E893-4D77-AD74-6913881416AF}
 		{9233EFFE-7DB8-495E-940F-D8119E2827FA} = {40238C68-3450-4C9D-B467-9D0BBB236271}
 		{77EDDE45-F965-40B4-BA8F-BD6E88F1842C} = {40238C68-3450-4C9D-B467-9D0BBB236271}
 		{19499305-2957-4FBE-8698-50D87422CAE0} = {40238C68-3450-4C9D-B467-9D0BBB236271}
@@ -185,6 +198,7 @@ Global
 		{6C2FA7E9-ADCA-4974-9BAD-A07FC1F99533} = {5A3D3D52-1324-4B57-8CE0-26C7EBC7331A}
 		{30F38FF3-D8AB-4BEB-BC0A-1137C9AE21AC} = {5A3D3D52-1324-4B57-8CE0-26C7EBC7331A}
 		{D3BEDBBE-41C8-21C8-14B9-126F9121DF70} = {5A3D3D52-1324-4B57-8CE0-26C7EBC7331A}
+                {14C7C54E-CA68-4022-B6DE-C57324C8DB89} = {5A3D3D52-1324-4B57-8CE0-26C7EBC7331A}
 		{5A3D3D52-1324-4B57-8CE0-26C7EBC7331A} = {2D495C55-779C-4B15-8A2F-252EEB79B860}
 		{7D77AE33-A2A7-4595-ACC6-15E56B1E836F} = {2D495C55-779C-4B15-8A2F-252EEB79B860}
 		{40238C68-3450-4C9D-B467-9D0BBB236271} = {2D495C55-779C-4B15-8A2F-252EEB79B860}
