@@ -8,7 +8,6 @@ using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using ModelContextProtocol.Server;
-using static Microsoft.VisualStudio.Services.Users.User;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools
 {
