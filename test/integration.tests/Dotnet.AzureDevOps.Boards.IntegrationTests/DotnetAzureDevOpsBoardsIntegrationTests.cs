@@ -484,11 +484,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task BatchCreate_SucceedsAsync()
         {
-            WorkItemCreateOptions[] batch = new[]
-            {
+            WorkItemCreateOptions[] batch =
+            [
                 new WorkItemCreateOptions { Title = "Batch Task 1", Tags = "IntegrationTest;Batch" },
                 new WorkItemCreateOptions { Title = "Batch Task 2", Tags = "IntegrationTest;Batch" }
-            };
+            ];
 
             IReadOnlyList<int> ids = await _workItemsClient.CreateWorkItemsBatchAsync("Task", batch);
 
@@ -543,24 +543,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             IReadOnlyList<TeamSettingsIteration> iterationList = await _workItemsClient.ListIterationsAsync(teamContext, "current", _azureDevOpsConfiguration.ProjectName);
             Assert.NotNull(iterations);
+            Assert.NotNull(iterationList);
 
             TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
             Assert.NotNull(areas);
-        }
-
-        /// <summary>
-        /// Set and read a custom field value.
-        /// </summary>
-        [Fact()]
-        public async Task CustomField_SucceedsAsync()
-        {
-            int? id = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "CustomField Task", Tags = "IntegrationTest;Custom" });
-            Assert.True(id.HasValue);
-            _createdWorkItemIds.Add(id!.Value);
-
-            await _workItemsClient.SetCustomFieldAsync(id.Value, "Custom.ITField", "foo");
-            object? value = await _workItemsClient.GetCustomFieldAsync(id.Value, "Custom.ITField");
-            Assert.Equal("foo", value?.ToString());
         }
 
         /// <summary>

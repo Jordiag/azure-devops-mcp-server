@@ -163,7 +163,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Lists boardId columns for a team boardId.")]
-        public static Task<List<BoardColumn>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, string team, string boardId, TeamContext teamContext, object? userState)
+        public static Task<List<BoardColumn>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid boardId, TeamContext teamContext, object? userState)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListBoardColumnsAsync(teamContext, boardId, userState);

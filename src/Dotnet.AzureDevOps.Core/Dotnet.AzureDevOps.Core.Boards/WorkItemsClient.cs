@@ -9,6 +9,7 @@ using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.Organization.Client;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
@@ -213,15 +214,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             var query = new Wiql { Query = wiql };
             WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: _projectName, cancellationToken: cancellationToken);
-            if(result.WorkItems != null)
-            {
-                if(result.WorkItems.Count() > 0)
-                {
-                    int[] ids = [.. result.WorkItems.Select(w => w.Id)];
-                    List<WorkItem> items = await _workItemClient.GetWorkItemsAsync(ids, cancellationToken: cancellationToken);
-                    return items;
-                }
 
+            if (result.WorkItems?.Any() == true)
+            {
+                int[] ids = [.. result.WorkItems.Select(w => w.Id)];
+                List<WorkItem> items = await _workItemClient.GetWorkItemsAsync(ids, cancellationToken: cancellationToken);
+                return items;
             }
 
             return [];
@@ -369,7 +367,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 new JsonPatchOperation
                 {
-                    Operation = Operation.Add,
+                    Operation = Operation.Replace,
                     Path = $"/fields/{fieldName}",
                     Value = value
                 }
@@ -492,7 +490,6 @@ namespace Dotnet.AzureDevOps.Core.Boards
             string baseProcessName // e.g. "Agile", "Scrum", "CMMI"
             )
         {
-            // Map base process names to internal process IDs
             string parentProcessId = baseProcessName.ToLower() switch
             {
                 "agile" => "adcc42ab-9882-485e-a3ed-7678f01f66bc",
@@ -501,7 +498,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 _ => throw new ArgumentException("Unsupported base process name")
             };
 
-            string url = $"{_organizationUrl}/_apis/work/processadmin/processes/inherit?api-version={Constants.ApiVersion}";
+            string url = $"{_organizationUrl}/_apis/work/processes?api-version={Constants.ApiVersion}";
 
             using var client = new HttpClient();
 
@@ -520,41 +517,20 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
             HttpResponseMessage response = await client.PostAsync(url, content);
 
-            if(response.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"✅ Inherited process '{newProcessName}' created successfully.");
-                return true;
-            }
-            else
-            {
-                string error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ Failed to create process: {response.StatusCode}\n{error}");
-                return false;
-            }
+            return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> DeleteInheritedProcessAsync(string organization, string personalAccessToken, string processId)
+        public async Task<bool> DeleteInheritedProcessAsync(string processId)
         {
-            string url = $"https://dev.azure.com/{organization}/_apis/work/processadmin/processes/{processId}?api-version=7.1-preview.1";
+            string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version=7.1-preview.1";
 
             using var client = new HttpClient();
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             HttpResponseMessage response = await client.DeleteAsync(url);
 
-            if(response.IsSuccessStatusCode)
-            {
-                Console.WriteLine("✅ Process deleted successfully.");
-                return true;
-            }
-            else
-            {
-                string error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ Failed to delete process: {response.StatusCode}\n{error}");
-                return false;
-            }
+            return response.IsSuccessStatusCode;
         }
-
     }
 }
