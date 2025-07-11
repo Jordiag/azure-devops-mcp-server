@@ -4,6 +4,7 @@ using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -21,13 +22,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly string _projectName;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
-        private readonly string _personalAccessToken;
 
         public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
-            _personalAccessToken = personalAccessToken;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);

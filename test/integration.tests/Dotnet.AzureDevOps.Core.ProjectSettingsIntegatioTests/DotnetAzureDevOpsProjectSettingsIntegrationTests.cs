@@ -3,6 +3,7 @@ using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettingsIntegatioTests
