@@ -2,6 +2,6 @@
 {
     public static class Constants
     {
-        public const string ApiVersion = "7.2-preview.1";
+        public const string ApiVersion = "7.1";
     }
 }

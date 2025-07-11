@@ -3,6 +3,8 @@ using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using System.IO;
+using System.Linq;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -378,8 +380,167 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.Contains("Read", actualTags);
         }
 
+        /// <summary>
+        /// Create an Epic and ensure WIQL query can locate it.
+        /// </summary>
+        [Fact]
+        public async Task QueryWorkItems_SucceedsAsync()
+        {
+            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            {
+                Title = "Query Epic",
+                Tags = "IntegrationTest;Query"
+            });
+            Assert.True(epicId.HasValue);
+            _createdWorkItemIds.Add(epicId.Value);
 
-        #region xUnit Lifetime
+            string wiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'Query'";
+            IReadOnlyList<WorkItem> list = await _workItemsClient.QueryWorkItemsAsync(wiql);
+
+            Assert.Contains(list, w => w.Id == epicId.Value);
+        }
+
+        /// <summary>
+        /// Add and retrieve a comment on a work item.
+        /// </summary>
+        [Fact]
+        public async Task AddAndReadComments_SucceedsAsync()
+        {
+            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            {
+                Title = "Comment Epic",
+                Tags = "IntegrationTest;Comment"
+            });
+            Assert.True(epicId.HasValue);
+            _createdWorkItemIds.Add(epicId.Value);
+
+            const string commentText = "Integration comment";
+            await _workItemsClient.AddCommentAsync(epicId.Value, _azureDevOpsConfiguration.ProjectName, commentText);
+
+            IReadOnlyList<WorkItemComment> comments = await _workItemsClient.GetCommentsAsync(epicId.Value);
+            Assert.Contains(comments, c => c.Text == commentText);
+        }
+
+        /// <summary>
+        /// Attach a file to a work item and download it again.
+        /// </summary>
+        [Fact]
+        public async Task AttachAndDownload_SucceedsAsync()
+        {
+            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            {
+                Title = "Attachment Epic",
+                Tags = "IntegrationTest;Attach"
+            });
+            Assert.True(epicId.HasValue);
+            _createdWorkItemIds.Add(epicId.Value);
+
+            string tempFile = Path.GetTempFileName();
+            await File.WriteAllTextAsync(tempFile, "attachment");
+
+            Guid? attachmentId = await _workItemsClient.AddAttachmentAsync(epicId.Value, tempFile);
+            Assert.NotNull(attachmentId);
+
+            using Stream? stream = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId.Value);
+            Assert.NotNull(stream);
+
+            long len;
+            using(var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                len = memoryStream.Length;
+            }
+            Assert.True(len > 0);
+
+            File.Delete(tempFile);
+        }
+
+        /// <summary>
+        /// Verify history records after updating a work item.
+        /// </summary>
+        [Fact]
+        public async Task WorkItemHistory_SucceedsAsync()
+        {
+            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            {
+                Title = "History Epic",
+                Description = "Initial",
+                Tags = "IntegrationTest;History"
+            });
+            Assert.True(epicId.HasValue);
+            _createdWorkItemIds.Add(epicId.Value);
+
+            await _workItemsClient.UpdateEpicAsync(epicId.Value, new WorkItemCreateOptions { Description = "Updated" });
+
+            IReadOnlyList<WorkItemUpdate> history = await _workItemsClient.GetHistoryAsync(epicId.Value);
+            Assert.True(history.Count > 1);
+        }
+
+        /// <summary>
+        /// Create multiple work items in a batch operation.
+        /// </summary>
+        [Fact]
+        public async Task BatchCreate_SucceedsAsync()
+        {
+            WorkItemCreateOptions[] batch =
+            [
+                new WorkItemCreateOptions { Title = "Batch Task 1", Tags = "IntegrationTest;Batch" },
+                new WorkItemCreateOptions { Title = "Batch Task 2", Tags = "IntegrationTest;Batch" }
+            ];
+
+            IReadOnlyList<int> ids = await _workItemsClient.CreateWorkItemsBatchAsync("Task", batch);
+
+            Assert.Equal(batch.Length, ids.Count);
+
+            foreach(int id in ids)
+                _createdWorkItemIds.Add(id);
+        }
+
+        /// <summary>
+        /// Link two work items and then remove the link.
+        /// </summary>
+        [Fact]
+        public async Task LinkManagement_SucceedsAsync()
+        {
+            int? first = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Link A", Tags = "IntegrationTest;Link" });
+            int? second = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Link B", Tags = "IntegrationTest;Link" });
+            Assert.True(first.HasValue && second.HasValue);
+            _createdWorkItemIds.Add(first!.Value);
+            _createdWorkItemIds.Add(second!.Value);
+
+            await _workItemsClient.AddLinkAsync(first.Value, second.Value, "System.LinkTypes.Related");
+
+            IReadOnlyList<WorkItemRelation> links = await _workItemsClient.GetLinksAsync(first.Value);
+            Assert.Contains(links, l => l.Url.Contains(second.Value.ToString()));
+
+            string linkUrl = links.First(l => l.Url.Contains(second.Value.ToString())).Url!;
+            await _workItemsClient.RemoveLinkAsync(first.Value, linkUrl);
+
+            IReadOnlyList<WorkItemRelation> after = await _workItemsClient.GetLinksAsync(first.Value);
+            Assert.DoesNotContain(after, l => l.Url == linkUrl);
+        }
+
+        public async Task BulkEdit_SucceedsAsync()
+        {
+            int? a = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 1", Tags = "IntegrationTest;Bulk" });
+            int? b = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 2", Tags = "IntegrationTest;Bulk" });
+            Assert.True(a.HasValue && b.HasValue);
+            _createdWorkItemIds.Add(a!.Value);
+            _createdWorkItemIds.Add(b!.Value);
+
+            var updates = new (int, WorkItemCreateOptions)[]
+            {
+                (a.Value, new WorkItemCreateOptions { State = "Closed" }),
+                (b.Value, new WorkItemCreateOptions { State = "Closed" })
+            };
+
+            await _workItemsClient.BulkUpdateWorkItemsAsync(updates);
+
+            WorkItem? first = await _workItemsClient.GetWorkItemAsync(a.Value);
+            WorkItem? second = await _workItemsClient.GetWorkItemAsync(b.Value);
+            Assert.Equal("Closed", first?.Fields?["System.State"].ToString());
+            Assert.Equal("Closed", second?.Fields?["System.State"].ToString());
+        }
 
         /// <summary>
         /// xUnit method for async initialization before any tests run.
@@ -398,7 +559,5 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 await _workItemsClient.DeleteWorkItemAsync(id);
             }
         }
-
-        #endregion
     }
 }

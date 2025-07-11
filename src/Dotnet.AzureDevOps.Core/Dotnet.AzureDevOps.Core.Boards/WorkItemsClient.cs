@@ -1,10 +1,17 @@
-﻿using Dotnet.AzureDevOps.Core.Boards.Options;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Common;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
@@ -13,15 +20,19 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly string _organizationUrl;
         private readonly string _projectName;
         private readonly WorkItemTrackingHttpClient _workItemClient;
+        private readonly WorkHttpClient _workClient;
+        private readonly string _personalAccessToken;
 
         public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
+            _personalAccessToken = personalAccessToken;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _workItemClient = connection.GetClient<WorkItemTrackingHttpClient>();
+            _workClient = connection.GetClient<WorkHttpClient>();
         }
 
         public Task<int?> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
@@ -75,8 +86,8 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task DeleteWorkItemAsync(int workItemId, CancellationToken cancellationToken = default) =>
             await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
 
-        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options,bool validateOnly = false, bool bypassRules = false, 
-            bool suppressNotifications = false,  WorkItemExpand? expand = null, CancellationToken cancellationToken = default)
+        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options, bool validateOnly = false, bool bypassRules = false,
+            bool suppressNotifications = false, WorkItemExpand? expand = null, CancellationToken cancellationToken = default)
         {
             JsonPatchDocument patchDocument = BuildPatchDocument(options);
 
@@ -194,5 +205,203 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 return null;
             }
         }
+
+        public async Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string wiql, CancellationToken cancellationToken = default)
+        {
+            var query = new Wiql { Query = wiql };
+            WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: _projectName, cancellationToken: cancellationToken);
+
+            if (result.WorkItems?.Any() == true)
+            {
+                int[] ids = [.. result.WorkItems.Select(w => w.Id)];
+                List<WorkItem> items = await _workItemClient.GetWorkItemsAsync(ids, cancellationToken: cancellationToken);
+                return items;
+            }
+
+            return [];
+        }
+
+        public async Task AddCommentAsync(int workItemId, string projectName, string comment, CancellationToken cancellationToken = default)
+        {
+            var commentCreate = new CommentCreate { Text = comment };
+            _ = await _workItemClient.AddCommentAsync(commentCreate, projectName, workItemId, cancellationToken: cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<WorkItemComment>> GetCommentsAsync(int workItemId, CancellationToken cancellationToken = default)
+        {
+            WorkItemComments commentsResult = await _workItemClient.GetCommentsAsync(workItemId, cancellationToken: cancellationToken);
+            return (IReadOnlyList<WorkItemComment>)(commentsResult.Comments ?? []);
+        }
+
+        public async Task<Guid?> AddAttachmentAsync(int workItemId, string filePath, CancellationToken cancellationToken = default)
+        {
+            using FileStream fileStream = File.OpenRead(filePath);
+            AttachmentReference reference = await _workItemClient.CreateAttachmentAsync(fileStream, fileName: Path.GetFileName(filePath), cancellationToken: cancellationToken);
+
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = "/relations/-",
+                    Value = new
+                    {
+                        rel = "AttachedFile",
+                        url = reference.Url
+                    }
+                }
+            };
+
+            _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+            return reference.Id;
+        }
+
+        public async Task<Stream?> GetAttachmentAsync(string projectName, Guid attachmentId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _workItemClient.GetAttachmentContentAsync(projectName, attachmentId, cancellationToken: cancellationToken);
+            }
+            catch(VssServiceException)
+            {
+                return null;
+            }
+        }
+
+        public async Task<IReadOnlyList<WorkItemUpdate>> GetHistoryAsync(int workItemId, CancellationToken cancellationToken = default)
+        {
+            List<WorkItemUpdate> updates = await _workItemClient.GetUpdatesAsync(workItemId, cancellationToken: cancellationToken);
+            return updates;
+        }
+
+        public async Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string workItemType, IEnumerable<WorkItemCreateOptions> items, CancellationToken cancellationToken = default)
+        {
+            var createdIds = new List<int>();
+            foreach(WorkItemCreateOptions opt in items)
+            {
+                int? id = await CreateWorkItemAsync(workItemType, opt, cancellationToken: cancellationToken);
+                if(id.HasValue)
+                    createdIds.Add(id.Value);
+            }
+
+            return createdIds;
+        }
+
+        public async Task AddLinkAsync(int workItemId, int targetWorkItemId, string linkType, CancellationToken cancellationToken = default)
+        {
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = "/relations/-",
+                    Value = new
+                    {
+                        rel = linkType,
+                        url = $"{_organizationUrl}/{_projectName}/_apis/wit/workItems/{targetWorkItemId}"
+                    }
+                }
+            };
+
+            _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+        }
+
+        public async Task RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default)
+        {
+            WorkItem? item = await GetWorkItemAsync(workItemId, cancellationToken);
+            if (item?.Relations == null)
+                return;
+
+            WorkItemRelation? relation = item.Relations.FirstOrDefault(r => r.Url == linkUrl);
+            if (relation == null)
+                return;
+
+            int index = item.Relations.IndexOf(relation);
+            if (index < 0)
+                return;
+
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Remove,
+                    Path = $"/relations/{index}"
+                }
+            };
+
+            _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<WorkItemRelation>> GetLinksAsync(int workItemId, CancellationToken cancellationToken = default)
+        {
+            WorkItem? item = await GetWorkItemAsync(workItemId, cancellationToken);
+            return (IReadOnlyList<WorkItemRelation>)(item?.Relations ?? []);
+        }
+
+        public Task<List<BoardReference>> ListBoardsAsync(TeamContext teamContext, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetBoardsAsync(teamContext, userState, cancellationToken);
+
+        public Task<TeamSettingsIteration> GetTeamIterationAsync(TeamContext teamContext, Guid iterationId, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetTeamIterationAsync(teamContext, iterationId, userState, cancellationToken);
+
+        public Task<List<TeamSettingsIteration>> GetTeamIterationsAsync(TeamContext teamContext, string timeframe, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetTeamIterationsAsync(teamContext, timeframe, userState, cancellationToken);
+
+        public Task<List<BoardColumn>> ListBoardColumnsAsync(TeamContext teamContext, Guid board, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetBoardColumnsAsync(teamContext, board.ToString(), userState, cancellationToken: cancellationToken);
+
+        public Task<List<TeamSettingsIteration>> ListIterationsAsync(TeamContext teamContext, string? timeFrame = null, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetTeamIterationsAsync(teamContext, timeFrame, userState, cancellationToken: cancellationToken);
+
+        public Task<TeamFieldValues> ListAreasAsync(TeamContext teamContext, CancellationToken cancellationToken = default)
+            => _workClient.GetTeamFieldValuesAsync(teamContext, cancellationToken: cancellationToken);
+
+        public async Task<object?> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default)
+        {
+            WorkItem? item = await GetWorkItemAsync(workItemId, cancellationToken);
+            return item == null || !item.Fields.TryGetValue(fieldName, out object? value) ? null : value;
+        }
+
+        /// <summary>
+        /// Sets a custom Field. You cannot add custom fields to a work item type if your project is using a system process (e.g. Agile, Scrum, or CMMI directly) so, You need to create an inherited process from the system one.
+        /// </summary>
+        /// <param name="workItemId"></param>
+        /// <param name="fieldName"></param>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task SetCustomFieldAsync(int workItemId, string fieldName, object value, CancellationToken cancellationToken = default)
+        {
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Replace,
+                    Path = $"/fields/{fieldName}",
+                    Value = value
+                }
+            };
+
+            _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+        }
+
+        public Task<Board?> ExportBoardAsync(TeamContext teamContext, string boardId, CancellationToken cancellationToken = default)
+            => _workClient.GetBoardAsync(teamContext, boardId, cancellationToken: cancellationToken);
+
+
+        public async Task<int> GetWorkItemCountAsync(string wiql, CancellationToken cancellationToken = default)
+        {
+            IReadOnlyList<WorkItem> items = await QueryWorkItemsAsync(wiql, cancellationToken);
+            return items.Count;
+        }
+
+        public async Task BulkUpdateWorkItemsAsync(IEnumerable<(int id, WorkItemCreateOptions options)> updates, CancellationToken cancellationToken = default)
+        {
+            foreach((int id, WorkItemCreateOptions options) in updates)
+            {
+                await UpdateWorkItemAsync(id, options, cancellationToken);
+            }
+        }
+
     }
 }
