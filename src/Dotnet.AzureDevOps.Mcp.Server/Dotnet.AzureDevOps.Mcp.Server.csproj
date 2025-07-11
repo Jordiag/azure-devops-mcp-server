@@ -24,6 +24,7 @@
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Pipelines\Dotnet.AzureDevOps.Core.Pipelines.csproj" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Repos\Dotnet.AzureDevOps.Core.Repos.csproj" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.TestPlans\Dotnet.AzureDevOps.Core.TestPlans.csproj" />
+    <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.ProjectSettings\Dotnet.AzureDevOps.Core.ProjectSettings.csproj" />
   </ItemGroup>
 
 </Project>

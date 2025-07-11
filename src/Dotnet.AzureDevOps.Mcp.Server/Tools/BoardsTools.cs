@@ -168,6 +168,27 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             return client.ListBoardColumnsAsync(teamContext, boardId, userState);
         }
 
+        [McpServerTool, Description("Lists boards for a team.")]
+        public static Task<List<BoardReference>> ListBoardsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListBoardsAsync(teamContext, userState);
+        }
+
+        [McpServerTool, Description("Gets a specific team iteration.")]
+        public static Task<TeamSettingsIteration> GetTeamIterationAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, Guid iterationId, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetTeamIterationAsync(teamContext, iterationId, userState);
+        }
+
+        [McpServerTool, Description("Lists iterations for a team with a timeframe filter.")]
+        public static Task<List<TeamSettingsIteration>> GetTeamIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string timeframe, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetTeamIterationsAsync(teamContext, timeframe, userState);
+        }
+
         [McpServerTool, Description("Lists iterations for a team.")]
         public static Task<List<TeamSettingsIteration>> ListIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string? timeFrame = null, object? userState = null)
         {
