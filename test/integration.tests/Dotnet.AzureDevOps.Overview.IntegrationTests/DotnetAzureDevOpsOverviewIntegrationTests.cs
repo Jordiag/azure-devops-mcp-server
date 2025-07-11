@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Tests.Common;
@@ -6,6 +7,7 @@ using Microsoft.TeamFoundation.Wiki.WebApi;
 
 namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 {
+    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsOverviewIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;

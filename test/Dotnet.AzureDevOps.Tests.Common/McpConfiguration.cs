@@ -1,5 +1,8 @@
-﻿namespace Dotnet.AzureDevOps.Tests.Common
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Dotnet.AzureDevOps.Tests.Common
 {
+    [ExcludeFromCodeCoverage]
     public class McpConfiguration
     {
         public string McpServerUrl { get; }
