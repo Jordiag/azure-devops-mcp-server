@@ -5,6 +5,7 @@ using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -477,23 +478,43 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// Create multiple work items in a batch operation.
+        /// Creates multiple work items in a single $batch operation and verifies the result.
         /// </summary>
         [Fact]
         public async Task BatchCreate_SucceedsAsync()
         {
+            // Arrange
             WorkItemCreateOptions[] batch =
             [
                 new WorkItemCreateOptions { Title = "Batch Task 1", Tags = "IntegrationTest;Batch" },
                 new WorkItemCreateOptions { Title = "Batch Task 2", Tags = "IntegrationTest;Batch" }
             ];
 
-            IReadOnlyList<int> ids = await _workItemsClient.CreateWorkItemsBatchAsync("Task", batch);
+            // Act
+            IReadOnlyList<WitBatchResponse> responses =
+                await _workItemsClient.CreateWorkItemsBatchAsync(
+                    workItemType: "Task",
+                    items: batch,
+                    suppressNotifications: true,
+                    bypassRules: false);
 
-            Assert.Equal(batch.Length, ids.Count);
+            // Assert – the same number of responses as requests
+            Assert.Equal(batch.Length, responses.Count);
 
-            foreach(int id in ids)
-                _createdWorkItemIds.Add(id);
+            foreach(WitBatchResponse resp in responses)
+            {
+                Assert.Equal(200, resp.Code);
+
+                WorkItem? workItem = JsonSerializer.Deserialize<WorkItem>(resp.Body?.ToString() ?? "{}");
+
+                Assert.NotNull(workItem);
+
+                int? id = workItem.Id;
+                if (id.HasValue)
+                {
+                    _createdWorkItemIds.Add(id.Value);
+                }
+            }
         }
 
         /// <summary>
@@ -520,6 +541,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.DoesNotContain(after, l => l.Url == linkUrl);
         }
 
+        [Fact]
         public async Task BulkEdit_SucceedsAsync()
         {
             int? a = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 1", Tags = "IntegrationTest;Bulk" });

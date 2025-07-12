@@ -1,7 +1,4 @@
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using System.Threading;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
@@ -137,7 +134,9 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         public static Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType, IEnumerable<WorkItemCreateOptions> items)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            return client.CreateWorkItemsBatchAsync(workItemType, items);
+            Task<IReadOnlyList<int>> result = client.CreateWorkItemsBatchAsync(workItemType: workItemType, items: items, default);
+
+            return result;
         }
 
         [McpServerTool, Description("Adds a relation link between two work items.")]
@@ -236,6 +235,66 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.BulkUpdateWorkItemsAsync(updates);
+        }
+
+        [McpServerTool, Description("Links many work-item pairs in a single $batch call.")]
+        public static Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsBatchAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<(int sourceId, int targetId, string relation)> links,
+            bool suppressNotifications = true,
+            bool bypassRules = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.LinkWorkItemsBatchAsync(links, suppressNotifications, bypassRules);
+        }
+
+        [McpServerTool, Description("Closes multiple work items (optionally setting a reason) in one batch.")]
+        public static Task<IReadOnlyList<WitBatchResponse>> CloseWorkItemsBatchAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<int> workItemIds,
+            string closedState = "Closed",
+            string? closedReason = "Duplicate",
+            bool suppressNotifications = true,
+            bool bypassRules = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CloseWorkItemsBatchAsync(workItemIds, closedState, closedReason,
+                                                   suppressNotifications, bypassRules);
+        }
+
+        [McpServerTool, Description("Closes duplicates and links them to their canonical items in one batch.")]
+        public static Task<IReadOnlyList<WitBatchResponse>> CloseAndLinkDuplicatesBatchAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<(int duplicateId, int canonicalId)> pairs,
+            bool suppressNotifications = true,
+            bool bypassRules = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CloseAndLinkDuplicatesBatchAsync(pairs, suppressNotifications, bypassRules);
+        }
+
+        [McpServerTool, Description("Creates child work items and links them to a parent in two back-to-back batches.")]
+        public static Task<List<WorkItem?>> AddChildWorkItemsBatchAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            int parentId,
+            string childType,
+            IEnumerable<WorkItemCreateOptions> children,
+            bool suppressNotifications = true,
+            bool bypassRules = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.AddChildWorkItemsBatchAsync(parentId, childType, children, suppressNotifications, bypassRules);
+        }
+
+        [McpServerTool, Description("Retrieves up to 200 work items in one /workitemsbatch POST.")]
+        public static Task<IReadOnlyList<WorkItem>> GetWorkItemsBatchByIdsAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<int> ids,
+            WorkItemExpand expand = WorkItemExpand.All,
+            IEnumerable<string>? fields = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetWorkItemsBatchByIdsAsync(ids, expand, fields);
         }
     }
 }

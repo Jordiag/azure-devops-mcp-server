@@ -1,9 +1,5 @@
-﻿using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
-using Dotnet.AzureDevOps.Core.Common;
-using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -22,11 +18,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly string _projectName;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
+        private const string _patchMethod = "PATCH";
+        private const string ContentTypeHeader = "Content-Type";
+        private const string JsonPatchContentType = "application/json-patch+json";
 
         public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
+
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);
@@ -210,7 +210,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             var query = new Wiql { Query = wiql };
             WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: _projectName, cancellationToken: cancellationToken);
 
-            if (result.WorkItems?.Any() == true)
+            if(result.WorkItems?.Any() == true)
             {
                 int[] ids = [.. result.WorkItems.Select(w => w.Id)];
                 List<WorkItem> items = await _workItemClient.GetWorkItemsAsync(ids, cancellationToken: cancellationToken);
@@ -308,15 +308,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default)
         {
             WorkItem? item = await GetWorkItemAsync(workItemId, cancellationToken);
-            if (item?.Relations == null)
+            if(item?.Relations == null)
                 return;
 
             WorkItemRelation? relation = item.Relations.FirstOrDefault(r => r.Url == linkUrl);
-            if (relation == null)
+            if(relation == null)
                 return;
 
             int index = item.Relations.IndexOf(relation);
-            if (index < 0)
+            if(index < 0)
                 return;
 
             var patch = new JsonPatchDocument
@@ -402,5 +402,329 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
         }
 
+        /// <summary>
+        /// Executes an arbitrary collection of <see cref="WitBatchRequest"/> objects in one $batch call.
+        /// </summary>
+        public async Task<IReadOnlyList<WitBatchResponse>> ExecuteBatchAsync(
+            IEnumerable<WitBatchRequest> requests,
+            CancellationToken cancellationToken = default) => requests == null
+                ? throw new ArgumentNullException(nameof(requests))
+                : (IReadOnlyList<WitBatchResponse>)await _workItemClient
+                .ExecuteBatchRequest(requests, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+        /// <summary>
+        /// Bulk‑creates many work items of the same type (e.g. hundreds of "User Story" records)
+        /// using a single $batch request.
+        /// </summary>
+        public Task<IReadOnlyList<WitBatchResponse>> CreateWorkItemsBatchAsync(
+            string workItemType,
+            IEnumerable<WorkItemCreateOptions> items,
+            bool suppressNotifications = true,
+            bool bypassRules = false,
+            CancellationToken cancellationToken = default)
+        {
+            if(string.IsNullOrWhiteSpace(workItemType))
+                throw new ArgumentException("Value cannot be null or whitespace.", nameof(workItemType));
+            ArgumentNullException.ThrowIfNull(items);
+
+            var batch = new List<WitBatchRequest>();
+
+            foreach(WorkItemCreateOptions item in items)
+            {
+                JsonPatchDocument patch = BuildPatchDocument(item);
+
+                WitBatchRequest request = _workItemClient.CreateWorkItemBatchRequest(
+                    project: _projectName,
+                    type: workItemType,
+                    document: patch,
+                    bypassRules: bypassRules,
+                    suppressNotifications: suppressNotifications);
+
+                batch.Add(request);
+            }
+
+            return ExecuteBatchAsync(batch, cancellationToken);
+        }
+
+        /// <summary>
+        /// Bulk‑updates an arbitrary set of existing work items in one $batch call.
+        /// </summary>
+        public Task<IReadOnlyList<WitBatchResponse>> UpdateWorkItemsBatchAsync(
+            IEnumerable<(int id, WorkItemCreateOptions options)> updates,
+            bool suppressNotifications = true,
+            bool bypassRules = false,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(updates);
+
+            var batch = new List<WitBatchRequest>();
+
+            foreach((int id, WorkItemCreateOptions options) in updates)
+            {
+                JsonPatchDocument patch = BuildPatchDocument(options);
+
+                // Hand‑craft the batch entry because some SDK builds lack a helper.
+                var request = new WitBatchRequest
+                {
+                    Method = _patchMethod,
+                    Uri = $"/_apis/wit/workitems/{id}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Headers = new Dictionary<string, string>
+                    {
+                        { ContentTypeHeader, JsonPatchContentType }
+                    },
+                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                };
+
+                batch.Add(request);
+            }
+
+            return ExecuteBatchAsync(batch, cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Adds work-item links (parent-child, duplicate, related, etc.) for many items in **one**
+        /// $batch request.  Each tuple describes a single edge: (sourceId, targetId, relation).
+        /// </summary>
+        /// <param name="links">
+        ///     Edges to create.  
+        ///     Examples: "System.LinkTypes.Related",
+        ///               "System.LinkTypes.Hierarchy-Forward",
+        ///               "System.LinkTypes.Duplicate-Forward".
+        /// </param>
+        public Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsBatchAsync(
+            IEnumerable<(int sourceId, int targetId, string relation)> links,
+            bool suppressNotifications = true,
+            bool bypassRules = false,
+            CancellationToken cancellationToken = default)
+        {
+            if(links == null)
+                throw new ArgumentNullException(nameof(links));
+
+            var batch = new List<WitBatchRequest>();
+
+            foreach((int sourceId, int targetId, string relation) in links)
+            {
+                if(string.IsNullOrWhiteSpace(relation))
+                    throw new ArgumentException("Relation cannot be null or whitespace.", nameof(links));
+
+                // JSON-Patch: append a new relation entry.
+                var patch = new JsonPatchDocument
+            {
+                new Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation
+                {
+                    Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add,
+                    Path      = "/relations/-",
+                    Value     = new
+                    {
+                        rel = relation,
+                        url = $"vstfs:///WorkItemTracking/WorkItem/{targetId}",
+                        attributes = new { comment = "Linked by batch helper" }
+                    }
+                }
+            };
+
+                var request = new WitBatchRequest
+                {
+                    Method = "PATCH",
+                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version=7.1-preview.1" +
+                              $"&bypassRules={bypassRules.ToString().ToLowerInvariant()}" +
+                              $"&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Headers = new Dictionary<string, string>
+                {
+                    { "Content-Type", "application/json-patch+json" }
+                },
+                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                };
+
+                batch.Add(request);
+            }
+
+            return ExecuteBatchAsync(batch, cancellationToken);
+        }
+
+        /// <summary>
+        /// Closes a list of work items by setting <c>System.State</c> (and optionally
+        /// <c>System.Reason</c>) in a single $batch request.
+        /// </summary>
+        public Task<IReadOnlyList<WitBatchResponse>> CloseWorkItemsBatchAsync(
+            IEnumerable<int> workItemIds,
+            string closedState = "Closed",
+            string? closedReason = "Duplicate",
+            bool suppressNotifications = true,
+            bool bypassRules = false,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(workItemIds);
+
+            var batch = new List<WitBatchRequest>();
+
+            foreach(int id in workItemIds)
+            {
+                var patch = new JsonPatchDocument
+                {
+                    new Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation
+                    {
+                        Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add,
+                        Path      = "/fields/System.State",
+                        Value     = closedState
+                    }
+                };
+
+                if(!string.IsNullOrWhiteSpace(closedReason))
+                {
+                    patch.Add(new Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation
+                    {
+                        Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add,
+                        Path = "/fields/System.Reason",
+                        Value = closedReason
+                    });
+                }
+
+                var request = new WitBatchRequest
+                {
+                    Method = "PATCH",
+                    Uri = $"/_apis/wit/workitems/{id}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Headers = new Dictionary<string, string>
+                    {
+                        { "Content-Type", "application/json-patch+json" }
+                    },
+                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                };
+
+                batch.Add(request);
+            }
+
+            return ExecuteBatchAsync(batch, cancellationToken);
+        }
+
+        /// <summary>
+        /// Convenience macro: for each tuple (<c>duplicateId</c>, <c>canonicalId</c>) this helper
+        /// (1) sets the duplicate work item to Closed/Duplicate, and (2) adds a
+        /// <c>System.LinkTypes.Duplicate-Forward</c> relation to the canonical item – all within
+        /// one $batch request.
+        /// </summary>
+        public Task<IReadOnlyList<WitBatchResponse>> CloseAndLinkDuplicatesBatchAsync(
+            IEnumerable<(int duplicateId, int canonicalId)> pairs,
+            bool suppressNotifications = true,
+            bool bypassRules = false,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(pairs);
+
+            var batch = new List<WitBatchRequest>();
+
+            foreach((int duplicateId, int canonicalId) in pairs)
+            {
+                var patch = new JsonPatchDocument
+                {
+                    // Close the item
+                    new Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation
+                    {
+                        Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add,
+                        Path      = "/fields/System.State",
+                        Value     = "Closed"
+                    },
+                    new Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation
+                    {
+                        Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add,
+                        Path      = "/fields/System.Reason",
+                        Value     = "Duplicate"
+                    },
+                    // Add duplicate relation
+                    new Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation
+                    {
+                        Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add,
+                        Path      = "/relations/-",
+                        Value     = new
+                        {
+                            rel = "System.LinkTypes.Duplicate-Forward",
+                            url = $"vstfs:///WorkItemTracking/WorkItem/{canonicalId}",
+                            attributes = new { comment = "Marked duplicate via batch helper" }
+                        }
+                    }
+                };
+
+                var request = new WitBatchRequest
+                {
+                    Method = "PATCH",
+                    Uri = $"/_apis/wit/workitems/{duplicateId}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Headers = new Dictionary<string, string>
+                    {
+                        { "Content-Type", "application/json-patch+json" }
+                    },
+                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                };
+
+                batch.Add(request);
+            }
+
+            return ExecuteBatchAsync(batch, cancellationToken);
+        }
+        /// <summary>
+        /// Convenience macro: creates a set of child work items **and** links them to the given parent
+        /// in two back‑to‑back $batch calls.  Returns the <see cref="WorkItem"/> instances for the
+        /// newly created children.
+        /// </summary>
+        public async Task<List<WorkItem?>> AddChildWorkItemsBatchAsync(
+            int parentId,
+            string childType,
+            IEnumerable<WorkItemCreateOptions> children,
+            bool suppressNotifications = true,
+            bool bypassRules = false,
+            CancellationToken cancellationToken = default)
+        {
+            // 1. Create the children (first $batch)
+            IReadOnlyList<WitBatchResponse> createResponses = await CreateWorkItemsBatchAsync(
+                childType, children, suppressNotifications, bypassRules, cancellationToken);
+
+            var newChildren = createResponses
+                .Select(r => JsonSerializer.Deserialize<WorkItem>(r.Body?.ToString() ?? "{}"))
+                .Where(wi => wi != null)
+                .ToList();
+
+            // 2. Link them to the parent (second $batch)
+            var links = new List<(int parentId, int id, string)>();
+            foreach(WorkItem? w in newChildren)
+            {
+                if(w != null && w.Id != null)
+                {
+                    links.Add((parentId, w.Id.Value, "System.LinkTypes.Hierarchy-Forward"));
+                }
+            }
+
+            await LinkWorkItemsBatchAsync(links, suppressNotifications, bypassRules, cancellationToken);
+
+            return newChildren;
+        }
+
+        /// <summary>
+        /// Fetches up to 200 work‑items by ID via the read‑side <c>/workitemsbatch</c> endpoint – a
+        /// single POST request instead of N individual GETs.  Mirrors the TS helper
+        /// <c>get_work_items_batch_by_ids</c>.
+        /// </summary>
+        public async Task<IReadOnlyList<WorkItem>> GetWorkItemsBatchByIdsAsync(
+            IEnumerable<int> ids,
+            WorkItemExpand expand = WorkItemExpand.All,
+            IEnumerable<string>? fields = null,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+            IList<int> idList = ids as IList<int> ?? ids.ToList();
+
+            if(idList.Count == 0)
+                return Array.Empty<WorkItem>();
+
+            var request = new WorkItemBatchGetRequest
+            {
+                Ids = [.. idList],
+                Fields = fields?.ToList(),
+                Expand = expand
+            };
+
+            List<WorkItem>? batch = await _workItemClient.GetWorkItemsBatchAsync(request, cancellationToken, cancellationToken);
+            return batch ?? [];
+        }
     }
 }
