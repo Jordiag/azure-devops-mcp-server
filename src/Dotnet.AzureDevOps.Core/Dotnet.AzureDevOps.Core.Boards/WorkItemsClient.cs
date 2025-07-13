@@ -407,11 +407,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// </summary>
         public async Task<IReadOnlyList<WitBatchResponse>> ExecuteBatchAsync(
             IEnumerable<WitBatchRequest> requests,
-            CancellationToken cancellationToken = default) => requests == null
+            CancellationToken cancellationToken = default) => 
+                requests == null
                 ? throw new ArgumentNullException(nameof(requests))
                 : (IReadOnlyList<WitBatchResponse>)await _workItemClient
-                .ExecuteBatchRequest(requests, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                    .ExecuteBatchRequest(requests, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
 
         /// <summary>
         /// Bulk‑creates many work items of the same type (e.g. hundreds of "User Story" records)
@@ -429,19 +430,19 @@ namespace Dotnet.AzureDevOps.Core.Boards
             ArgumentNullException.ThrowIfNull(items);
 
             var batch = new List<WitBatchRequest>();
-
+            int idItem = 1;
             foreach(WorkItemCreateOptions item in items)
             {
                 JsonPatchDocument patch = BuildPatchDocument(item);
 
                 WitBatchRequest request = _workItemClient.CreateWorkItemBatchRequest(
-                    project: _projectName,
-                    type: workItemType,
+                    idItem,
                     document: patch,
                     bypassRules: bypassRules,
                     suppressNotifications: suppressNotifications);
 
                 batch.Add(request);
+                idItem++;
             }
 
             return ExecuteBatchAsync(batch, cancellationToken);

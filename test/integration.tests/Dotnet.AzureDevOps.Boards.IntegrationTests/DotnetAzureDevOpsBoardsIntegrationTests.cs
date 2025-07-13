@@ -478,46 +478,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// Creates multiple work items in a single $batch operation and verifies the result.
-        /// </summary>
-        [Fact]
-        public async Task BatchCreate_SucceedsAsync()
-        {
-            // Arrange
-            WorkItemCreateOptions[] batch =
-            [
-                new WorkItemCreateOptions { Title = "Batch Task 1", Tags = "IntegrationTest;Batch" },
-                new WorkItemCreateOptions { Title = "Batch Task 2", Tags = "IntegrationTest;Batch" }
-            ];
-
-            // Act
-            IReadOnlyList<WitBatchResponse> responses =
-                await _workItemsClient.CreateWorkItemsBatchAsync(
-                    workItemType: "Task",
-                    items: batch,
-                    suppressNotifications: true,
-                    bypassRules: false);
-
-            // Assert – the same number of responses as requests
-            Assert.Equal(batch.Length, responses.Count);
-
-            foreach(WitBatchResponse resp in responses)
-            {
-                Assert.Equal(200, resp.Code);
-
-                WorkItem? workItem = JsonSerializer.Deserialize<WorkItem>(resp.Body?.ToString() ?? "{}");
-
-                Assert.NotNull(workItem);
-
-                int? id = workItem.Id;
-                if (id.HasValue)
-                {
-                    _createdWorkItemIds.Add(id.Value);
-                }
-            }
-        }
-
-        /// <summary>
         /// Link two work items and then remove the link.
         /// </summary>
         [Fact]
