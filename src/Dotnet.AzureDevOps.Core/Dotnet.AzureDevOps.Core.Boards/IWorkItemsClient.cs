@@ -2,7 +2,6 @@
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
@@ -39,7 +38,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         Task<int?> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
         Task<int?> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
         Task<int?> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
-        Task<IReadOnlyList<WitBatchResponse>> ExecuteBatchAsync(IEnumerable<WitBatchRequest> requests,CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<WitBatchResponse>> ExecuteBatchAsync(IEnumerable<WitBatchRequest> requests, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WitBatchResponse>> CreateWorkItemsBatchAsync(string workItemType, IEnumerable<WorkItemCreateOptions> items, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WitBatchResponse>> UpdateWorkItemsBatchAsync(IEnumerable<(int id, WorkItemCreateOptions options)> updates, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsBatchAsync(IEnumerable<(int sourceId, int targetId, string relation)> links, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
