@@ -2,6 +2,7 @@
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using WorkItemFieldUpdate = Dotnet.AzureDevOps.Core.Boards.Options.WorkItemFieldUpdate;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
@@ -60,7 +61,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         Task<QueryHierarchyItem> GetQueryAsync(string projectName, string queryIdOrPath, QueryExpand? expand = null, int depth = 0, bool includeDeleted = false, bool useIsoDateFormat = false, CancellationToken cancellationToken = default);
 
-        Task<WorkItemQueryResult> GetQueryResultsByIdAsync(string queryId, TeamContext teamContext, bool? timePrecision = false, int top = 50, CancellationToken cancellationToken = default);
+        Task<WorkItemQueryResult> GetQueryResultsByIdAsync(Guid queryId, TeamContext teamContext, bool? timePrecision = false, int top = 50, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsByNameBatchAsync(IEnumerable<(int sourceId, int targetId, string type, string? comment)> links, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
     }

@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
+using WorkItemFieldUpdate = Dotnet.AzureDevOps.Core.Boards.Options.WorkItemFieldUpdate;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
@@ -841,8 +842,8 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public Task<QueryHierarchyItem> GetQueryAsync(string projectName, string queryIdOrPath, QueryExpand? expand = null, int depth = 0, bool includeDeleted = false, bool useIsoDateFormat = false, CancellationToken cancellationToken = default)
             => _workItemClient.GetQueryAsync(projectName, queryIdOrPath, expand, depth, includeDeleted, useIsoDateFormat, cancellationToken: cancellationToken);
 
-        public Task<WorkItemQueryResult> GetQueryResultsByIdAsync(string queryId, TeamContext teamContext, bool? timePrecision = false, int top = 50, CancellationToken cancellationToken = default)
-            => _workItemClient.QueryByIdAsync(queryId, teamContext, timePrecision, top, cancellationToken: cancellationToken);
+        public Task<WorkItemQueryResult> GetQueryResultsByIdAsync(Guid queryId, TeamContext teamContext, bool? timePrecision = false, int top = 50, CancellationToken cancellationToken = default)
+            => _workItemClient.QueryByIdAsync(teamContext, queryId, timePrecision, top, cancellationToken: cancellationToken);
 
         public Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsByNameBatchAsync(
             IEnumerable<(int sourceId, int targetId, string type, string? comment)> links,

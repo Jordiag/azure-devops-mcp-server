@@ -5,6 +5,7 @@ using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using ModelContextProtocol.Server;
+using WorkItemFieldUpdate = Dotnet.AzureDevOps.Core.Boards.Options.WorkItemFieldUpdate;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools
 {
@@ -323,7 +324,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             string organizationUrl,
             string projectName,
             string personalAccessToken,
-            string queryId,
+            Guid queryId,
             TeamContext teamContext,
             bool? timePrecision = false,
             int top = 50)
