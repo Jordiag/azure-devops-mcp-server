@@ -167,6 +167,41 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             return client.ListBoardColumnsAsync(teamContext, boardId, userState);
         }
 
+        [McpServerTool, Description("Lists backlog configurations for a team.")]
+        public static Task<List<BacklogLevelConfiguration>> ListBacklogsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListBacklogsAsync(teamContext, userState);
+        }
+
+        [McpServerTool, Description("Lists work items for a backlog category.")]
+        public static Task<BacklogLevelWorkItems> ListBacklogWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string backlogId, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListBacklogWorkItemsAsync(teamContext, backlogId, userState);
+        }
+
+        [McpServerTool, Description("Lists work items relevant to the authenticated user.")]
+        public static Task<PredefinedQuery> ListMyWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string queryType = "assignedtome", int? top = null, bool? includeCompleted = null, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ListMyWorkItemsAsync(queryType, top, includeCompleted, userState);
+        }
+
+        [McpServerTool, Description("Links a work item to a pull request.")]
+        public static Task LinkWorkItemToPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string projectId, string repositoryId, int pullRequestId, int workItemId)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.LinkWorkItemToPullRequestAsync(projectId, repositoryId, pullRequestId, workItemId);
+        }
+
+        [McpServerTool, Description("Lists work items for a specific iteration.")]
+        public static Task<IterationWorkItems> GetWorkItemsForIterationAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, Guid iterationId, object? userState = null)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetWorkItemsForIterationAsync(teamContext, iterationId, userState);
+        }
+
         [McpServerTool, Description("Lists boards for a team.")]
         public static Task<List<BoardReference>> ListBoardsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
         {

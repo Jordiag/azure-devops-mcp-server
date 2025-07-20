@@ -349,6 +349,42 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public Task<List<BoardColumn>> ListBoardColumnsAsync(TeamContext teamContext, Guid board, object? userState = null, CancellationToken cancellationToken = default)
             => _workClient.GetBoardColumnsAsync(teamContext, board.ToString(), userState, cancellationToken: cancellationToken);
 
+        public Task<List<BacklogLevelConfiguration>> ListBacklogsAsync(TeamContext teamContext, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetBacklogsAsync(teamContext, userState, cancellationToken);
+
+        public Task<BacklogLevelWorkItems> ListBacklogWorkItemsAsync(TeamContext teamContext, string backlogId, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetBacklogLevelWorkItemsAsync(teamContext, backlogId, userState, cancellationToken);
+
+        public Task<PredefinedQuery> ListMyWorkItemsAsync(string queryType = "assignedtome", int? top = null, bool? includeCompleted = null, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetPredefinedQueryResultsAsync(_projectName, queryType, top, includeCompleted, userState, cancellationToken);
+
+        public async Task LinkWorkItemToPullRequestAsync(string projectId, string repositoryId, int pullRequestId, int workItemId, CancellationToken cancellationToken = default)
+        {
+            string artifactPathValue = $"{projectId}/{repositoryId}/{pullRequestId}";
+            string encodedPath = Uri.EscapeDataString(artifactPathValue);
+            string vstfsUrl = $"vstfs:///Git/PullRequestId/{encodedPath}";
+
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = "/relations/-",
+                    Value = new
+                    {
+                        rel = "ArtifactLink",
+                        url = vstfsUrl,
+                        attributes = new { name = "Pull Request" }
+                    }
+                }
+            };
+
+            _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+        }
+
+        public Task<IterationWorkItems> GetWorkItemsForIterationAsync(TeamContext teamContext, Guid iterationId, object? userState = null, CancellationToken cancellationToken = default)
+            => _workClient.GetIterationWorkItemsAsync(teamContext, iterationId, userState, cancellationToken);
+
         public Task<List<TeamSettingsIteration>> ListIterationsAsync(TeamContext teamContext, string? timeFrame = null, object? userState = null, CancellationToken cancellationToken = default)
             => _workClient.GetTeamIterationsAsync(teamContext, timeFrame, userState, cancellationToken: cancellationToken);
 
