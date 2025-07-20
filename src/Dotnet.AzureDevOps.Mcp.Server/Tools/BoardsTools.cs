@@ -5,6 +5,7 @@ using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using ModelContextProtocol.Server;
+using WorkItemFieldUpdate = Dotnet.AzureDevOps.Core.Boards.Options.WorkItemFieldUpdate;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools
 {
@@ -270,6 +271,79 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.BulkUpdateWorkItemsAsync(updates);
+        }
+
+        [McpServerTool, Description("Create a new work item with arbitrary fields.")]
+        public static Task<WorkItem?> CreateWorkItemAsync(
+            string organizationUrl,
+            string projectName,
+            string personalAccessToken,
+            string workItemType,
+            IEnumerable<WorkItemFieldValue> fields)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CreateWorkItemAsync(workItemType, fields);
+        }
+
+        [McpServerTool, Description("Update a work item with arbitrary field operations.")]
+        public static Task<WorkItem?> UpdateWorkItemAsync(
+            string organizationUrl,
+            string projectName,
+            string personalAccessToken,
+            int workItemId,
+            IEnumerable<WorkItemFieldUpdate> updates)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.UpdateWorkItemAsync(workItemId, updates);
+        }
+
+        [McpServerTool, Description("Get a work item type definition.")]
+        public static Task<WorkItemType> GetWorkItemTypeAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetWorkItemTypeAsync(projectName, workItemType);
+        }
+
+        [McpServerTool, Description("Retrieve a query by ID or path.")]
+        public static Task<QueryHierarchyItem> GetQueryAsync(
+            string organizationUrl,
+            string projectName,
+            string personalAccessToken,
+            string query,
+            QueryExpand? expand = null,
+            int depth = 0,
+            bool includeDeleted = false,
+            bool useIsoDateFormat = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetQueryAsync(projectName, query, expand, depth, includeDeleted, useIsoDateFormat);
+        }
+
+        [McpServerTool, Description("Retrieve query results by ID.")]
+        public static Task<WorkItemQueryResult> GetQueryResultsByIdAsync(
+            string organizationUrl,
+            string projectName,
+            string personalAccessToken,
+            Guid queryId,
+            TeamContext teamContext,
+            bool? timePrecision = false,
+            int top = 50)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.GetQueryResultsByIdAsync(queryId, teamContext, timePrecision, top);
+        }
+
+        [McpServerTool, Description("Link work items together in batch using friendly relation names.")]
+        public static Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsByNameBatchAsync(
+            string organizationUrl,
+            string projectName,
+            string personalAccessToken,
+            IEnumerable<(int sourceId, int targetId, string type, string? comment)> links,
+            bool suppressNotifications = true,
+            bool bypassRules = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.LinkWorkItemsByNameBatchAsync(links, suppressNotifications, bypassRules);
         }
 
         [McpServerTool, Description("Links many work-item pairs in a single $batch call.")]
