@@ -7,6 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.225.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Packaging.Client" Version="20.259.0-preview" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core.Common\Dotnet.AzureDevOps.Core.Common.csproj" />
   </ItemGroup>
 
