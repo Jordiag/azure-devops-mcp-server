@@ -2,25 +2,33 @@ name: Build on main
 
 on:
   push:
-    branches: [main]          # run only when commits land on main
+    branches: [main]
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      # ───────────────────── Checkout source ─────────────────────
+      # ──────────────── Checkout source ────────────────
       - uses: actions/checkout@v4
 
-      # ───────────────────── .NET toolchain ──────────────────────
+      # ──────────────── .NET SDK setup ────────────────
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'   # change if your repo targets another SDK
+          dotnet-version: '9.0.x'  # Adjust for your project
 
-      # ───────────────────── Restore & build ─────────────────────
+      # ──────────────── Cache NuGet packages ────────────────
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      # ──────────────── Restore & build ────────────────
       - name: Restore packages
         run: dotnet restore Dotnet.AzureDevOps.sln
 
       - name: Build solution
         run: dotnet build Dotnet.AzureDevOps.sln --configuration Release --no-restore
-
