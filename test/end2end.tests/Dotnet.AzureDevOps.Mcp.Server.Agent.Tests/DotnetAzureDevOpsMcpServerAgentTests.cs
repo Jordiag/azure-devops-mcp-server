@@ -26,7 +26,6 @@ public sealed class McpAgentIntegrationTests : IAsyncLifetime
     public McpAgentIntegrationTests()
     {
         _mcpConfiguration = new McpConfiguration();
-        Console.WriteLine($"Using MCP server URL: {_mcpConfiguration.McpServerUrl}");
         _serverUri = new Uri(_mcpConfiguration.McpServerUrl);
         _openAiKey = _mcpConfiguration.OpenAiApiKey;
         _openAiModel = _mcpConfiguration.OpenAiModel;
