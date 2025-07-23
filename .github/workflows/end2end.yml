@@ -40,6 +40,15 @@ jobs:
           dotnet --version
           dotnet --list-sdks
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+            nuget-
+
       - name: Restore NuGet packages
         run: |
           dotnet restore $env:solution
