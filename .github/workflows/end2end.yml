@@ -1,60 +1,16 @@
-name: End2End Tests
-
-on:
-  workflow_dispatch:
-
-jobs:
-  end2end-tests:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
-
-    env:
-      buildConfiguration: Release
-      solution: Dotnet.AzureDevOps.sln
-      sonarProjectKey: Chanlabs_Dotnet.AzureDevOps
-      sonarOrganization: chanlabs-1
-      mcpServerPort: 5050
-      mcpServerUrl: http://localhost:5050
-      AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
-      AZURE_DEVOPS_PIPELINE_ID: ${{ secrets.AZURE_DEVOPS_PIPELINE_ID }}
-      AZURE_DEVOPS_PROJECT_ID: ${{ secrets.AZURE_DEVOPS_PROJECT_ID }}
-      AZURE_DEVOPS_REPO_ID: ${{ secrets.AZURE_DEVOPS_REPO_ID }}
-      AZURE_DEVOPS_REPOSITORY_ID: ${{ secrets.AZURE_DEVOPS_REPOSITORY_ID }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-      AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 9.0
-        run: |
-          Write-Host "Checking .NET installation..."
-          dotnet --version
-          dotnet --list-sdks
-
-      - name: Restore NuGet packages
-        run: |
-          dotnet restore $env:solution
-
-      - name: Build solution
-        run: |
-          dotnet build $env:solution --configuration $env:buildConfiguration --no-restore
-
       - name: Start MCP Server and Run Tests
+        id: test-mcp
         run: |
           Write-Host "Starting MCP Server..."
-          $env:ASPNETCORE_URLS = "${{ env.mcpServerUrl }}"
-      
+          $env:ASPNETCORE_URLS = "${{ env:mcpServerUrl }}"
+
           # Start server in background
           $mcpProcess = Start-Process -FilePath "dotnet" -ArgumentList "run --project src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj --configuration $env:buildConfiguration" -PassThru -WindowStyle Hidden
-      
+
+          echo "MCP_PID=$($mcpProcess.Id)" | Out-File -Append -FilePath $env:GITHUB_ENV
+
           Write-Host "Started MCP Server with PID $($mcpProcess.Id)"
-      
+
           # Wait for readiness
           $maxRetries = 30
           $retryCount = 0
@@ -71,13 +27,13 @@ jobs:
               $retryCount++
             }
           } while ($retryCount -lt $maxRetries)
-      
+
           if ($retryCount -eq $maxRetries) {
             Write-Error "MCP Server did not start in time"
             Stop-Process -Id $mcpProcess.Id -Force
             exit 1
           }
-      
+
           # Run tests
           $testProject = "test/end2end.tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.csproj"
           if (!(Test-Path $testProject)) {
@@ -85,13 +41,13 @@ jobs:
             Stop-Process -Id $mcpProcess.Id -Force
             exit 1
           }
-      
+
           dotnet build $testProject --configuration $env:buildConfiguration
           if ($LASTEXITCODE -ne 0) {
             Stop-Process -Id $mcpProcess.Id -Force
             exit $LASTEXITCODE
           }
-      
+
           dotnet test $testProject `
             --configuration $env:buildConfiguration `
             --no-build `
@@ -100,40 +56,40 @@ jobs:
             --logger "console;verbosity=detailed" `
             --logger "trx;LogFileName=TestResults.trx" `
             --results-directory "${{ runner.temp }}"
-      
 
-          if: always()
-          run: |
-            if ($env:MCP_PID) {
-              try {
-                Stop-Process -Id $env:MCP_PID -Force
-                Write-Host "Stopped MCP server (PID $env:MCP_PID)"
-              } catch {
-                Write-Warning "Failed to stop MCP server PID: $($_.Exception.Message)"
-              }
-            }
-  
+      - name: Stop MCP Server
+        if: always()
+        run: |
+          if ($env:MCP_PID) {
             try {
-              Write-Host "Checking for processes on port $env:mcpServerPort..."
-              $netstat = netstat -ano | Select-String ":$env:mcpServerPort"
-              if ($netstat) {
-                $netstat | ForEach-Object {
-                  if ($_ -match '\s+(\d+)$') {
-                    $portPid = $Matches[1]
-                    try {
-                      $proc = Get-Process -Id $portPid -ErrorAction Stop
-                      if ($proc.ProcessName -eq "dotnet") {
-                        Stop-Process -Id $portPid -Force
-                        Write-Host "Killed dotnet process on port $env:mcpServerPort (PID $portPid)"
-                      }
-                    } catch {
-                      Write-Host "Process $portPid may have exited"
+              Stop-Process -Id $env:MCP_PID -Force
+              Write-Host "Stopped MCP server (PID $env:MCP_PID)"
+            } catch {
+              Write-Warning "Failed to stop MCP server PID: $($_.Exception.Message)"
+            }
+          }
+
+          try {
+            Write-Host "Checking for processes on port $env:mcpServerPort..."
+            $netstat = netstat -ano | Select-String ":$env:mcpServerPort"
+            if ($netstat) {
+              $netstat | ForEach-Object {
+                if ($_ -match '\s+(\d+)$') {
+                  $portPid = $Matches[1]
+                  try {
+                    $proc = Get-Process -Id $portPid -ErrorAction Stop
+                    if ($proc.ProcessName -eq "dotnet") {
+                      Stop-Process -Id $portPid -Force
+                      Write-Host "Killed dotnet process on port $env:mcpServerPort (PID $portPid)"
                     }
+                  } catch {
+                    Write-Host "Process $portPid may have exited"
                   }
                 }
-              } else {
-                Write-Host "No processes on port $env:mcpServerPort"
               }
-            } catch {
-              Write-Warning "Failed to check port usage: $($_.Exception.Message)"
+            } else {
+              Write-Host "No processes on port $env:mcpServerPort"
             }
+          } catch {
+            Write-Warning "Failed to check port usage: $($_.Exception.Message)"
+          }
