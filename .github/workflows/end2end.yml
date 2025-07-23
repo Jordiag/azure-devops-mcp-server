@@ -37,6 +37,10 @@ jobs:
           dotnet --version
           dotnet --list-sdks
 
+      - name: Print MCP_SERVER_URL
+        run: echo "MCP_SERVER_URL is $env:MCP_SERVER_URL"
+        shell: pwsh
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
