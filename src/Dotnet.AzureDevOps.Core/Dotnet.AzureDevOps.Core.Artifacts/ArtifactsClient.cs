@@ -6,9 +6,7 @@ using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.VisualStudio.Services.Feed.WebApi;
-using Microsoft.VisualStudio.Services.NuGet.WebApi;
-using Microsoft.VisualStudio.Services.Packaging.Shared.WebApi;
+
 
 
 namespace Dotnet.AzureDevOps.Core.Artifacts;
@@ -20,8 +18,8 @@ public class ArtifactsClient : IArtifactsClient
     private readonly string _projectName;
     private readonly HttpClient _http;
     private readonly string _organizationUrl;
-    private readonly FeedHttpClient _feedHttpClient;
-    private readonly NuGetHttpClient _nuGetHttpClient;
+    //private readonly FeedHttpClient _feedHttpClient;
+    //private readonly NuGetHttpClient _nuGetHttpClient;
 
     public ArtifactsClient(string organizationUrl, string projectName, string personalAccessToken)
     {
@@ -168,22 +166,22 @@ public class ArtifactsClient : IArtifactsClient
             userState: null,
             cancellationToken: cancellationToken);
 
-    public async Task SetUpstreamingBehaviorAsync(Guid feedId, string packageName, UpstreamingBehavior behavior, CancellationToken cancellationToken = default) =>
-        await _nuGetHttpClient.SetUpstreamingBehaviorAsync(
-            project: _projectName,
-            feedId: feedId.ToString(),
-            packageName: packageName,
-            body: behavior,
-            userState: null,
-            cancellationToken: cancellationToken);
+    //public async Task SetUpstreamingBehaviorAsync(Guid feedId, string packageName, UpstreamingBehavior behavior, CancellationToken cancellationToken = default) =>
+    //    await _nuGetHttpClient.SetUpstreamingBehaviorAsync(
+    //        project: _projectName,
+    //        feedId: feedId.ToString(),
+    //        packageName: packageName,
+    //        body: behavior,
+    //        userState: null,
+    //        cancellationToken: cancellationToken);
 
-    public async Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(Guid feedId, string packageName, CancellationToken cancellationToken = default) =>
-        await _nuGetHttpClient.GetUpstreamingBehaviorAsync(
-            project: _projectName,
-            feedId: feedId.ToString(),
-            packageName: packageName,
-            userState: null,
-            cancellationToken: cancellationToken);
+    //public async Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(Guid feedId, string packageName, CancellationToken cancellationToken = default) =>
+    //    await _nuGetHttpClient.GetUpstreamingBehaviorAsync(
+    //        project: _projectName,
+    //        feedId: feedId.ToString(),
+    //        packageName: packageName,
+    //        userState: null,
+    //        cancellationToken: cancellationToken);
 
     public async Task<Package> GetPackageVersionAsync(Guid feedId, string packageName, string version, CancellationToken cancellationToken = default) =>
         await _nuGetHttpClient.GetPackageVersionAsync(
@@ -195,15 +193,15 @@ public class ArtifactsClient : IArtifactsClient
             userState: null,
             cancellationToken: cancellationToken);
 
-    public async Task UpdatePackageVersionAsync(Guid feedId, string packageName, string version, PackageVersionDetails details, CancellationToken cancellationToken = default) =>
-        await _nuGetHttpClient.UpdatePackageVersionAsync(
-            project: _projectName,
-            feedId: feedId.ToString(),
-            packageName: packageName,
-            packageVersion: version,
-            body: details,
-            userState: null,
-            cancellationToken: cancellationToken);
+    //public async Task UpdatePackageVersionAsync(Guid feedId, string packageName, string version, PackageVersionDetails details, CancellationToken cancellationToken = default) =>
+    //    await _nuGetHttpClient.UpdatePackageVersionAsync(
+    //        project: _projectName,
+    //        feedId: feedId.ToString(),
+    //        packageName: packageName,
+    //        packageVersion: version,
+    //        body: details,
+    //        userState: null,
+    //        cancellationToken: cancellationToken);
 
     public async Task<Stream> DownloadPackageAsync(Guid feedId, string packageName, string version, CancellationToken cancellationToken = default) =>
         await _nuGetHttpClient.DownloadPackageAsync(
