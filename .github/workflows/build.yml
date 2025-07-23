@@ -22,14 +22,20 @@ jobs:
           dotnet-version: '9.0.x'  # Adjust for your project
 
       # ──────────────── Cache NuGet packages ────────────────
+      - name: Set cache key with date and lock hash
+        id: cache-key
+        run: |
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "hash=$(sha256sum **/packages.lock.json | sha256sum | cut -c1-8)" >> $GITHUB_OUTPUT
+      
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          key: nuget-${{ runner.os }}-${{ steps.cache-key.outputs.date }}-${{ steps.cache-key.outputs.hash }}
           restore-keys: |
             nuget-${{ runner.os }}-
-
+      
       # ──────────────── Restore & build ────────────────
       - name: Restore packages
         run: dotnet restore Dotnet.AzureDevOps.sln

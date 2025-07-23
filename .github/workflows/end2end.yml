@@ -40,20 +40,29 @@ jobs:
           dotnet --version
           dotnet --list-sdks
 
-      - name: Print MCP_SERVER_URL
-        run: echo "MCP_SERVER_URL is $env:MCP_SERVER_URL"
-        shell: pwsh
-
+      # ──────────────── Generate daily date + lock file hash ────────────────
+      - name: Set cache key with date and lock hash
+        id: cache-key
+        shell: bash
+        run: |
+          DATE=$(date +'%Y-%m-%d')
+          HASH=$(find . -type f -name 'packages.lock.json' -exec sha256sum {} + | sha256sum | cut -c1-8)
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+      
+      # ──────────────── Cache NuGet packages ────────────────
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          key: nuget-${{ runner.os }}-${{ steps.cache-key.outputs.date }}-${{ steps.cache-key.outputs.hash }}
           restore-keys: |
             nuget-${{ runner.os }}-
             nuget-
-
+      
+      # ──────────────── Restore NuGet packages ────────────────
       - name: Restore NuGet packages
+        shell: pwsh
         run: |
           dotnet restore $env:solution
 
