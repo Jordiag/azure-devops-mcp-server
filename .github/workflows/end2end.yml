@@ -1,0 +1,154 @@
+name: End2End Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  end2end-tests:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    env:
+      buildConfiguration: Release
+      solution: Dotnet.AzureDevOps.sln
+      sonarProjectKey: Chanlabs_Dotnet.AzureDevOps
+      sonarOrganization: chanlabs-1
+      mcpServerPort: 5050
+      mcpServerUrl: http://localhost:5050
+      AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+      AZURE_DEVOPS_PIPELINE_ID: ${{ secrets.AZURE_DEVOPS_PIPELINE_ID }}
+      AZURE_DEVOPS_PROJECT_ID: ${{ secrets.AZURE_DEVOPS_PROJECT_ID }}
+      AZURE_DEVOPS_REPO_ID: ${{ secrets.AZURE_DEVOPS_REPO_ID }}
+      AZURE_DEVOPS_REPOSITORY_ID: ${{ secrets.AZURE_DEVOPS_REPOSITORY_ID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+      MCP_SERVER_URL:  env.MCP_SERVER_URL
+      OPENAI_MODEL: env.OPENAI_MODEL
+      USE_AZURE_OPENAI: env.USE_AZURE_OPENAI
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9.0
+        run: |
+          Write-Host "Checking .NET installation..."
+          dotnet --version
+          dotnet --list-sdks
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+            nuget-
+
+      - name: Restore NuGet packages
+        run: |
+          dotnet restore $env:solution
+
+      - name: Build solution
+        run: |
+          dotnet build $env:solution --configuration $env:buildConfiguration --no-restore
+          
+      - name: Start MCP Server and Run Tests
+        id: test-mcp
+        run: |
+          Write-Host "Starting MCP Server..."
+          $env:ASPNETCORE_URLS = $env:mcpServerUrl
+
+          # Start server in background
+          $mcpProcess = Start-Process -FilePath "dotnet" -ArgumentList "run --project src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj --configuration $env:buildConfiguration" -PassThru -WindowStyle Hidden
+
+          echo "MCP_PID=$($mcpProcess.Id)" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+          Write-Host "Started MCP Server with PID $($mcpProcess.Id)"
+
+          # Wait for readiness
+          $maxRetries = 30
+          $retryCount = 0
+          do {
+            try {
+              $response = Invoke-WebRequest -Uri "$env:mcpServerUrl/health" -Method Get -TimeoutSec 2
+              if ($response.StatusCode -eq 200) {
+                Write-Host "MCP Server is ready"
+                break
+              }
+            } catch {
+              Write-Host "Waiting for MCP Server... ($retryCount/$maxRetries)"
+              Start-Sleep -Seconds 2
+              $retryCount++
+            }
+          } while ($retryCount -lt $maxRetries)
+
+          if ($retryCount -eq $maxRetries) {
+            Write-Error "MCP Server did not start in time"
+            Stop-Process -Id $mcpProcess.Id -Force
+            exit 1
+          }
+
+          # Run tests
+          $testProject = "test/end2end.tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.csproj"
+          if (!(Test-Path $testProject)) {
+            Write-Error "Test project not found at $testProject"
+            Stop-Process -Id $mcpProcess.Id -Force
+            exit 1
+          }
+
+          dotnet build $testProject --configuration $env:buildConfiguration
+          if ($LASTEXITCODE -ne 0) {
+            Stop-Process -Id $mcpProcess.Id -Force
+            exit $LASTEXITCODE
+          }
+
+          dotnet test $testProject `
+            --configuration $env:buildConfiguration `
+            --no-build `
+            --verbosity detailed `
+            --collect:"XPlat Code Coverage" `
+            --logger "console;verbosity=detailed" `
+            --logger "trx;LogFileName=TestResults.trx" `
+            --results-directory "${{ runner.temp }}"
+
+      - name: Stop MCP Server
+        if: always()
+        run: |
+          if ($env:MCP_PID) {
+            try {
+              Stop-Process -Id $env:MCP_PID -Force
+              Write-Host "Stopped MCP server (PID $env:MCP_PID)"
+            } catch {
+              Write-Warning "Failed to stop MCP server PID: $($_.Exception.Message)"
+            }
+          }
+
+          try {
+            Write-Host "Checking for processes on port $env:mcpServerPort..."
+            $netstat = netstat -ano | Select-String ":$env:mcpServerPort"
+            if ($netstat) {
+              $netstat | ForEach-Object {
+                if ($_ -match '\s+(\d+)$') {
+                  $portPid = $Matches[1]
+                  try {
+                    $proc = Get-Process -Id $portPid -ErrorAction Stop
+                    if ($proc.ProcessName -eq "dotnet") {
+                      Stop-Process -Id $portPid -Force
+                      Write-Host "Killed dotnet process on port $env:mcpServerPort (PID $portPid)"
+                    }
+                  } catch {
+                    Write-Host "Process $portPid may have exited"
+                  }
+                }
+              }
+            } else {
+              Write-Host "No processes on port $env:mcpServerPort"
+            }
+          } catch {
+            Write-Warning "Failed to check port usage: $($_.Exception.Message)"
+          }

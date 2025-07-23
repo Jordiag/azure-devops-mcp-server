@@ -4,8 +4,14 @@ on:
     workflows: ["Build on main"]
     types:
       - completed
+
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '.github/workflows/**'
+
+  workflow_dispatch:
+
 jobs:
   integration-tests:
     runs-on: windows-latest
@@ -54,6 +60,15 @@ jobs:
       
       - name: Install Coverage Tool
         run: dotnet tool install --global dotnet-coverage
+      
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+            nuget-
       
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
