@@ -4,8 +4,12 @@ on:
     workflows: ["Build on main"]
     types:
       - completed
+
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '.github/workflows/**'
+      
 jobs:
   integration-tests:
     runs-on: windows-latest
