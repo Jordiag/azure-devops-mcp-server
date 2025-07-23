@@ -1,2 +1,0 @@
-# Acortex.AzureDevOps.Client
-
