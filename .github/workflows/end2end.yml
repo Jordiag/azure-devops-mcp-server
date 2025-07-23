@@ -11,6 +11,7 @@ jobs:
         shell: pwsh
 
     env:
+      MCP_SERVER_URL: ${{ vars.MCP_SERVER_URL }}
       buildConfiguration: Release
       solution: Dotnet.AzureDevOps.sln
       sonarProjectKey: Chanlabs_Dotnet.AzureDevOps
