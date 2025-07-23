@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  integration-tests:
+  end2end-tests:
     runs-on: windows-latest
     defaults:
       run:
