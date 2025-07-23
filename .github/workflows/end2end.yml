@@ -49,7 +49,7 @@ jobs:
         id: test-mcp
         run: |
           Write-Host "Starting MCP Server..."
-          $env:ASPNETCORE_URLS = "${{ env:mcpServerUrl }}"
+          $env:ASPNETCORE_URLS = $env:mcpServerUrl
 
           # Start server in background
           $mcpProcess = Start-Process -FilePath "dotnet" -ArgumentList "run --project src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj --configuration $env:buildConfiguration" -PassThru -WindowStyle Hidden
