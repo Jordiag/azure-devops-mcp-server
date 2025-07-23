@@ -11,7 +11,6 @@ jobs:
         shell: pwsh
 
     env:
-      MCP_SERVER_URL: ${{ vars.MCP_SERVER_URL }}
       buildConfiguration: Release
       solution: Dotnet.AzureDevOps.sln
       sonarProjectKey: Chanlabs_Dotnet.AzureDevOps
@@ -27,6 +26,9 @@ jobs:
       AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
       AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+      MCP_SERVER_URL: ${{ vars.MCP_SERVER_URL }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      USE_AZURE_OPENAI: ${{ vars.USE_AZURE_OPENAI }}
 
     steps:
       - name: Checkout
