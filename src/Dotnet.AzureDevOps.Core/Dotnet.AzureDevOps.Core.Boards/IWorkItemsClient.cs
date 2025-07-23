@@ -39,7 +39,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         Task<List<TeamSettingsIteration>> ListIterationsAsync(TeamContext teamContext, string? timeFrame = null, object? userState = null, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string wiql, CancellationToken cancellationToken = default);
         Task RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default);
-        Task SetCustomFieldAsync(int workItemId, string fieldName, object value, CancellationToken cancellationToken = default);
+        Task SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default);
         Task<int?> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
         Task<int?> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
         Task<int?> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);

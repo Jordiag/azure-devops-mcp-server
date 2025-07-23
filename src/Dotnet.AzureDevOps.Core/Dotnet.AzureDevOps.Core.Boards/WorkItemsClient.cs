@@ -406,7 +406,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <param name="value"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task SetCustomFieldAsync(int workItemId, string fieldName, object value, CancellationToken cancellationToken = default)
+        public async Task SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default)
         {
             var patch = new JsonPatchDocument
             {

@@ -162,10 +162,10 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Lists boardId columns for a team boardId.")]
-        public static Task<List<BoardColumn>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid boardId, TeamContext teamContext, object? userState)
+        public static Task<List<BoardColumn>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid boardId, TeamContext teamContext)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            return client.ListBoardColumnsAsync(teamContext, boardId, userState);
+            return client.ListBoardColumnsAsync(teamContext, boardId);
         }
 
         [McpServerTool, Description("Lists backlog configurations for a team.")]
@@ -246,7 +246,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Sets a custom field on a work item.")]
-        public static Task SetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName, object value)
+        public static Task SetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName, string value)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.SetCustomFieldAsync(workItemId, fieldName, value);
@@ -310,7 +310,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             string projectName,
             string personalAccessToken,
             string query,
-            QueryExpand? expand = null,
+            QueryExpand expand,
             int depth = 0,
             bool includeDeleted = false,
             bool useIsoDateFormat = false)
