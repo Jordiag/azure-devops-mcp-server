@@ -26,9 +26,9 @@ jobs:
       AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
       AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
-      MCP_SERVER_URL:  env.MCP_SERVER_URL
-      OPENAI_MODEL: env.OPENAI_MODEL
-      USE_AZURE_OPENAI: env.USE_AZURE_OPENAI
+      MCP_SERVER_URL: ${{ vars.MCP_SERVER_URL }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      USE_AZURE_OPENAI: ${{ vars.USE_AZURE_OPENAI }}
 
     steps:
       - name: Checkout
@@ -39,6 +39,10 @@ jobs:
           Write-Host "Checking .NET installation..."
           dotnet --version
           dotnet --list-sdks
+
+      - name: Print MCP_SERVER_URL
+        run: echo "MCP_SERVER_URL is $env:MCP_SERVER_URL"
+        shell: pwsh
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
