@@ -26,6 +26,7 @@ jobs:
       AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
       AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+      MCP_SERVER_URL:  ${{ env.MCP_SERVER_URL }}
 
     steps:
       - name: Checkout
