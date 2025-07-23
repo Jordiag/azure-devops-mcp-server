@@ -45,14 +45,17 @@ jobs:
         run: |
           dotnet build $env:solution --configuration $env:buildConfiguration --no-restore
 
-      - name: Start MCP Server in background
-        id: mcp
+      - name: Start MCP Server and Run Tests
         run: |
           Write-Host "Starting MCP Server..."
           $env:ASPNETCORE_URLS = "${{ env.mcpServerUrl }}"
-          $mcpProcess = Start-Process -FilePath "dotnet" -ArgumentList "run --project src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj --configuration $env:buildConfiguration" -PassThru -NoNewWindow
-          echo "MCP_PID=$($mcpProcess.Id)" >> $env:GITHUB_ENV
-
+      
+          # Start server in background
+          $mcpProcess = Start-Process -FilePath "dotnet" -ArgumentList "run --project src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj --configuration $env:buildConfiguration" -PassThru -WindowStyle Hidden
+      
+          Write-Host "Started MCP Server with PID $($mcpProcess.Id)"
+      
+          # Wait for readiness
           $maxRetries = 30
           $retryCount = 0
           do {
@@ -68,33 +71,27 @@ jobs:
               $retryCount++
             }
           } while ($retryCount -lt $maxRetries)
-
+      
           if ($retryCount -eq $maxRetries) {
             Write-Error "MCP Server did not start in time"
+            Stop-Process -Id $mcpProcess.Id -Force
             exit 1
           }
-
-      - name: Test MCP Server Connectivity
-        run: |
-          try {
-            $response = Invoke-WebRequest -Uri "$env:mcpServerUrl/health" -Method Get
-            Write-Host "Health check: $($response.StatusCode)"
-          } catch {
-            Write-Error "Cannot connect to MCP server"
-            exit 1
-          }
-
-      - name: Run Tests with Detailed Output
-        run: |
+      
+          # Run tests
           $testProject = "test/end2end.tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests/Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.csproj"
           if (!(Test-Path $testProject)) {
             Write-Error "Test project not found at $testProject"
+            Stop-Process -Id $mcpProcess.Id -Force
             exit 1
           }
-
+      
           dotnet build $testProject --configuration $env:buildConfiguration
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
+          if ($LASTEXITCODE -ne 0) {
+            Stop-Process -Id $mcpProcess.Id -Force
+            exit $LASTEXITCODE
+          }
+      
           dotnet test $testProject `
             --configuration $env:buildConfiguration `
             --no-build `
@@ -103,40 +100,40 @@ jobs:
             --logger "console;verbosity=detailed" `
             --logger "trx;LogFileName=TestResults.trx" `
             --results-directory "${{ runner.temp }}"
+      
 
-      - name: Stop MCP Server
-        if: always()
-        run: |
-          if ($env:MCP_PID) {
-            try {
-              Stop-Process -Id $env:MCP_PID -Force
-              Write-Host "Stopped MCP server (PID $env:MCP_PID)"
-            } catch {
-              Write-Warning "Failed to stop MCP server PID: $($_.Exception.Message)"
+          if: always()
+          run: |
+            if ($env:MCP_PID) {
+              try {
+                Stop-Process -Id $env:MCP_PID -Force
+                Write-Host "Stopped MCP server (PID $env:MCP_PID)"
+              } catch {
+                Write-Warning "Failed to stop MCP server PID: $($_.Exception.Message)"
+              }
             }
-          }
-
-          try {
-            Write-Host "Checking for processes on port $env:mcpServerPort..."
-            $netstat = netstat -ano | Select-String ":$env:mcpServerPort"
-            if ($netstat) {
-              $netstat | ForEach-Object {
-                if ($_ -match '\s+(\d+)$') {
-                  $portPid = $Matches[1]
-                  try {
-                    $proc = Get-Process -Id $portPid -ErrorAction Stop
-                    if ($proc.ProcessName -eq "dotnet") {
-                      Stop-Process -Id $portPid -Force
-                      Write-Host "Killed dotnet process on port $env:mcpServerPort (PID $portPid)"
+  
+            try {
+              Write-Host "Checking for processes on port $env:mcpServerPort..."
+              $netstat = netstat -ano | Select-String ":$env:mcpServerPort"
+              if ($netstat) {
+                $netstat | ForEach-Object {
+                  if ($_ -match '\s+(\d+)$') {
+                    $portPid = $Matches[1]
+                    try {
+                      $proc = Get-Process -Id $portPid -ErrorAction Stop
+                      if ($proc.ProcessName -eq "dotnet") {
+                        Stop-Process -Id $portPid -Force
+                        Write-Host "Killed dotnet process on port $env:mcpServerPort (PID $portPid)"
+                      }
+                    } catch {
+                      Write-Host "Process $portPid may have exited"
                     }
-                  } catch {
-                    Write-Host "Process $portPid may have exited"
                   }
                 }
+              } else {
+                Write-Host "No processes on port $env:mcpServerPort"
               }
-            } else {
-              Write-Host "No processes on port $env:mcpServerPort"
+            } catch {
+              Write-Warning "Failed to check port usage: $($_.Exception.Message)"
             }
-          } catch {
-            Write-Warning "Failed to check port usage: $($_.Exception.Message)"
-          }
