@@ -48,7 +48,6 @@ Integration tests exercise each client against a real Azure DevOps organization.
 
 - **src** – source projects implementing the client libraries and MCP server.
 - **test** – unit, integration and end-to-end tests.
-- **Pipelines** – Azure DevOps YAML pipeline definitions.
 - `Dotnet.AzureDevOps.sln` – solution file linking all projects.
 
 ## Getting started
