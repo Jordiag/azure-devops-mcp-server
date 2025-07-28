@@ -1,4 +1,5 @@
 name: Integration Tests
+
 on:
   workflow_run:
     workflows: ["Build on main"]
@@ -42,29 +43,30 @@ jobs:
       MCP_SERVER_URL: ${{ vars.MCP_SERVER_URL }}
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
       USE_AZURE_OPENAI: ${{ vars.USE_AZURE_OPENAI }}
+
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
-      
+          fetch-depth: 0  # Required for full history
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.x'
-      
+
       - name: Install NuGet
         uses: NuGet/setup-nuget@v1
-      
+
       - name: Install SonarCloud Scanner for .NET
         run: dotnet tool install --global dotnet-sonarscanner
-      
+
       - name: Install Coverage Tool
         run: dotnet tool install --global dotnet-coverage
-      
+
       - name: Set cache date
         id: cache-date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-      
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -73,13 +75,21 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
             nuget-
-      
+
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
-      
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
-      
+
+      - name: Set Sonar PR Analysis Parameters (if pull_request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "SONAR_PR_KEY=/d:sonar.pullrequest.key=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          echo "SONAR_PR_BRANCH=/d:sonar.pullrequest.branch=${{ github.head_ref }}" >> $GITHUB_ENV
+          echo "SONAR_PR_BASE=/d:sonar.pullrequest.base=${{ github.base_ref }}" >> $GITHUB_ENV
+        shell: bash
+
       - name: Begin SonarCloud Analysis
         run: |
           dotnet sonarscanner begin `
@@ -87,12 +97,15 @@ jobs:
             /o:"${{ env.sonarOrganization }}" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
+            ${{ env.SONAR_PR_KEY }} `
+            ${{ env.SONAR_PR_BRANCH }} `
+            ${{ env.SONAR_PR_BASE }}
         shell: pwsh
-      
+
       - name: Build with MSBuild
         run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
-      
+
       - name: Run Tests with Coverage
         run: |
           dotnet test "${{ env.solution }}" `
@@ -104,14 +117,13 @@ jobs:
             --no-build
         shell: pwsh
         continue-on-error: true
-      
+
       - name: Convert Coverage to XML
         run: |
-          # Merge all coverage files and convert to XML
           dotnet-coverage merge ./TestResults/**/*.coverage --output coverage.xml --output-format xml
         shell: pwsh
         continue-on-error: true
-      
+
       - name: End SonarCloud Analysis
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
         shell: pwsh
