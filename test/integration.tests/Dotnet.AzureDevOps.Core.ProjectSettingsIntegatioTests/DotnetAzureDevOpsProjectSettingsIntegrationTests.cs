@@ -7,7 +7,6 @@ using Microsoft.TeamFoundation.Work.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettingsIntegatioTests
 {
-    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsProjectSettingsIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
@@ -16,7 +15,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettingsIntegatioTests
 
         public DotnetAzureDevOpsProjectSettingsIntegrationTests()
         {
-            _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
+            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
             _projectSettingsClient = new ProjectSettingsClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,

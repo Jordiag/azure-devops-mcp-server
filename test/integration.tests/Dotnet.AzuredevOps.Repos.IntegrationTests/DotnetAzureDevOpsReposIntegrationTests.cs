@@ -7,7 +7,6 @@ using Microsoft.TeamFoundation.SourceControl.WebApi;
 
 namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 {
-    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsReposIntegrationTests : IAsyncLifetime
     {
         private readonly ReposClient _reposClient;
@@ -24,7 +23,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
         public DotnetAzureDevOpsReposIntegrationTests()
         {
-            _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
+            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
             _repoName = _azureDevOpsConfiguration.RepoName ?? string.Empty;
             _srcBranch = _azureDevOpsConfiguration.SrcBranch;
             _targetBranch = _azureDevOpsConfiguration.TargetBranch;

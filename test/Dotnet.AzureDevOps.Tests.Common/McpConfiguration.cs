@@ -1,32 +1,34 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace Dotnet.AzureDevOps.Tests.Common
 {
-    [ExcludeFromCodeCoverage]
     public class McpConfiguration
     {
-        public string McpServerUrl { get; }
-        public string OpenAiApiKey { get; }
-        public string OpenAiModel { get; }
-        public string AzureOpenAiEndpoint { get; }
-        public string AzureOpenAiDeployment { get; }
-        public string AzureOpenAiKey { get; }
-        public bool UseAzureOpenAi { get; }
+        public string McpServerUrl { get; private set; } = null!;
+        public string OpenAiApiKey { get; private set; } = null!;
+        public string OpenAiModel { get; private set; } = null!;
+        public string? SelfHostedUrl { get; private set; }
+        public string AzureOpenAiEndpoint { get; private set; } = null!;
+        public string AzureOpenAiDeployment { get; private set; } = null!;
+        public string AzureOpenAiKey { get; private set; } = null!;
+        public bool UseAzureOpenAi { get; private set; } = false;
 
-        public McpConfiguration()
-        {
-            McpServerUrl = GetEnv("MCP_SERVER_URL");
-            OpenAiApiKey = GetEnv("OPENAI_API_KEY");
-            OpenAiModel = GetEnv("OPENAI_MODEL");
+        private McpConfiguration() { }
 
-            UseAzureOpenAi  = bool.TryParse(GetEnv("USE_AZURE_OPENAI"), out bool b) && b;
-            AzureOpenAiEndpoint = GetEnv("AZURE_OPENAI_ENDPOINT");
-            AzureOpenAiDeployment = GetEnv("AZURE_OPENAI_DEPLOYMENT");
-            AzureOpenAiKey = GetEnv("AZURE_OPENAI_KEY");
-        }
+        public static McpConfiguration FromEnvironment(IConfiguration config)
+            => FromConfiguration(TestConfiguration.Configuration);
 
-        private static string GetEnv(string name) =>
-            Environment.GetEnvironmentVariable(name)
-            ?? throw new ArgumentException($"{name} environment variable is missing.");
+        public static McpConfiguration FromConfiguration(IConfiguration config)
+            => new()
+            {
+                McpServerUrl = config.GetRequiredSection("MCP_SERVER_URL").Value!,
+                OpenAiApiKey = config.GetRequiredSection("OPENAI_API_KEY").Value!,
+                OpenAiModel = config.GetRequiredSection("OPENAI_MODEL").Value!,
+                SelfHostedUrl = config.GetSection("OPENAI_SELF_HOSTED_URL").Value,
+                UseAzureOpenAi = config.GetRequiredSection("USE_AZURE_OPENAI").Get<bool>()!,
+                AzureOpenAiEndpoint = config.GetRequiredSection("AZURE_OPENAI_ENDPOINT").Value!,
+                AzureOpenAiDeployment = config.GetRequiredSection("AZURE_OPENAI_DEPLOYMENT").Value!,
+                AzureOpenAiKey = config.GetRequiredSection("AZURE_OPENAI_KEY").Value!
+            };
     }
 }

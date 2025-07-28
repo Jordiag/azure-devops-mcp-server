@@ -78,12 +78,8 @@ jobs:
 
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
-
-      # -- Sonar Begin (PR Context Only) --
-      - name: Begin SonarCloud Analysis (Pull Request)
+      
+      - name: Set Sonar PR Analysis Parameters (if pull_request)
         if: github.event_name == 'pull_request'
         run: |
           dotnet sonarscanner begin `
@@ -92,12 +88,13 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
+            /d:sonar.dotnet.exludeTestProjects=true `
             /d:sonar.pullrequest.key="${{ github.event.pull_request.number }}" `
             /d:sonar.pullrequest.branch="${{ github.head_ref }}" `
             /d:sonar.pullrequest.base="${{ github.base_ref }}"
         shell: pwsh
 
-      # -- Sonar Begin (Non-PR: workflow_run or manual) --
+    # -- Sonar Begin (Non-PR: workflow_run or manual) --
       - name: Begin SonarCloud Analysis (Non-PR)
         if: github.event_name != 'pull_request'
         run: |
@@ -106,12 +103,15 @@ jobs:
             /o:"${{ env.sonarOrganization }}" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
-        shell: pwsh
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
+            /d:sonar.dotnet.exludeTestProjects=true
+      
+      - name: Build with Dotnet
+        run: dotnet build "${{ env.solution }}" -c "Release" --no-restore
 
-      - name: Build with MSBuild
-        run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
-
+      - name: Publish with dotnet
+        run: dotnet publish "./src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj" -o "${{ github.workspace }}/artifacts" -c Release --no-build
+      
       - name: Run Tests with Coverage
         run: |
           dotnet test "${{ env.solution }}" `

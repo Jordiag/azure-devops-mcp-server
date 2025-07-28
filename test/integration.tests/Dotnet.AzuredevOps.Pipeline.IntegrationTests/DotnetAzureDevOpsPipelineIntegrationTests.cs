@@ -6,7 +6,6 @@ using Microsoft.TeamFoundation.Build.WebApi;
 
 namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 {
-    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
     {
         private readonly PipelinesClient _pipelines;
@@ -21,7 +20,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 
         public DotnetAzureDevOpsPipelineIntegrationTests()
         {
-            _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
+            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
             _definitionId = _azureDevOpsConfiguration.PipelineDefinitionId;
             _branch = _azureDevOpsConfiguration.BuildBranch;
