@@ -195,38 +195,6 @@ namespace Dotnet.AzureDevOps.Core.Overview
             return await response.Content.ReadAsStringAsync(cancellationToken);
         }
 
-        public async Task<TeamProject?> GetProjectSummaryAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _projectHttpClient.GetProject(_projectName, includeCapabilities: true, includeHistory: false, userState: null);
-            }
-            catch(VssServiceException)
-            {
-                return null;
-            }
-        }
-
-        public async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default)
-        {
-            var teamContext = new TeamContext(_projectName);
-            List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
-            IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? [];
-            return dashboards;
-        }
-
-        public async Task<Dashboard?> GetDashboardAsync(Guid dashboardId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                TeamContext teamContext = new TeamContext(_projectName);
-                return await _dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
-            }
-            catch(VssServiceException)
-            {
-                return null;
-            }
-        }
 
         public Task DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default) =>
             _wikiHttpClient.DeletePageAsync(project: _projectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
