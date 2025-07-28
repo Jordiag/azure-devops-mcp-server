@@ -3,6 +3,8 @@ using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
+using Microsoft.TeamFoundation.Dashboards.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi;
 using ModelContextProtocol.Server;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
@@ -63,5 +65,47 @@ public class OverviewTools
     {
         WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.DeletePageAsync(wikiId, path, version);
+    }
+
+    [McpServerTool, Description("Lists pages in a wiki.")]
+    public static Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPagesBatchOptions options)
+    {
+        WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPagesAsync(wikiId, options);
+    }
+
+    [McpServerTool, Description("Gets wiki page content.")]
+    public static Task<string?> GetPageTextAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
+    {
+        WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetPageTextAsync(wikiId, path);
+    }
+
+    [McpServerTool, Description("Searches wikis for text.")]
+    public static Task<string> SearchWikiAsync(string organizationUrl, string projectName, string personalAccessToken, WikiSearchOptions options)
+    {
+        WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SearchWikiAsync(options);
+    }
+
+    [McpServerTool, Description("Retrieves project summary information.")]
+    public static Task<TeamProject?> GetProjectSummaryAsync(string organizationUrl, string projectName, string personalAccessToken)
+    {
+        WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetProjectSummaryAsync();
+    }
+
+    [McpServerTool, Description("Lists dashboards under the project.")]
+    public static Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(string organizationUrl, string projectName, string personalAccessToken)
+    {
+        WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListDashboardsAsync();
+    }
+
+    [McpServerTool, Description("Retrieves a dashboard by identifier.")]
+    public static Task<Dashboard?> GetDashboardAsync(string organizationUrl, string projectName, string personalAccessToken, Guid dashboardId)
+    {
+        WikiClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetDashboardAsync(dashboardId);
     }
 }

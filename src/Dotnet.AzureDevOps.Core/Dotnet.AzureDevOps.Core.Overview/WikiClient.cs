@@ -1,8 +1,19 @@
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Dashboards.WebApi;
+using Dotnet.AzureDevOps.Core.Common;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
+using Microsoft.TeamFoundation.Wiki.WebApi.Contracts;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
@@ -10,14 +21,22 @@ namespace Dotnet.AzureDevOps.Core.Overview
     {
         private readonly string _projectName;
         private readonly WikiHttpClient _wikiHttpClient;
+        private readonly ProjectHttpClient _projectHttpClient;
+        private readonly DashboardHttpClient _dashboardHttpClient;
+        private readonly string _organizationUrl;
+        private readonly string _personalAccessToken;
 
         public WikiClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _projectName = projectName;
+            _organizationUrl = organizationUrl;
+            _personalAccessToken = personalAccessToken;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(organizationUrl), credentials);
             _wikiHttpClient = connection.GetClient<WikiHttpClient>();
+            _projectHttpClient = connection.GetClient<ProjectHttpClient>();
+            _dashboardHttpClient = connection.GetClient<DashboardHttpClient>();
         }
 
         public async Task<Guid> CreateWikiAsync(WikiCreateOptions wikiCreateOptions, CancellationToken cancellationToken = default)
@@ -90,6 +109,118 @@ namespace Dotnet.AzureDevOps.Core.Overview
                     path: path,
                     includeContent: true,
                     cancellationToken: cancellationToken);
+            }
+            catch(VssServiceException)
+            {
+                return null;
+            }
+        }
+
+        public async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(Guid wikiId, WikiPagesBatchOptions pagesOptions, GitVersionDescriptor? versionDescriptor = null, CancellationToken cancellationToken = default)
+        {
+            var request = new WikiPagesBatchRequest
+            {
+                Top = pagesOptions.Top,
+                ContinuationToken = pagesOptions.ContinuationToken,
+                PageViewsForDays = pagesOptions.PageViewsForDays
+            };
+
+            PagedList<WikiPageDetail> pages = await _wikiHttpClient.GetPagesBatchAsync(
+                pagesBatchRequest: request,
+                project: _projectName,
+                wikiIdentifier: wikiId,
+                versionDescriptor: versionDescriptor,
+                cancellationToken: cancellationToken);
+
+            return pages;
+        }
+
+        public async Task<string?> GetPageTextAsync(Guid wikiId, string path, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                Stream stream = await _wikiHttpClient.GetPageTextAsync(
+                    project: _projectName,
+                    wikiIdentifier: wikiId,
+                    path: path,
+                    recursionLevel: VersionControlRecursionType.None,
+                    versionDescriptor: null,
+                    includeContent: true,
+                    cancellationToken: cancellationToken);
+
+                using StreamReader reader = new StreamReader(stream);
+                string content = await reader.ReadToEndAsync();
+                return content;
+            }
+            catch(VssServiceException)
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> SearchWikiAsync(WikiSearchOptions searchOptions, CancellationToken cancellationToken = default)
+        {
+            using HttpClient httpClient = new HttpClient { BaseAddress = new Uri(_organizationUrl) };
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+
+            Dictionary<string, string[]> filters = new Dictionary<string, string[]>();
+            if (searchOptions.Project is { Count: > 0 })
+            {
+                filters["Project"] = searchOptions.Project.ToArray();
+            }
+            if (searchOptions.Wiki is { Count: > 0 })
+            {
+                filters["Wiki"] = searchOptions.Wiki.ToArray();
+            }
+
+            var body = new Dictionary<string, object?>
+            {
+                ["searchText"] = searchOptions.SearchText,
+                ["includeFacets"] = searchOptions.IncludeFacets,
+                ["$skip"] = searchOptions.Skip,
+                ["$top"] = searchOptions.Top
+            };
+            if (filters.Count > 0)
+            {
+                body["filters"] = filters;
+            }
+
+            using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
+                httpClient,
+                requestUri: $"_apis/search/wikisearchresults?api-version={Constants.ApiVersion}",
+                value: body,
+                cancellationToken: cancellationToken);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+
+        public async Task<TeamProject?> GetProjectSummaryAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _projectHttpClient.GetProject(_projectName, includeCapabilities: true, includeHistory: false, userState: null);
+            }
+            catch(VssServiceException)
+            {
+                return null;
+            }
+        }
+
+        public async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default)
+        {
+            var teamContext = new TeamContext(_projectName);
+            List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
+            IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? [];
+            return dashboards;
+        }
+
+        public async Task<Dashboard?> GetDashboardAsync(Guid dashboardId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                TeamContext teamContext = new TeamContext(_projectName);
+                return await _dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
             }
             catch(VssServiceException)
             {

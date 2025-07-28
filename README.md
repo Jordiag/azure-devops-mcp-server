@@ -28,7 +28,7 @@ If you choose to build on top of this project during the preview phase, be prepa
 The repository contains multiple C# projects that wrap the Microsoft Azure DevOps SDK and REST APIs. Each Azure DevOps tab—Boards, Repos, Pipelines, Artifacts and others—has a project under `/src/` exposing a simplified client interface. These thin wrappers are consumed by `Dotnet.AzureDevOps.Mcp.Server` to surface Model Context Protocol (MCP) tools. While most calls forward to the official SDKs or, when necessary, the REST endpoints, this layer keeps the MCP server decoupled from Azure DevOps so it can evolve independently or swap implementations in the future.
 The solution is organized as a multi‑project workspace targeting **.NET 9**. Each service area of Azure DevOps has its own client library:
 
-* <img width="30px" align="center" alt="Azure Devops Overview" src="https://cdn.vsassets.io/ext/ms.vss-tfs-web/platform-content/Nav-Dashboard.S24hPD.png"/> **Overview** – Wiki creation and page management.
+* <img width="30px" align="center" alt="Azure Devops Overview" src="https://cdn.vsassets.io/ext/ms.vss-tfs-web/platform-content/Nav-Dashboard.S24hPD.png"/> **Overview** – Wiki creation, search, project summary, and dashboard management.
 * <img width="30px" align="center" alt="Azure Devops Boards" src="https://cdn.vsassets.io/ext/ms.vss-work-web/common-content/Content/Nav-Plan.XB8qU6.png"/> **Boards** – CRUD operations for Epics, Features, User Stories, and Tasks.
   Includes listing boards and columns, exporting boards, and retrieving
   iterations.
