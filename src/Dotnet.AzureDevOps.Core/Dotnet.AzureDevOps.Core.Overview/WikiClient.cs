@@ -12,6 +12,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
+using Microsoft.TeamFoundation.Wiki.WebApi.Contracts;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
@@ -123,7 +125,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
                 PageViewsForDays = pagesOptions.PageViewsForDays
             };
 
-            WikiPageDetail[] pages = await _wikiHttpClient.GetPagesBatchAsync(
+            PagedList<WikiPageDetail> pages = await _wikiHttpClient.GetPagesBatchAsync(
                 pagesBatchRequest: request,
                 project: _projectName,
                 wikiIdentifier: wikiId,
@@ -184,7 +186,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
                 body["filters"] = filters;
             }
 
-            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+            using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
+                httpClient,
                 requestUri: $"_apis/search/wikisearchresults?api-version={Constants.ApiVersion}",
                 value: body,
                 cancellationToken: cancellationToken);
@@ -196,7 +199,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                return await _projectHttpClient.GetProject(_projectName, includeCapabilities: true, includeHistory: false, userState: null, cancellationToken: cancellationToken);
+                return await _projectHttpClient.GetProject(_projectName, includeCapabilities: true, includeHistory: false, userState: null);
             }
             catch(VssServiceException)
             {
@@ -206,9 +209,9 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
         public async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default)
         {
-            TeamContext teamContext = new TeamContext(_projectName);
-            DashboardGroup group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
-            IReadOnlyList<Dashboard> dashboards = group.DashboardEntries?.Select(e => e.Dashboard).Where(d => d != null).ToList() ?? new List<Dashboard>();
+            var teamContext = new TeamContext(_projectName);
+            List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
+            IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? [];
             return dashboards;
         }
 
