@@ -4,6 +4,9 @@ using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Dashboards.WebApi;
+using System.Linq;
 
 namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 {
@@ -12,6 +15,8 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly WikiClient _wikiClient;
+        private readonly DashboardClient _dashboardClient;
+        private readonly SummaryClient _summaryClient;
         private readonly List<Guid> _createdWikis = [];
 
         public DotnetAzureDevOpsOverviewIntegrationTests()
@@ -19,6 +24,14 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
 
             _wikiClient = new WikiClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+            _dashboardClient = new DashboardClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+            _summaryClient = new SummaryClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
@@ -134,6 +147,34 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Assert.Contains("Updated", page!.Page.Content); // confirm update
 
             await _wikiClient.DeletePageAsync(id, path, gitVersionDescriptor);
+        }
+
+        [Fact]
+        public async Task ListDashboards_ReturnsCollectionAsync()
+        {
+            IReadOnlyList<Dashboard> dashboards = await _dashboardClient.ListDashboardsAsync();
+            Assert.NotNull(dashboards);
+        }
+
+        [Fact]
+        public async Task GetDashboard_ReturnsDashboardAsync()
+        {
+            IReadOnlyList<Dashboard> dashboards = await _dashboardClient.ListDashboardsAsync();
+            Dashboard? first = dashboards.FirstOrDefault();
+            if (first == null)
+                return;
+
+            Dashboard? dashboard = await _dashboardClient.GetDashboardAsync(first.Id);
+            Assert.NotNull(dashboard);
+            Assert.Equal(first.Id, dashboard!.Id);
+        }
+
+        [Fact]
+        public async Task GetProjectSummary_ReturnsProjectAsync()
+        {
+            TeamProject? project = await _summaryClient.GetProjectSummaryAsync();
+            Assert.NotNull(project);
+            Assert.Equal(_azureDevOpsConfiguration.ProjectName, project!.Name);
         }
 
         public Task InitializeAsync() => Task.CompletedTask;
