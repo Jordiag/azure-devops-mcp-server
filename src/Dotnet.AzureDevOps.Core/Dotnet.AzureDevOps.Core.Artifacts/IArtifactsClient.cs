@@ -1,8 +1,5 @@
 ﻿using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
-using Microsoft.VisualStudio.Services.Feed.WebApi;
-using Microsoft.VisualStudio.Services.NuGet.WebApi;
-using Microsoft.VisualStudio.Services.Packaging.Shared.WebApi;
 using System.IO;
 
 namespace Dotnet.AzureDevOps.Core.Artifacts;
