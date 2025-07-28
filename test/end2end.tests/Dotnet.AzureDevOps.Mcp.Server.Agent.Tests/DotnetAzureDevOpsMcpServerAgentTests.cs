@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using ModelContextProtocol.Client;
 using ModelContextProtocol.SemanticKernel.Extensions;
 using Xunit;
 
@@ -11,6 +12,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests;
 
 public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
 {
+    private readonly TestFixture _fixture;
     private readonly Kernel _kernel;
 
     private const string EchoToolName = "echo";
@@ -18,14 +20,9 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
 
     public McpAgentIntegrationTests(TestFixture fixture)
     {
-        using IServiceScope scope = fixture.Services.CreateScope();
+        _fixture = fixture;
+        IServiceScope scope = fixture.Services.CreateScope();
         _kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
-
-        HttpClient client = fixture.CreateClient();
-        _kernel.Plugins.AddMcpFunctionsFromSseServerAsync("MyMcpServer", client.BaseAddress!, httpClient: client)
-            .GetAwaiter()
-            .GetResult();
-
     }
 
     [SkippableFact(DisplayName = "Server exposes at least one MCP tool")]
@@ -33,10 +30,11 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
     {
         var settings = new OpenAIPromptExecutionSettings
         {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
         };
 
-        FunctionResult result = await _kernel.InvokePromptAsync(
+        Kernel kernel = await SutAsync(tool => tool.Name.Contains("WorkItems"));
+        FunctionResult result = await kernel.InvokePromptAsync(
             "list all the functionality actions that internally allows you to interact with azure devops", new(settings));
 
         string text = result.ToString() ?? string.Empty;
@@ -61,7 +59,7 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
         var agent = new ChatCompletionAgent
         {
             Name = "McpTester",
-            Kernel = _kernel,
+            Kernel = await SutAsync(),
             Instructions = "Use available tools to answer the user's question.",
             Arguments = new KernelArguments(settings)
         };
@@ -96,4 +94,9 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
         await foreach(AgentResponseItem<ChatMessageContent> update in agent.InvokeAsync(prompt))
         { }
     }
+
+    private async Task<Kernel> SutAsync(Func<McpClientTool, bool> predicate)
+        => await _kernel.ForMcpAsync(_fixture.Server.BaseAddress, _fixture.CreateClient(), predicate);
+    private async Task<Kernel> SutAsync()
+        => await _kernel.ForMcpAsync(_fixture.Server.BaseAddress, _fixture.CreateClient(), t => t.Name == "EchoTool");
 }

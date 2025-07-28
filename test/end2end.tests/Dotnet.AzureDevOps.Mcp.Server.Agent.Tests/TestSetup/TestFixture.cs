@@ -1,5 +1,4 @@
-﻿using System.Security.Authentication;
-using Dotnet.AzureDevOps.Tests.Common;
+﻿using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -7,8 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using Microsoft.VisualStudio.Services.Common;
-using ModelContextProtocol.SemanticKernel.Extensions;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.TestSetup;
 
