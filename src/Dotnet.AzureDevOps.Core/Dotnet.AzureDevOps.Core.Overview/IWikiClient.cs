@@ -2,7 +2,6 @@ using Dotnet.AzureDevOps.Core.Overview.Options;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.TeamFoundation.Dashboards.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
@@ -28,10 +27,5 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
         Task<IReadOnlyList<WikiV2>> ListWikisAsync(CancellationToken cancellationToken = default);
 
-        Task<TeamProject?> GetProjectSummaryAsync(CancellationToken cancellationToken = default);
-
-        Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default);
-
-        Task<Dashboard?> GetDashboardAsync(Guid dashboardId, CancellationToken cancellationToken = default);
     }
 }
