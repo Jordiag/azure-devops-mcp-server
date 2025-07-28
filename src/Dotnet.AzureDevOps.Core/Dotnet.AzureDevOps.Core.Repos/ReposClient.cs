@@ -713,7 +713,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             await _gitHttpClient.UpdateThreadAsync(
-                gitPullRequestCommentThread: update,
+                commentThread: update,
                 project: _projectName,
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -744,7 +744,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/commits/{commitId}/pullRequests?api-version=7.0";
                 using HttpResponseMessage message = await httpClient.GetAsync(requestUrl);
                 message.EnsureSuccessStatusCode();
-                var pullRequests = await message.Content.ReadFromJsonAsync<List<GitPullRequest>>();
+                List<GitPullRequest>? pullRequests = await message.Content.ReadFromJsonAsync<List<GitPullRequest>>();
                 if (pullRequests is not null)
                 {
                     result.AddRange(pullRequests);
