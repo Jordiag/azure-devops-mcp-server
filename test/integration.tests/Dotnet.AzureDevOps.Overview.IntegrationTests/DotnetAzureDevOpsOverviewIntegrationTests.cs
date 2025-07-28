@@ -146,6 +146,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         }
 
         private static string UtcStamp() =>
-            DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            DateTime.UtcNow.ToString("O").Replace(':','-');
     }
 }
