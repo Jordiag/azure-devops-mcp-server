@@ -1,5 +1,4 @@
 ﻿using System.IO.Compression;
-using System.Threading;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -167,6 +166,51 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 project: _projectName,
                 cancellationToken: cancellationToken)
                 .ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
+
+        public Task<IReadOnlyList<BuildDefinitionReference>> ListDefinitionsAsync(BuildDefinitionListOptions options, CancellationToken cancellationToken = default) =>
+            _build.GetDefinitionsAsync(
+                project: _projectName,
+                name: options.Name,
+                repositoryId: options.RepositoryId,
+                repositoryType: options.RepositoryType,
+                queryOrder: options.QueryOrder,
+                top: options.Top,
+                continuationToken: options.ContinuationToken,
+                minMetricsTimeInUtc: options.MinMetricsTimeInUtc,
+                definitionIds: options.DefinitionIds?.ToArray(),
+                path: options.Path,
+                builtAfter: options.BuiltAfter,
+                notBuiltAfter: options.NotBuiltAfter,
+                includeLatestBuilds: options.IncludeLatestBuilds,
+                taskIdFilter: options.TaskIdFilter,
+                processType: options.ProcessType,
+                yamlFilename: options.YamlFilename,
+                userState: null, // No user state filtering in this method
+                cancellationToken: cancellationToken)
+                .ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
+
+        public Task<List<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(int definitionId, CancellationToken cancellationToken = default) =>
+            _build.GetDefinitionRevisionsAsync(_projectName, definitionId, cancellationToken);
+
+        public Task<List<BuildLog>> GetLogsAsync(int buildId, CancellationToken cancellationToken = default) =>
+            _build.GetBuildLogsAsync(_projectName, buildId, cancellationToken);
+
+        public Task<List<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default) =>
+            _build.GetBuildLogLinesAsync(_projectName, buildId, logId, startLine, endLine, cancellationToken);
+
+        public Task<List<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, CancellationToken cancellationToken = default) =>
+            _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, cancellationToken);
+
+        public Task<BuildReportMetadata?> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default) =>
+            _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);
+
+        public Task UpdateBuildStageAsync(int buildId, string stageName, StageUpdateType status, bool forceRetryAllJobs = false, CancellationToken cancellationToken = default) =>
+            _build.UpdateStageAsync(
+                new UpdateStageParameters { State = status, ForceRetryAllJobs = forceRetryAllJobs },
+                _projectName,
+                buildId,
+                stageName,
+                cancellationToken);
 
         public async Task UpdatePipelineAsync(int definitionId, PipelineUpdateOptions pipelineUpdateOptions, CancellationToken cancellationToken = default)
         {

@@ -5,7 +5,6 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.SemanticKernel.Extensions;
-using Xunit;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests;
 
@@ -38,9 +37,9 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
 
         FunctionResult result = await _kernel.InvokePromptAsync(
             "list all the functionality actions that internally allows you to interact with azure devops", new(settings));
-        
+
         string text = result.ToString() ?? string.Empty;
-        
+
         Assert.False(string.IsNullOrWhiteSpace(text), "No tools returned or call failed.");
         Assert.Contains("epic", text, StringComparison.InvariantCultureIgnoreCase);
     }
