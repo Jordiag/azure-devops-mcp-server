@@ -1,5 +1,4 @@
 ﻿using System.IO.Compression;
-using System.Threading;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;

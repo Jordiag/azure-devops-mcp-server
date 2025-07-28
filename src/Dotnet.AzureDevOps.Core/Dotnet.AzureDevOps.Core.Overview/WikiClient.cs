@@ -1,19 +1,13 @@
+using System.Text;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview.Options;
-using Microsoft.TeamFoundation.SourceControl.WebApi;
-using Microsoft.TeamFoundation.Wiki.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
-using Dotnet.AzureDevOps.Core.Common;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
+using Microsoft.TeamFoundation.Wiki.WebApi;
+using Microsoft.TeamFoundation.Wiki.WebApi.Contracts;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi.Types;
-using Microsoft.TeamFoundation.Wiki.WebApi.Contracts;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
@@ -165,11 +159,11 @@ namespace Dotnet.AzureDevOps.Core.Overview
             httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
 
             Dictionary<string, string[]> filters = new Dictionary<string, string[]>();
-            if (searchOptions.Project is { Count: > 0 })
+            if(searchOptions.Project is { Count: > 0 })
             {
                 filters["Project"] = searchOptions.Project.ToArray();
             }
-            if (searchOptions.Wiki is { Count: > 0 })
+            if(searchOptions.Wiki is { Count: > 0 })
             {
                 filters["Wiki"] = searchOptions.Wiki.ToArray();
             }
@@ -181,7 +175,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
                 ["$skip"] = searchOptions.Skip,
                 ["$top"] = searchOptions.Top
             };
-            if (filters.Count > 0)
+            if(filters.Count > 0)
             {
                 body["filters"] = filters;
             }

@@ -1,5 +1,3 @@
-using Microsoft.TeamFoundation.Core.WebApi;
-
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
     public interface IProjectSettingsClient
