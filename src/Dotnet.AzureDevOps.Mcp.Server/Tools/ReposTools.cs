@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Collections.Generic;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;

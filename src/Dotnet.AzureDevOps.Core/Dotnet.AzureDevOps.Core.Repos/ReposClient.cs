@@ -1,11 +1,10 @@
-﻿using Dotnet.AzureDevOps.Core.Repos.Options;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 
 namespace Dotnet.AzureDevOps.Core.Repos
 {
@@ -186,10 +185,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             await _gitHttpClient.CreatePullRequestReviewerAsync(
-                reviewer: reviewerUpdate, 
-                repositoryId: repositoryId, 
-                reviewerId: reviewerId, 
-                pullRequestId: pullRequestId, 
+                reviewer: reviewerUpdate,
+                repositoryId: repositoryId,
+                reviewerId: reviewerId,
+                pullRequestId: pullRequestId,
                 project: _projectName);
         }
 
@@ -296,7 +295,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return webApiTagDefinitions;
         }
 
-        public async Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label) => 
+        public async Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label) =>
             await _gitHttpClient.DeletePullRequestLabelsAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -369,7 +368,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 pullRequestId: pullRequestId);
 
         public async Task<GitPullRequestIterationChanges> GetIterationChangesAsync(
-            string repositoryId, int pullRequestId, int iteration) => 
+            string repositoryId, int pullRequestId, int iteration) =>
             await _gitHttpClient.GetPullRequestIterationChangesAsync(
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -458,7 +457,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     project: _projectName,
                     repositoryId: repositoryId);
             }
-            catch (VssServiceException)
+            catch(VssServiceException)
             {
                 return null;
             }
@@ -476,7 +475,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 project: _projectName);
         }
 
-        public async Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) => 
+        public async Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) =>
             await _gitHttpClient.DeleteCommentAsync(
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -516,7 +515,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<GitAnnotatedTag> GetTagAsync(
-            string repositoryId, string objectId) => 
+            string repositoryId, string objectId) =>
             await _gitHttpClient.GetAnnotatedTagAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -529,8 +528,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                 project: _projectName,
                 repositoryId: repositoryId);
-            
-            GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ?? 
+
+            GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ??
                 throw new InvalidOperationException($"Tag '{tagName}' does not exist in repositoryId '{repositoryId}'.");
 
             var refUpdate = new GitRefUpdate
@@ -646,7 +645,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryName
                 );
             }
-            catch (VssServiceException)
+            catch(VssServiceException)
             {
                 return null;
             }
@@ -704,13 +703,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
             string authToken = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
 
-            foreach (string commitId in commitIds)
+            foreach(string commitId in commitIds)
             {
                 string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/commits/{commitId}/pullRequests?api-version=7.0";
                 using HttpResponseMessage message = await httpClient.GetAsync(requestUrl);
                 message.EnsureSuccessStatusCode();
                 List<GitPullRequest>? pullRequests = await message.Content.ReadFromJsonAsync<List<GitPullRequest>>();
-                if (pullRequests is not null)
+                if(pullRequests is not null)
                 {
                     result.AddRange(pullRequests);
                 }
