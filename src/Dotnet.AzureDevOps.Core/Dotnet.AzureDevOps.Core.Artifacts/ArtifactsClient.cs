@@ -6,7 +6,6 @@ using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
 
 
-
 namespace Dotnet.AzureDevOps.Core.Artifacts;
 
 public class ArtifactsClient : IArtifactsClient
@@ -34,10 +33,11 @@ public class ArtifactsClient : IArtifactsClient
     {
         string feedsUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds?api-version={ApiVersion}";
         var payload = new { name = feedCreateOptions.Name, description = feedCreateOptions.Description };
-        HttpResponseMessage httpResponseMessage = await _http.PostAsJsonAsync(
-            requestUri: feedsUrl,
-            value: payload,
-            cancellationToken: cancellationToken);
+        HttpResponseMessage httpResponseMessage = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
+            _http,
+            feedsUrl,
+            payload,
+            cancellationToken);
         httpResponseMessage.EnsureSuccessStatusCode();
         Feed? feed = await httpResponseMessage.Content.ReadFromJsonAsync<Feed>(cancellationToken);
         return feed!.Id;
@@ -123,19 +123,21 @@ public class ArtifactsClient : IArtifactsClient
 
     public async Task SetFeedPermissionsAsync(Guid feedId, IEnumerable<FeedPermission> feedPermissions, CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await _http.PostAsJsonAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/permissions?api-version={ApiVersion}",
-            value: feedPermissions,
-            cancellationToken: cancellationToken);
+        HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
+            _http,
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/permissions?api-version={ApiVersion}",
+            feedPermissions,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task<FeedView> CreateFeedViewAsync(Guid feedId, FeedView feedView, CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await _http.PostAsJsonAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/views?api-version={ApiVersion}",
-            value: feedView,
-            cancellationToken: cancellationToken);
+        HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
+            _http,
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/views?api-version={ApiVersion}",
+            feedView,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<FeedView>(cancellationToken))!;
     }
@@ -160,10 +162,11 @@ public class ArtifactsClient : IArtifactsClient
 
     public async Task SetUpstreamingBehaviorAsync(Guid feedId, string packageName, UpstreamingBehavior behavior, CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await _http.PutAsJsonAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}",
-            value: behavior,
-            cancellationToken: cancellationToken);
+        HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PutAsJsonAsync(
+            _http,
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}",
+            behavior,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -216,10 +219,11 @@ public class ArtifactsClient : IArtifactsClient
 
     public async Task<FeedRetentionPolicy> SetRetentionPolicyAsync(Guid feedId, FeedRetentionPolicy policy, CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await _http.PutAsJsonAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/retentionpolicies?api-version={ApiVersion}",
-            value: policy,
-            cancellationToken: cancellationToken);
+        HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PutAsJsonAsync(
+            _http,
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/retentionpolicies?api-version={ApiVersion}",
+            policy,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken))!;
     }
