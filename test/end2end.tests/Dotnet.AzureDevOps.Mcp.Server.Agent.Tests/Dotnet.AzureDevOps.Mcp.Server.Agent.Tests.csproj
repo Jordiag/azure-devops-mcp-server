@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <UserSecretsId>8d23797a-0535-45c9-a9bb-1af8c4d539b6</UserSecretsId>
   </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.SemanticKernel" />

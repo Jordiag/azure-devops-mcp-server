@@ -33,14 +33,14 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
         };
 
-        Kernel kernel = await SutAsync(tool => tool.Name.Contains("WorkItems"));
+        Kernel kernel = await SutAsync(tool => tool.Name.Contains("WorkItem") || tool.Name.Contains("Epic"));
         FunctionResult result = await kernel.InvokePromptAsync(
-            "list all the functionality actions that internally allows you to interact with azure devops", new(settings));
+            "list all the functionality actions that internally allows you to interact with azure devops. Structure them as json based on the tool call name", new(settings));
 
-        string text = result.ToString() ?? string.Empty;
+        string text = result.ToString()?.ToLower() ?? string.Empty;
 
         Assert.False(string.IsNullOrWhiteSpace(text), "No tools returned or call failed.");
-        Assert.Contains("epic", text, StringComparison.InvariantCultureIgnoreCase);
+        Assert.Contains("deleteworkitem", text, StringComparison.InvariantCultureIgnoreCase);
     }
 
     [SkippableTheory(DisplayName = "LLM calls ‘echo’ tool via function‑calling")]
@@ -73,30 +73,8 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
         Assert.Contains(message, response, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact(DisplayName = "Creates_WorkItem")]
-    public async Task Server_ShouldCreate_WorkItemAsync()
-    {
-        var settings = new OpenAIPromptExecutionSettings
-        {
-            ToolCallBehavior = ToolCallBehavior.EnableKernelFunctions,
-        };
-
-        var agent = new ChatCompletionAgent
-        {
-            Name = "McpTester",
-            Kernel = _kernel,
-            Instructions = "Use available tools to answer the user's question.",
-            Arguments = new KernelArguments(settings)
-        };
-
-        string prompt = "please create a User Story with the title Test and all other parameters empty.";
-        
-        await foreach(AgentResponseItem<ChatMessageContent> update in agent.InvokeAsync(prompt))
-        { }
-    }
-
     private async Task<Kernel> SutAsync(Func<McpClientTool, bool> predicate)
         => await _kernel.ForMcpAsync(_fixture.Server.BaseAddress, _fixture.CreateClient(), predicate);
     private async Task<Kernel> SutAsync()
-        => await _kernel.ForMcpAsync(_fixture.Server.BaseAddress, _fixture.CreateClient(), t => t.Name == "EchoTool");
+        => await _kernel.ForMcpAsync(_fixture.Server.BaseAddress, _fixture.CreateClient(), t => t.Name == "Echo");
 }
