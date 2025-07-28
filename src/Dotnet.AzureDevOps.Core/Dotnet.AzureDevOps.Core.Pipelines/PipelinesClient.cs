@@ -125,7 +125,6 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             }
         }
 
-        #region PIPELINE DEFINITION CRUD  (Pipelines ▸ Pipelines)
 
         public async Task<int> CreatePipelineAsync(PipelineCreateOptions pipelineCreateOptions, CancellationToken cancellationToken = default)
         {
@@ -198,6 +197,5 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
-        #endregion
     }
 }
