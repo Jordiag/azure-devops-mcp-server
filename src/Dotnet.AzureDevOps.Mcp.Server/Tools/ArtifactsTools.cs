@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Collections.Generic;
+using System.IO;
 using Dotnet.AzureDevOps.Core.Artifacts;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
@@ -62,5 +64,89 @@ public class ArtifactsTools
     {
         ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.DeletePackageAsync(feedId, packageName, version);
+    }
+
+    [McpServerTool, Description("Gets permissions for a feed.")]
+    public static Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetFeedPermissionsAsync(feedId);
+    }
+
+    [McpServerTool, Description("Sets permissions on a feed.")]
+    public static Task SetFeedPermissionsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, IEnumerable<FeedPermission> permissions)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SetFeedPermissionsAsync(feedId, permissions);
+    }
+
+    [McpServerTool, Description("Creates a feed view.")]
+    public static Task<FeedView> CreateFeedViewAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, FeedView view)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreateFeedViewAsync(feedId, view);
+    }
+
+    [McpServerTool, Description("Lists feed views.")]
+    public static Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListFeedViewsAsync(feedId);
+    }
+
+    [McpServerTool, Description("Deletes a feed view.")]
+    public static Task DeleteFeedViewAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string viewId)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.DeleteFeedViewAsync(feedId, viewId);
+    }
+
+    [McpServerTool, Description("Sets upstreaming behavior for a package.")]
+    public static Task SetUpstreamingBehaviorAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, UpstreamingBehavior behavior)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SetUpstreamingBehaviorAsync(feedId, packageName, behavior);
+    }
+
+    [McpServerTool, Description("Gets upstreaming behavior for a package.")]
+    public static Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetUpstreamingBehaviorAsync(feedId, packageName);
+    }
+
+    [McpServerTool, Description("Gets a specific package version.")]
+    public static Task<Package> GetPackageVersionAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetPackageVersionAsync(feedId, packageName, version);
+    }
+
+    [McpServerTool, Description("Updates metadata for a package version.")]
+    public static Task UpdatePackageVersionAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version, PackageVersionDetails details)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.UpdatePackageVersionAsync(feedId, packageName, version, details);
+    }
+
+    [McpServerTool, Description("Downloads a package version.")]
+    public static Task<Stream> DownloadPackageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.DownloadPackageAsync(feedId, packageName, version);
+    }
+
+    [McpServerTool, Description("Gets the retention policy for a feed.")]
+    public static Task<FeedRetentionPolicy> GetRetentionPolicyAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetRetentionPolicyAsync(feedId);
+    }
+
+    [McpServerTool, Description("Sets the retention policy for a feed.")]
+    public static Task<FeedRetentionPolicy> SetRetentionPolicyAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, FeedRetentionPolicy policy)
+    {
+        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SetRetentionPolicyAsync(feedId, policy);
     }
 }
