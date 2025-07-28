@@ -1,7 +1,6 @@
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
