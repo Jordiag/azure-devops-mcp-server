@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for full history
+          fetch-depth: 0  # Required for SonarCloud analysis
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -82,15 +82,9 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: Set Sonar PR Analysis Parameters (if pull_request)
+      # -- Sonar Begin (PR Context Only) --
+      - name: Begin SonarCloud Analysis (Pull Request)
         if: github.event_name == 'pull_request'
-        run: |
-          echo "SONAR_PR_KEY=/d:sonar.pullrequest.key=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-          echo "SONAR_PR_BRANCH=/d:sonar.pullrequest.branch=${{ github.head_ref }}" >> $GITHUB_ENV
-          echo "SONAR_PR_BASE=/d:sonar.pullrequest.base=${{ github.base_ref }}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Begin SonarCloud Analysis
         run: |
           dotnet sonarscanner begin `
             /k:"${{ env.sonarProjectKey }}" `
@@ -98,9 +92,21 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
-            ${{ env.SONAR_PR_KEY }} `
-            ${{ env.SONAR_PR_BRANCH }} `
-            ${{ env.SONAR_PR_BASE }}
+            /d:sonar.pullrequest.key="${{ github.event.pull_request.number }}" `
+            /d:sonar.pullrequest.branch="${{ github.head_ref }}" `
+            /d:sonar.pullrequest.base="${{ github.base_ref }}"
+        shell: pwsh
+
+      # -- Sonar Begin (Non-PR: workflow_run or manual) --
+      - name: Begin SonarCloud Analysis (Non-PR)
+        if: github.event_name != 'pull_request'
+        run: |
+          dotnet sonarscanner begin `
+            /k:"${{ env.sonarProjectKey }}" `
+            /o:"${{ env.sonarOrganization }}" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
         shell: pwsh
 
       - name: Build with MSBuild
