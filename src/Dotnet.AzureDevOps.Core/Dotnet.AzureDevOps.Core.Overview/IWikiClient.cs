@@ -27,11 +27,5 @@ namespace Dotnet.AzureDevOps.Core.Overview
         Task<WikiV2?> GetWikiAsync(Guid wikiId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<WikiV2>> ListWikisAsync(CancellationToken cancellationToken = default);
-
-        Task<TeamProject?> GetProjectSummaryAsync(CancellationToken cancellationToken = default);
-
-        Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default);
-
-        Task<Dashboard?> GetDashboardAsync(Guid dashboardId, CancellationToken cancellationToken = default);
     }
 }
