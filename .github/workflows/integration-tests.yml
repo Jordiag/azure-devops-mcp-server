@@ -86,7 +86,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
             /d:sonar.dotnet.exludeTestProjects=true `
-            /d:sonar.sca.exclusions = “tests/**, fixtures/**”
+            /d:sonar.coverage.exclusions = “tests/**, fixtures/**”
         shell: pwsh
       
       - name: Build with Dotnet
