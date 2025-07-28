@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.SemanticKernel.Extensions;
+using Xunit;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests;
 
