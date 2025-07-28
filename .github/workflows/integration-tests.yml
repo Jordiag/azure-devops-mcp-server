@@ -77,9 +77,6 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore "${{ env.solution }}"
       
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
-      
       - name: Begin SonarCloud Analysis
         run: |
           dotnet sonarscanner begin `
@@ -87,11 +84,16 @@ jobs:
             /o:"${{ env.sonarOrganization }}" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
+            /d:sonar.dotnet.exludeTestProjects=true `
+            /d:sonar.sca.exclusions = “tests/**, fixtures/**”
         shell: pwsh
       
-      - name: Build with MSBuild
-        run: msbuild Dotnet.AzureDevOps.sln /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}/artifacts" /p:Platform="Any CPU" /p:Configuration="Release"
+      - name: Build with Dotnet
+        run: dotnet build "${{ env.solution }}" -c "Release" --no-restore
+
+      - name: Publish with dotnet
+        run: dotnet publish "./src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj" -o "${{ github.workspace }}/artifacts" -c Release --no-build
       
       - name: Run Tests with Coverage
         run: |
