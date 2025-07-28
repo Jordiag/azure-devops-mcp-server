@@ -177,33 +177,33 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 queryOrder: options.QueryOrder,
                 top: options.Top,
                 continuationToken: options.ContinuationToken,
-                minMetricsTime: options.MinMetricsTime,
+                minMetricsTimeInUtc: options.MinMetricsTimeInUtc,
                 definitionIds: options.DefinitionIds?.ToArray(),
                 path: options.Path,
                 builtAfter: options.BuiltAfter,
                 notBuiltAfter: options.NotBuiltAfter,
-                includeAllProperties: options.IncludeAllProperties,
                 includeLatestBuilds: options.IncludeLatestBuilds,
                 taskIdFilter: options.TaskIdFilter,
                 processType: options.ProcessType,
                 yamlFilename: options.YamlFilename,
+                userState: null, // No user state filtering in this method
                 cancellationToken: cancellationToken)
                 .ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
 
-        public Task<IReadOnlyList<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(int definitionId, CancellationToken cancellationToken = default) =>
+        public Task<List<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(int definitionId, CancellationToken cancellationToken = default) =>
             _build.GetDefinitionRevisionsAsync(_projectName, definitionId, cancellationToken);
 
-        public Task<IReadOnlyList<BuildLog>> GetLogsAsync(int buildId, CancellationToken cancellationToken = default) =>
+        public Task<List<BuildLog>> GetLogsAsync(int buildId, CancellationToken cancellationToken = default) =>
             _build.GetBuildLogsAsync(_projectName, buildId, cancellationToken);
 
-        public Task<IReadOnlyList<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default) =>
+        public Task<List<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default) =>
             _build.GetBuildLogLinesAsync(_projectName, buildId, logId, startLine, endLine, cancellationToken);
 
-        public Task<IReadOnlyList<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, CancellationToken cancellationToken = default) =>
+        public Task<List<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, CancellationToken cancellationToken = default) =>
             _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, cancellationToken);
 
-        public Task<BuildReport?> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default) =>
-            _build.GetBuildReportAsync(_projectName, buildId, cancellationToken);
+        public Task<BuildReportMetadata?> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default) =>
+            _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);
 
         public Task UpdateBuildStageAsync(int buildId, string stageName, StageUpdateType status, bool forceRetryAllJobs = false, CancellationToken cancellationToken = default) =>
             _build.UpdateStageAsync(
