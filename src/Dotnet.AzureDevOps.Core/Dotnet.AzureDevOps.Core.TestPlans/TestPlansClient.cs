@@ -1,5 +1,10 @@
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.WebApi.Patch;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+using Microsoft.VisualStudio.Services.TestManagement.TestResults.WebApi;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
@@ -9,14 +14,15 @@ public class TestPlansClient : ITestPlansClient
 {
     private readonly string _projectName;
     private readonly TestPlanHttpClient _testPlanClient;
+    private readonly VssConnection _connection;
 
     public TestPlansClient(string organizationUrl, string projectName, string personalAccessToken)
     {
         _projectName = projectName;
 
         var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-        var connection = new VssConnection(new Uri(organizationUrl), credentials);
-        _testPlanClient = connection.GetClient<TestPlanHttpClient>();
+        _connection = new VssConnection(new Uri(organizationUrl), credentials);
+        _testPlanClient = _connection.GetClient<TestPlanHttpClient>();
     }
 
     public async Task<int> CreateTestPlanAsync(TestPlanCreateOptions testPlanCreateOptions, CancellationToken cancellationToken = default)
@@ -113,6 +119,56 @@ public class TestPlansClient : ITestPlansClient
             suiteId: testSuiteId,
             cancellationToken: cancellationToken);
     }
+
+    public async Task<WorkItem?> CreateTestCaseAsync(TestCaseCreateOptions options, CancellationToken cancellationToken = default)
+    {
+        var workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
+
+        var patch = new JsonPatchDocument
+        {
+            new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.Title", Value = options.Title }
+        };
+
+        if (!string.IsNullOrWhiteSpace(options.Steps))
+        {
+            patch.Add(new JsonPatchOperation
+            {
+                Operation = Operation.Add,
+                Path = "/fields/Microsoft.VSTS.TCM.Steps",
+                Value = options.Steps
+            });
+        }
+
+        if (options.Priority.HasValue)
+        {
+            patch.Add(new JsonPatchOperation
+            {
+                Operation = Operation.Add,
+                Path = "/fields/Microsoft.VSTS.Common.Priority",
+                Value = options.Priority.Value
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.AreaPath))
+        {
+            patch.Add(new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.AreaPath", Value = options.AreaPath });
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.IterationPath))
+        {
+            patch.Add(new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.IterationPath", Value = options.IterationPath });
+        }
+
+        WorkItem result = await workItemTracking.CreateWorkItemAsync(patch, options.Project, "Test Case", cancellationToken: cancellationToken);
+        return result;
+    }
+
+    public Task<IReadOnlyList<WorkItem>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default) =>
+        _testPlanClient.GetTestCaseListAsync(_projectName, testPlanId, testSuiteId, cancellationToken: cancellationToken)
+            .ContinueWith(t => (IReadOnlyList<WorkItem>)t.Result);
+
+    public Task<TestResultsDetails?> GetTestResultsForBuildAsync(string projectName, int buildId, CancellationToken cancellationToken = default) =>
+        _connection.GetClient<TestResultsHttpClient>().GetTestResultsDetailsForBuildAsync(projectName, buildId, cancellationToken: cancellationToken);
 
     public async Task<TestSuite> GetRootSuiteAsync(int planId)
     {

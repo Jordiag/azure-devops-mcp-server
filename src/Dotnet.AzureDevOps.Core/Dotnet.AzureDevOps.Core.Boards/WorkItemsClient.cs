@@ -389,6 +389,59 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public Task<List<TeamSettingsIteration>> ListIterationsAsync(TeamContext teamContext, string? timeFrame = null, object? userState = null, CancellationToken cancellationToken = default)
             => _workClient.GetTeamIterationsAsync(teamContext, timeFrame, userState, cancellationToken: cancellationToken);
 
+        public async Task<IReadOnlyList<WorkItemClassificationNode>> CreateIterationsAsync(string projectName, IEnumerable<IterationCreateOptions> iterations, CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(projectName);
+            ArgumentNullException.ThrowIfNull(iterations);
+
+            var created = new List<WorkItemClassificationNode>();
+
+            foreach (IterationCreateOptions iteration in iterations)
+            {
+                var node = new WorkItemClassificationNode
+                {
+                    Name = iteration.IterationName,
+                    Attributes = new Dictionary<string, object?>()
+                };
+
+                if (iteration.StartDate.HasValue)
+                    node.Attributes["startDate"] = iteration.StartDate.Value;
+                if (iteration.FinishDate.HasValue)
+                    node.Attributes["finishDate"] = iteration.FinishDate.Value;
+
+                WorkItemClassificationNode result = await _workItemClient.CreateOrUpdateClassificationNodeAsync(
+                    postedNode: node,
+                    project: projectName,
+                    structureGroup: TreeStructureGroup.Iterations,
+                    path: null,
+                    cancellationToken: cancellationToken);
+
+                created.Add(result);
+            }
+
+            return created;
+        }
+
+        public async Task<IReadOnlyList<TeamSettingsIteration>> AssignIterationsAsync(TeamContext teamContext, IEnumerable<IterationAssignmentOptions> iterations, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(iterations);
+
+            var assigned = new List<TeamSettingsIteration>();
+            foreach (IterationAssignmentOptions iteration in iterations)
+            {
+                var data = new TeamSettingsIteration
+                {
+                    Id = iteration.Identifier,
+                    Path = iteration.Path
+                };
+
+                TeamSettingsIteration result = await _workClient.PostTeamIterationAsync(data, teamContext, cancellationToken: cancellationToken);
+                assigned.Add(result);
+            }
+
+            return assigned;
+        }
+
         public Task<TeamFieldValues> ListAreasAsync(TeamContext teamContext, CancellationToken cancellationToken = default)
             => _workClient.GetTeamFieldValuesAsync(teamContext, cancellationToken: cancellationToken);
 

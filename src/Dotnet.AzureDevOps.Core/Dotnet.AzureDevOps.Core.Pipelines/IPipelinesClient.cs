@@ -24,6 +24,20 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
 
         Task<IReadOnlyList<BuildDefinitionReference>> ListPipelinesAsync(CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<BuildDefinitionReference>> ListDefinitionsAsync(BuildDefinitionListOptions options, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(int definitionId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<BuildLog>> GetLogsAsync(int buildId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, CancellationToken cancellationToken = default);
+
+        Task<BuildReport?> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default);
+
+        Task UpdateBuildStageAsync(int buildId, string stageName, StageUpdateType status, bool forceRetryAllJobs = false, CancellationToken cancellationToken = default);
+
         Task UpdatePipelineAsync(int definitionId, PipelineUpdateOptions pipelineUpdateOptions, CancellationToken cancellationToken = default);
 
         Task DeletePipelineAsync(int definitionId, CancellationToken cancellationToken = default);
