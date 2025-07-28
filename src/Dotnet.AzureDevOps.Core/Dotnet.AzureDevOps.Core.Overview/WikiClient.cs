@@ -195,6 +195,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
             return await response.Content.ReadAsStringAsync(cancellationToken);
         }
 
+
         public Task DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default) =>
             _wikiHttpClient.DeletePageAsync(project: _projectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
     }
