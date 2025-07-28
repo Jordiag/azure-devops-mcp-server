@@ -6,7 +6,6 @@ using Dotnet.AzureDevOps.Tests.Common;
 
 namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
-    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsArtifactsIntegrationTests : IAsyncLifetime
     {
         private readonly ArtifactsClient _artifactsClient;
@@ -15,7 +14,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 
         public DotnetAzureDevOpsArtifactsIntegrationTests()
         {
-            _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
+            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
             _artifactsClient = new ArtifactsClient(
                 _azureDevOpsConfiguration.OrganisationUrl,

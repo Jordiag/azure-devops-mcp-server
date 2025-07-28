@@ -7,7 +7,6 @@ using Microsoft.TeamFoundation.Wiki.WebApi;
 
 namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 {
-    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsOverviewIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
@@ -16,7 +15,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
         public DotnetAzureDevOpsOverviewIntegrationTests()
         {
-            _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
+            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
             _wikiClient = new WikiClient(
                 _azureDevOpsConfiguration.OrganisationUrl,

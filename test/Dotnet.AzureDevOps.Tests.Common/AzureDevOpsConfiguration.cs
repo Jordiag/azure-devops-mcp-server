@@ -1,47 +1,47 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace Dotnet.AzureDevOps.Tests.Common
 {
-    [ExcludeFromCodeCoverage]
     public class AzureDevOpsConfiguration
     {
-        public string OrganisationUrl { get; }
-        public string ProjectName { get; }
-        public string PersonalAccessToken { get; }
-        public string ProjectId { get; }
-        public string RepositoryId { get; }
-        public string BuildBranch { get; }
-        public string? CommitSha { get; }
-        public string PipelineId { get; }
-        public string SrcBranch { get; }
-        public string TargetBranch { get; }
-        public string BotUserEmail { get; }
-        public string RepoName { get; }
-        public string MainBranchName { get; }
-        public string RepoId { get; }
-        public int PipelineDefinitionId { get; }
+        public string OrganisationUrl { get; private set; } = null!;
+        public string ProjectName { get; private set; } = null!;
+        public string PersonalAccessToken { get; private set; } = null!;
+        public string ProjectId { get; private set; } = null!;
+        public string RepositoryId { get; private set; } = null!;
+        public string BuildBranch { get; private set; } = null!;
+        public string? CommitSha { get; private set; }
+        public string PipelineId { get; private set; } = null!;
+        public string SrcBranch { get; private set; } = null!;
+        public string TargetBranch { get; private set; } = null!;
+        public string BotUserEmail { get; private set; } = null!;
+        public string RepoName { get; private set; } = null!;
+        public string MainBranchName { get; private set; } = null!;
+        public string RepoId { get; private set; } = null!;
+        public int PipelineDefinitionId { get; private set; }
 
-        public AzureDevOpsConfiguration()
-        {
-            OrganisationUrl = GetEnv("AZURE_DEVOPS_ORG_URL");
-            ProjectName = GetEnv("AZURE_DEVOPS_PROJECT_NAME");
-            PersonalAccessToken = GetEnv("AZURE_DEVOPS_PAT");
-            ProjectId = GetEnv("AZURE_DEVOPS_PROJECT_ID");
-            RepositoryId = GetEnv("AZURE_DEVOPS_REPOSITORY_ID");
-            BuildBranch = GetEnv("AZURE_DEVOPS_BUILD_BRANCH");
-            CommitSha = GetEnv("AZURE_DEVOPS_COMMIT_SHA") == "null" ? null : GetEnv("AZURE_DEVOPS_COMMIT_SHA");
-            PipelineId = GetEnv("AZURE_DEVOPS_PIPELINE_ID");
-            SrcBranch = GetEnv("AZURE_DEVOPS_SRC_BRANCH") ?? "refs/heads/feature/integration-test";
-            TargetBranch = GetEnv("AZURE_DEVOPS_TARGET_BRANCH") ?? "refs/heads/main";
-            BotUserEmail = GetEnv("AZURE_DEVOPS_BOT_USER_EMAIL") ?? string.Empty;
-            RepoName = GetEnv("AZURE_DEVOPS_REPO_NAME");
-            RepoId = GetEnv("AZURE_DEVOPS_REPO_ID");
-            MainBranchName = GetEnv("AZURE_DEVOPS_MAIN_BRANCH_NAME");
-            PipelineDefinitionId = 85;
-        }
+        private AzureDevOpsConfiguration() { }
+        public static AzureDevOpsConfiguration FromEnvironment()
+            => FromConfiguration(TestConfiguration.Configuration);
 
-        private static string GetEnv(string name) =>
-            Environment.GetEnvironmentVariable(name)
-            ?? throw new ArgumentException($"{name} environment variable is missing.");
+        public static AzureDevOpsConfiguration FromConfiguration(IConfiguration config) 
+            => new()
+            {
+                OrganisationUrl = config.GetRequiredSection("AZURE_DEVOPS_ORG_URL").Value!,
+                ProjectName = config.GetRequiredSection("AZURE_DEVOPS_PROJECT_NAME").Value!,
+                PersonalAccessToken = config.GetRequiredSection("AZURE_DEVOPS_PAT").Value!,
+                ProjectId = config.GetRequiredSection("AZURE_DEVOPS_PROJECT_ID").Value!,
+                RepositoryId = config.GetRequiredSection("AZURE_DEVOPS_REPOSITORY_ID").Value!,
+                BuildBranch = config.GetRequiredSection("AZURE_DEVOPS_BUILD_BRANCH").Value!,
+                CommitSha = config.GetSection("AZURE_DEVOPS_COMMIT_SHA").Value ?? config.GetRequiredSection("AZURE_DEVOPS_COMMIT_SHA").Value!,
+                PipelineId = config.GetRequiredSection("AZURE_DEVOPS_PIPELINE_ID").Value!,
+                SrcBranch = config.GetSection("AZURE_DEVOPS_SRC_BRANCH").Value! ?? "refs/heads/feature/integration-test",
+                TargetBranch = config.GetSection("AZURE_DEVOPS_TARGET_BRANCH").Value! ?? "refs/heads/main",
+                BotUserEmail = config.GetSection("AZURE_DEVOPS_BOT_USER_EMAIL").Value! ?? string.Empty,
+                RepoName = config.GetRequiredSection("AZURE_DEVOPS_REPO_NAME").Value!,
+                RepoId = config.GetRequiredSection("AZURE_DEVOPS_REPO_ID").Value!,
+                MainBranchName = config.GetRequiredSection("AZURE_DEVOPS_MAIN_BRANCH_NAME").Value!,
+                PipelineDefinitionId = 85
+            };
     }
 }

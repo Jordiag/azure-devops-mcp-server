@@ -9,7 +9,6 @@ using System.Text.Json;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
-    [ExcludeFromCodeCoverage]
     public class DotnetAzureDevOpsBoardsIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
@@ -18,7 +17,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
         public DotnetAzureDevOpsBoardsIntegrationTests()
         {
-            _azureDevOpsConfiguration = new AzureDevOpsConfiguration();
+            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
             _workItemsClient = new WorkItemsClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
