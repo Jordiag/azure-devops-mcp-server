@@ -62,9 +62,9 @@ $vars = @{
     "USE_AZURE_OPENAI"              = "false" # change to "true" to use Azure OpenAI instead of public OpenAI
 }
 
-foreach ($kv in $vars.GetEnumerator()) {
-    [Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "User")
-    Write-Host "Set $($kv.Key)"
+foreach ($keyValuePair in $vars.GetEnumerator()) {
+    [Environment]::SetEnvironmentVariable($keyValuePair.Key, $keyValuePair.Value, "User")
+    Write-Host "Set $($keyValuePair.Key)"
 }
 
 Write-Host "`nDone! Open a new PowerShell or Command Prompt session to pick up the changes."
