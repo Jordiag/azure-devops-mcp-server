@@ -1,5 +1,5 @@
+using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
@@ -33,7 +33,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
                 TeamContext teamContext = new TeamContext(_projectName);
                 return await _dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
             }
-            catch (VssServiceException)
+            catch(VssServiceException)
             {
                 return null;
             }
