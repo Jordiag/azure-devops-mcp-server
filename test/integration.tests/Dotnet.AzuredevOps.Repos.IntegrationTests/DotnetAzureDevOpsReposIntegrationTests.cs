@@ -67,7 +67,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             "teamfoundation.sourcecontrol.webapi.githttpclientbase.createpullrequestreviewersasync?view=azure-devops-dotnet")]
         public async Task ListAndReviewers_Workflow_SucceedsAsync()
         {
-            var opts = new PullRequestCreateOptions
+            var pullRequestCreateOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -76,7 +76,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 TargetBranch = _targetBranch
             };
 
-            int pullRequestId = (await _reposClient.CreatePullRequestAsync(opts)).Value;
+            int pullRequestId = (await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions)).Value;
             _createdPrIds.Add(pullRequestId);
 
             if(!string.IsNullOrWhiteSpace(_userEmail))

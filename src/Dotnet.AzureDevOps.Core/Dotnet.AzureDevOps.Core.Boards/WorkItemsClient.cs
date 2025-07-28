@@ -277,9 +277,9 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string workItemType, IEnumerable<WorkItemCreateOptions> items, CancellationToken cancellationToken = default)
         {
             var createdIds = new List<int>();
-            foreach(WorkItemCreateOptions opt in items)
+            foreach(WorkItemCreateOptions itemOptions in items)
             {
-                int? id = await CreateWorkItemAsync(workItemType, opt, cancellationToken: cancellationToken);
+                int? id = await CreateWorkItemAsync(workItemType, itemOptions, cancellationToken: cancellationToken);
                 if(id.HasValue)
                     createdIds.Add(id.Value);
             }
