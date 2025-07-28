@@ -8,7 +8,7 @@ public sealed class TestConfiguration
     public static IConfiguration Configuration
         => new ConfigurationManager()
             .AddJsonFile("appsettings.json", optional: true)
-            .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: false)
+            .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true)
             .AddEnvironmentVariables()
             .Build();
 }
