@@ -59,5 +59,27 @@ namespace Dotnet.AzureDevOps.Core.Repos
         Task<GitAnnotatedTag> GetTagAsync(string repositoryId, string objectId);
 
         Task<GitRefUpdateResult?> DeleteTagAsync(string repositoryId, string tagName);
+
+        Task<IReadOnlyList<GitRepository>> ListRepositoriesAsync();
+
+        Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByProjectAsync(PullRequestSearchOptions pullRequestSearchOptions);
+
+        Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId);
+
+        Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string repositoryId);
+
+        Task<IReadOnlyList<GitPullRequestCommentThread>> ListPullRequestThreadsAsync(string repositoryId, int pullRequestId);
+
+        Task<IReadOnlyList<Comment>> ListPullRequestThreadCommentsAsync(string repositoryId, int pullRequestId, int threadId);
+
+        Task<GitRepository?> GetRepositoryByNameAsync(string repositoryName);
+
+        Task<GitRef?> GetBranchAsync(string repositoryId, string branchName);
+
+        Task ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId);
+
+        Task<IReadOnlyList<GitCommitRef>> SearchCommitsAsync(string repositoryId, GitQueryCommitsCriteria searchCriteria, int top = 100);
+
+        Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByCommitsAsync(string repositoryId, IEnumerable<string> commitIds);
     }
 }

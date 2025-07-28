@@ -3,6 +3,9 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace Dotnet.AzureDevOps.Core.Repos
 {
@@ -10,10 +13,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
     {
         private readonly string _projectName;
         private readonly GitHttpClient _gitHttpClient;
+        private readonly string _organizationUrl;
+        private readonly string _personalAccessToken;
 
         public ReposClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _projectName = projectName;
+            _organizationUrl = organizationUrl;
+            _personalAccessToken = personalAccessToken;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(organizationUrl), credentials);
@@ -593,6 +600,158 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 searchCriteria: criteria,
                 top: top
             );
+        }
+
+        public async Task<IReadOnlyList<GitRepository>> ListRepositoriesAsync()
+            => await _gitHttpClient.GetRepositoriesAsync(project: _projectName);
+
+        public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByProjectAsync(PullRequestSearchOptions pullRequestSearchOptions)
+        {
+            var criteria = new GitPullRequestSearchCriteria
+            {
+                Status = pullRequestSearchOptions.Status,
+                TargetRefName = pullRequestSearchOptions.TargetBranch,
+                SourceRefName = pullRequestSearchOptions.SourceBranch
+            };
+
+            List<GitPullRequest> pullRequests = await _gitHttpClient.GetPullRequestsByProjectAsync(
+                project: _projectName,
+                searchCriteria: criteria,
+                top: 1000
+            );
+
+            return pullRequests;
+        }
+
+        public async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId)
+        {
+            List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                project: _projectName,
+                repositoryId: repositoryId,
+                filter: "heads/",
+                includeLinks: true,
+                includeStatuses: null,
+                includeMyBranches: false,
+                latestStatusesOnly: null,
+                peelTags: null,
+                filterContains: null
+            );
+
+            return refs;
+        }
+
+        public async Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string repositoryId)
+        {
+            List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                project: _projectName,
+                repositoryId: repositoryId,
+                filter: "heads/",
+                includeLinks: true,
+                includeStatuses: null,
+                includeMyBranches: true,
+                latestStatusesOnly: null,
+                peelTags: null,
+                filterContains: null
+            );
+
+            return refs;
+        }
+
+        public async Task<IReadOnlyList<GitPullRequestCommentThread>> ListPullRequestThreadsAsync(string repositoryId, int pullRequestId)
+            => await _gitHttpClient.GetThreadsAsync(
+                project: _projectName,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId,
+                iteration: null,
+                baseIteration: null);
+
+        public async Task<IReadOnlyList<Comment>> ListPullRequestThreadCommentsAsync(string repositoryId, int pullRequestId, int threadId)
+            => await _gitHttpClient.GetCommentsAsync(
+                project: _projectName,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId,
+                threadId: threadId);
+
+        public async Task<GitRepository?> GetRepositoryByNameAsync(string repositoryName)
+        {
+            try
+            {
+                return await _gitHttpClient.GetRepositoryAsync(
+                    project: _projectName,
+                    repositoryId: repositoryName
+                );
+            }
+            catch (VssServiceException)
+            {
+                return null;
+            }
+        }
+
+        public async Task<GitRef?> GetBranchAsync(string repositoryId, string branchName)
+        {
+            List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                project: _projectName,
+                repositoryId: repositoryId,
+                filter: $"heads/{branchName}",
+                includeLinks: true,
+                includeStatuses: null,
+                includeMyBranches: null,
+                latestStatusesOnly: null,
+                peelTags: null,
+                filterContains: null
+            );
+
+            return refs.FirstOrDefault();
+        }
+
+        public async Task ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId)
+        {
+            var update = new GitPullRequestCommentThread
+            {
+                Id = threadId,
+                Status = CommentThreadStatus.Fixed
+            };
+
+            await _gitHttpClient.UpdateThreadAsync(
+                commentThread: update,
+                project: _projectName,
+                repositoryId: repositoryId,
+                pullRequestId: pullRequestId,
+                threadId: threadId
+            );
+        }
+
+        public async Task<IReadOnlyList<GitCommitRef>> SearchCommitsAsync(string repositoryId, GitQueryCommitsCriteria searchCriteria, int top = 100)
+            => await _gitHttpClient.GetCommitsAsync(
+                project: _projectName,
+                repositoryId: repositoryId,
+                searchCriteria: searchCriteria,
+                top: top
+            );
+
+        public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByCommitsAsync(string repositoryId, IEnumerable<string> commitIds)
+        {
+            var result = new List<GitPullRequest>();
+            using var httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(_organizationUrl)
+            };
+            string authToken = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
+
+            foreach (string commitId in commitIds)
+            {
+                string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/commits/{commitId}/pullRequests?api-version=7.0";
+                using HttpResponseMessage message = await httpClient.GetAsync(requestUrl);
+                message.EnsureSuccessStatusCode();
+                List<GitPullRequest>? pullRequests = await message.Content.ReadFromJsonAsync<List<GitPullRequest>>();
+                if (pullRequests is not null)
+                {
+                    result.AddRange(pullRequests);
+                }
+            }
+
+            return result;
         }
     }
 }

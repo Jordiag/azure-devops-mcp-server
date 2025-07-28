@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Collections.Generic;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -217,5 +218,82 @@ public class ReposTools
     {
         ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.GetLatestCommitsAsync(projectName, repositoryName, branchName, top);
+    }
+
+    [McpServerTool, Description("Lists repositories in a project.")]
+    public static Task<IReadOnlyList<GitRepository>> ListRepositoriesAsync(string organizationUrl, string projectName, string personalAccessToken)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListRepositoriesAsync();
+    }
+
+    [McpServerTool, Description("Lists pull requests across the project.")]
+    public static Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByProjectAsync(string organizationUrl, string projectName, string personalAccessToken, PullRequestSearchOptions options)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPullRequestsByProjectAsync(options);
+    }
+
+    [McpServerTool, Description("Lists branches in a repository.")]
+    public static Task<IReadOnlyList<GitRef>> ListBranchesAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListBranchesAsync(repositoryId);
+    }
+
+    [McpServerTool, Description("Lists my branches in a repository.")]
+    public static Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListMyBranchesAsync(repositoryId);
+    }
+
+    [McpServerTool, Description("Lists threads on a pull request.")]
+    public static Task<IReadOnlyList<GitPullRequestCommentThread>> ListPullRequestThreadsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPullRequestThreadsAsync(repositoryId, pullRequestId);
+    }
+
+    [McpServerTool, Description("Lists comments in a pull request thread.")]
+    public static Task<IReadOnlyList<Comment>> ListPullRequestThreadCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPullRequestThreadCommentsAsync(repositoryId, pullRequestId, threadId);
+    }
+
+    [McpServerTool, Description("Gets a repository by name.")]
+    public static Task<GitRepository?> GetRepositoryByNameAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetRepositoryByNameAsync(repositoryName);
+    }
+
+    [McpServerTool, Description("Gets a branch by name.")]
+    public static Task<GitRef?> GetBranchAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string branchName)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetBranchAsync(repositoryId, branchName);
+    }
+
+    [McpServerTool, Description("Resolves a comment thread.")]
+    public static Task ResolveCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ResolveCommentThreadAsync(repositoryId, pullRequestId, threadId);
+    }
+
+    [McpServerTool, Description("Searches commits in a repository.")]
+    public static Task<IReadOnlyList<GitCommitRef>> SearchCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, GitQueryCommitsCriteria criteria, int top = 100)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.SearchCommitsAsync(repositoryId, criteria, top);
+    }
+
+    [McpServerTool, Description("Lists pull requests containing specific commits.")]
+    public static Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, IEnumerable<string> commitIds)
+    {
+        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListPullRequestsByCommitsAsync(repositoryId, commitIds);
     }
 }
