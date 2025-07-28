@@ -68,7 +68,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
             );
         }
 
-        #region READ
 
         public async Task<GitPullRequest?> GetPullRequestAsync(string repositoryId, int pullRequestId)
         {
@@ -86,9 +85,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        #endregion
 
-        #region COMPLETE / MERGE
 
         public async Task CompletePullRequestAsync(
             string repositoryId,
@@ -118,8 +115,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 );
         }
 
-        #endregion
-
         public async Task UpdatePullRequestAsync(
             string repositoryId,
             int pullRequestId,
@@ -143,7 +138,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
 
-        #region LIST / QUERY
 
         public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsAsync(
             string repositoryId, PullRequestSearchOptions pullRequestSearchOptions)
@@ -164,9 +158,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return pullRequests;
         }
 
-        #endregion
-
-        #region REVIEWERS
 
         public async Task AddReviewersAsync(string repositoryId, int pullRequestId, (string guid, string name)[] reviewerInfos)
         {
@@ -202,9 +193,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 project: _projectName);
         }
 
-        #endregion
-
-        #region COMMENT THREADS
 
         public async Task<int> CreateCommentThreadAsync(CommentThreadOptions commentThreadOptions)
         {
@@ -288,10 +276,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
 
-        #endregion
-
-        #region LABELS / TAGS
-
         public async Task<IList<WebApiTagDefinition>> AddLabelsAsync(string repository, int pullRequestId, params string[] labels)
         {
             var webApiTagDefinitions = new List<WebApiTagDefinition>();
@@ -326,10 +310,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 repositoryId: repository,
                 pullRequestId: pullRequestId);
 
-
-        #endregion
-
-        #region REVIEWERS – remove
         public async Task RemoveReviewersAsync(string repositoryId, int pullRequestId, params string[] reviewerIds)
         {
             foreach(string id in reviewerIds)
@@ -339,11 +319,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     pullRequestId: pullRequestId,
                     project: _projectName);
         }
-        #endregion
 
 
 
-        #region STATUS CHECKS
         public async Task SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions)
         {
             var status = new GitPullRequestStatus
@@ -360,11 +338,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 pullRequestId: pullRequestId,
                 project: _projectName);
         }
-        #endregion
 
 
 
-        #region AUTO-COMPLETE
         public async Task EnableAutoCompleteAsync(
             string repositoryId,
             int pullRequestId,
@@ -382,11 +358,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 pullRequestId: pullRequestId,
                 project: _projectName);
         }
-        #endregion
 
 
 
-        #region ITERATIONS / DIFF
         public async Task<IReadOnlyList<GitPullRequestIteration>> ListIterationsAsync(
             string repositoryId, int pullRequestId) =>
             await _gitHttpClient.GetPullRequestIterationsAsync(
@@ -401,11 +375,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 pullRequestId: pullRequestId,
                 iterationId: iteration,
                 project: _projectName);
-        #endregion
 
 
 
-        #region PRs by LABEL (client-side filter)
         public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByLabelAsync(
             string repositoryId, string labelName, PullRequestStatus pullRequestStatus)
         {
@@ -415,11 +387,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return [.. allPullRequests.Where(pullRequest => pullRequest.Labels.Any(label =>
                 string.Equals(label.Name, labelName, StringComparison.OrdinalIgnoreCase)))];
         }
-        #endregion
 
 
 
-        #region BRANCH / COMMIT helpers
         public async Task CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha)
         {
             var refUpdate = new GitRefUpdate
@@ -493,9 +463,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 return null;
             }
         }
-        #endregion
 
-        #region COMMENT edit / delete
         public async Task EditCommentAsync(CommentEditOptions commentEditOptions)
         {
             var update = new Comment { Content = commentEditOptions.NewContent };
@@ -515,9 +483,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 threadId: threadId,
                 commentId: commentId,
                 project: _projectName);
-        #endregion
 
-        #region GIT TAGS  (Repos ▸ Tags UI)
 
         public async Task<GitAnnotatedTag> CreateTagAsync(TagCreateOptions tagCreateOptions)
         {
@@ -581,7 +547,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
             return gitRefUpdateResultList.First(r => r.OldObjectId == tagRef.ObjectId);
         }
-        #endregion
 
         public async Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string projectName, string repositoryName, string branchName, int top = 1)
         {
