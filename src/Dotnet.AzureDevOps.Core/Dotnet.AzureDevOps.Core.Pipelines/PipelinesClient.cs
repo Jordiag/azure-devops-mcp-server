@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Text.RegularExpressions;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -7,7 +8,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines
 {
-    public class PipelinesClient : IPipelinesClient
+    public partial class PipelinesClient : IPipelinesClient
     {
         private readonly string _projectName;
         private readonly BuildHttpClient _build;
@@ -21,6 +22,8 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             _build = connection.GetClient<BuildHttpClient>();
         }
 
+        private static Regex MyRegex() => new(@"\A\b[0-9a-fA-F]{7,40}\b\Z");
+
         public async Task<int> QueueRunAsync(BuildQueueOptions buildQueueOptions, CancellationToken cancellationToken = default)
         {
             var build = new Build
@@ -29,8 +32,11 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 SourceBranch = buildQueueOptions.Branch,
             };
 
-            if(!string.IsNullOrWhiteSpace(buildQueueOptions.CommitSha))
+            if(!string.IsNullOrWhiteSpace(buildQueueOptions.CommitSha) &&
+                MyRegex().IsMatch(buildQueueOptions.CommitSha))
+            {
                 build.SourceVersion = buildQueueOptions.CommitSha;
+            }
 
             if(buildQueueOptions.Parameters is { Count: > 0 })
                 build.Parameters = System.Text.Json.JsonSerializer.Serialize(buildQueueOptions.Parameters);
@@ -240,6 +246,5 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 project: _projectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
-
     }
 }

@@ -3,7 +3,7 @@ using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.Build.WebApi;
 
-namespace Dotnet.AzuredevOps.Pipeline.IntegrationTests
+namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 {
     public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
     {
@@ -112,6 +112,24 @@ namespace Dotnet.AzuredevOps.Pipeline.IntegrationTests
 
             // Assert – no exception; log either null or contains header line
             Assert.True(string.IsNullOrEmpty(consoleLog) || consoleLog.Length > 0);
+        }
+
+        [Fact]
+        public async Task PipelineLogsAndRevisions_SucceedsAsync()
+        {
+            int buildId = await _pipelines.QueueRunAsync(new BuildQueueOptions
+            {
+                DefinitionId = _definitionId,
+                Branch = _branch
+            });
+            _queuedBuildIds.Add(buildId);
+
+            List<BuildLog> logs = await _pipelines.GetLogsAsync(buildId);
+            Assert.NotNull(logs);
+
+            List<BuildDefinitionRevision> revisions = await _pipelines.GetDefinitionRevisionsAsync(
+                _definitionId);
+            Assert.NotNull(revisions);
         }
 
         [Fact]

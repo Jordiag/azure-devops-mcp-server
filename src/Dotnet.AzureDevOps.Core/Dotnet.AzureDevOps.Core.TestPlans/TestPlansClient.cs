@@ -163,9 +163,9 @@ public class TestPlansClient : ITestPlansClient
         return result;
     }
 
-    public Task<IReadOnlyList<WorkItem>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default) =>
+    public Task<PagedList<TestCase>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default) =>
         _testPlanClient.GetTestCaseListAsync(_projectName, testPlanId, testSuiteId, cancellationToken: cancellationToken)
-            .ContinueWith(t => (IReadOnlyList<WorkItem>)t.Result);
+            .ContinueWith(t => t.Result);
 
     public Task<TestResultsDetails?> GetTestResultsForBuildAsync(string projectName, int buildId, CancellationToken cancellationToken = default) =>
         _connection.GetClient<Microsoft.VisualStudio.Services.TestResults.WebApi.TestResultsHttpClient>().GetTestResultDetailsForBuildAsync(projectName, buildId, cancellationToken: cancellationToken);
