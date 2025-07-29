@@ -41,9 +41,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Mcp.Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Artifacts.IntegrationTests", "test\integration.tests\Dotnet.AzureDevOps.Artifacts.IntegrationTests\Dotnet.AzureDevOps.Artifacts.IntegrationTests.csproj", "{6C2FA7E9-ADCA-4974-9BAD-A07FC1F99533}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzuredevOps.Pipeline.IntegrationTests", "test\integration.tests\Dotnet.AzuredevOps.Pipeline.IntegrationTests\Dotnet.AzuredevOps.Pipeline.IntegrationTests.csproj", "{30F38FF3-D8AB-4BEB-BC0A-1137C9AE21AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.Pipeline.IntegrationTests", "test\integration.tests\Dotnet.AzuredevOps.Pipeline.IntegrationTests\Dotnet.AzureDevOps.Pipeline.IntegrationTests.csproj", "{30F38FF3-D8AB-4BEB-BC0A-1137C9AE21AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzuredevOps.TestPlans.IntegrationTests", "test\integration.tests\Dotnet.AzuredevOps.TestPlans.IntegrationTests\Dotnet.AzuredevOps.TestPlans.IntegrationTests.csproj", "{D3BEDBBE-41C8-21C8-14B9-126F9121DF70}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotnet.AzureDevOps.TestPlans.IntegrationTests", "test\integration.tests\Dotnet.AzuredevOps.TestPlans.IntegrationTests\Dotnet.AzureDevOps.TestPlans.IntegrationTests.csproj", "{D3BEDBBE-41C8-21C8-14B9-126F9121DF70}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration.tests", "integration.tests", "{5A3D3D52-1324-4B57-8CE0-26C7EBC7331A}"
 EndProject

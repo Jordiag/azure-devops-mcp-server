@@ -6,13 +6,13 @@ using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 
 namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
 {
-    public class DotnetAzuredevOpsTestPlansIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsTestPlansIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly TestPlansClient _testPlansClient;
         private readonly List<int> _createdPlanIds = [];
 
-        public DotnetAzuredevOpsTestPlansIntegrationTests()
+        public DotnetAzureDevOpsTestPlansIntegrationTests()
         {
             _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
