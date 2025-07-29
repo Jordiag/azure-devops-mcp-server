@@ -5,11 +5,10 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using static Microsoft.VisualStudio.Services.Users.User;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines
 {
-    public class PipelinesClient : IPipelinesClient
+    public partial class PipelinesClient : IPipelinesClient
     {
         private readonly string _projectName;
         private readonly BuildHttpClient _build;
@@ -23,7 +22,27 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             _build = connection.GetClient<BuildHttpClient>();
         }
 
-        private static Regex MyRegex() => new(@"\A\b[0-9a-fA-F]{7,40}\b\Z");
+        private static bool IsValidCommitSha(string? sha)
+        {
+            if(string.IsNullOrWhiteSpace(sha))
+                return false;
+
+            if(sha.Length != 40 && (sha.Length < 7 || sha.Length > 10))
+                return false;
+
+            foreach(char c in sha)
+            {
+                bool isHexDigit =
+                    (c >= '0' && c <= '9') ||
+                    (c >= 'a' && c <= 'f') ||
+                    (c >= 'A' && c <= 'F');
+
+                if(!isHexDigit)
+                    return false;
+            }
+
+            return true;
+        }
 
         public async Task<int> QueueRunAsync(BuildQueueOptions buildQueueOptions, CancellationToken cancellationToken = default)
         {
@@ -33,11 +52,9 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 SourceBranch = buildQueueOptions.Branch,
             };
 
-            if(!string.IsNullOrWhiteSpace(buildQueueOptions.CommitSha) &&
-                MyRegex().IsMatch(buildQueueOptions.CommitSha))
-            {
-                build.SourceVersion = buildQueueOptions.CommitSha;
-            }
+            // Only set SourceVersion if the SHA looks valid
+            if(IsValidCommitSha(buildQueueOptions.CommitSha))
+                build.SourceVersion = buildQueueOptions.CommitSha!;
 
             if(buildQueueOptions.Parameters is { Count: > 0 })
                 build.Parameters = System.Text.Json.JsonSerializer.Serialize(buildQueueOptions.Parameters);
@@ -46,6 +63,7 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 build: build,
                 project: _projectName,
                 cancellationToken: cancellationToken);
+
             return queued.Id;
         }
 
@@ -200,13 +218,13 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
             _build.GetDefinitionRevisionsAsync(_projectName, definitionId, cancellationToken: cancellationToken);
 
         public Task<List<BuildLog>> GetLogsAsync(int buildId, CancellationToken cancellationToken = default) =>
-            _build.GetBuildLogsAsync(_projectName, buildId, ancellationToken: cancellationToken);
+            _build.GetBuildLogsAsync(_projectName, buildId, cancellationToken: cancellationToken);
 
         public Task<List<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default) =>
-            _build.GetBuildLogLinesAsync(_projectName, buildId, logId, startLine, endLine, cancellationToken);
+            _build.GetBuildLogLinesAsync(_projectName, buildId, logId, startLine, endLine, cancellationToken: cancellationToken);
 
         public Task<List<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, CancellationToken cancellationToken = default) =>
-            _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, ancellationToken: cancellationToken);
+            _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, cancellationToken: cancellationToken);
 
         public Task<BuildReportMetadata?> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default) =>
             _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);

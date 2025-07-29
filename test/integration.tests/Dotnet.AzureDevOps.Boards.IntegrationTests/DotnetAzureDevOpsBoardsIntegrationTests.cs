@@ -1,6 +1,7 @@
 ﻿using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests

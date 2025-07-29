@@ -1,7 +1,7 @@
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Dotnet.AzureDevOps.Tests.Common;
+namespace Dotnet.AzureDevOps.Tests.Common.Attributes;
 
 [TraitDiscoverer("Dotnet.AzureDevOps.Tests.Common.TestTypeTraitDiscoverer", "Dotnet.AzureDevOps.Tests.Common")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]

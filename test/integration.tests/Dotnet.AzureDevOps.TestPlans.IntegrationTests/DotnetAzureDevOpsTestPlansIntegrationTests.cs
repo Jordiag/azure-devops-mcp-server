@@ -1,6 +1,7 @@
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 
 namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests

@@ -5,7 +5,7 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.Client;
 using Xunit;
-using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests;
 

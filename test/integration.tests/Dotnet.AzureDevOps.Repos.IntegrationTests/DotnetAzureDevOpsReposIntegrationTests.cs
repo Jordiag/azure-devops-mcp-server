@@ -1,6 +1,7 @@
 ﻿using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
@@ -162,14 +163,15 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         {
             /* ---------- Arrange ---------- */
 
-            string? latestCommitSha = (await _reposClient.GetLatestCommitsAsync(
+            IReadOnlyList<GitCommitRef> latestCommits = await _reposClient.GetLatestCommitsAsync(
                 _azureDevOpsConfiguration.ProjectName,
                 _repoName,
-                _azureDevOpsConfiguration.MainBranchName))
-                .FirstOrDefault()?.CommitId;
+                _azureDevOpsConfiguration.MainBranchName);
 
-            if(string.IsNullOrWhiteSpace(latestCommitSha))
-                return;               // skip test if no commit SHA provided (keeps CI green)
+            string? latestCommitSha = latestCommits.Count > 0 ? latestCommits[0].CommitId : null;
+
+            if (string.IsNullOrWhiteSpace(latestCommitSha))
+                return; // skip test if no commit SHA provided (keeps CI green)  
 
             string annTag = $"it-ann-{UtcStamp()}";
 
@@ -184,8 +186,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             });
 
             /* ---------- Assert – list finds annotated tag ---------- */
-            GitAnnotatedTag tag =
-                await _reposClient.GetTagAsync(_repoName, gitAnnotatedTag.ObjectId);
+            GitAnnotatedTag tag = await _reposClient.GetTagAsync(_repoName, gitAnnotatedTag.ObjectId);
 
             Assert.True(tag.Name == annTag);
 
@@ -193,10 +194,8 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             GitRefUpdateResult? result = await _reposClient.DeleteTagAsync(_repoName, annTag);
 
             /* ---------- Assert – annotated tag no longer returned ---------- */
-
             Assert.NotNull(result);
             Assert.True(result.Success);
-
         }
 
         [Fact]
@@ -287,11 +286,14 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
         public async Task DisposeAsync()
         {
-            foreach(int id in _createdPrIds.AsEnumerable().Reverse())
+            for (int i = _createdPrIds.Count - 1; i >= 0; i--)
             {
+                int id = _createdPrIds[i];
                 GitPullRequest? pr = await _reposClient.GetPullRequestAsync(_repoName, id);
-                if(pr != null && pr.Status != PullRequestStatus.Completed)
+                if (pr != null && pr.Status != PullRequestStatus.Completed)
+                {
                     await _reposClient.AbandonPullRequestAsync(_repoName, id);
+                }
             }
         }
 
