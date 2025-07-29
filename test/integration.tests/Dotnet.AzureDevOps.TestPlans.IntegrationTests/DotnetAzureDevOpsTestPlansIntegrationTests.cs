@@ -123,7 +123,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             });
             _queuedBuildIds.Add(buildId);
 
-            TestResultsDetails? details = await _testPlansClient.GetTestResultsForBuildAsync(
+            Microsoft.TeamFoundation.TestManagement.WebApi.TestResultsDetails? details = await _testPlansClient.GetTestResultsForBuildAsync(
                 _azureDevOpsConfiguration.ProjectName,
                 buildId);
 
