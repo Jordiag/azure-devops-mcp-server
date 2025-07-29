@@ -5,6 +5,7 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using static Microsoft.VisualStudio.Services.Users.User;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines
 {
@@ -196,16 +197,16 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 .ContinueWith(task => (IReadOnlyList<BuildDefinitionReference>)task.Result);
 
         public Task<List<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(int definitionId, CancellationToken cancellationToken = default) =>
-            _build.GetDefinitionRevisionsAsync(_projectName, definitionId, cancellationToken);
+            _build.GetDefinitionRevisionsAsync(_projectName, definitionId, cancellationToken: cancellationToken);
 
         public Task<List<BuildLog>> GetLogsAsync(int buildId, CancellationToken cancellationToken = default) =>
-            _build.GetBuildLogsAsync(_projectName, buildId, cancellationToken);
+            _build.GetBuildLogsAsync(_projectName, buildId, ancellationToken: cancellationToken);
 
         public Task<List<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default) =>
             _build.GetBuildLogLinesAsync(_projectName, buildId, logId, startLine, endLine, cancellationToken);
 
         public Task<List<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, CancellationToken cancellationToken = default) =>
-            _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, cancellationToken);
+            _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, ancellationToken: cancellationToken);
 
         public Task<BuildReportMetadata?> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default) =>
             _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);
@@ -216,7 +217,7 @@ namespace Dotnet.AzureDevOps.Core.Pipelines
                 _projectName,
                 buildId,
                 stageName,
-                cancellationToken);
+                cancellationToken: cancellationToken);
 
         public async Task UpdatePipelineAsync(int definitionId, PipelineUpdateOptions pipelineUpdateOptions, CancellationToken cancellationToken = default)
         {
