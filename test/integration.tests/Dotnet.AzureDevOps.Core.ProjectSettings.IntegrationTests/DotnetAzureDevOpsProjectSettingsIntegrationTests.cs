@@ -1,10 +1,12 @@
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 
-namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegationTests
+namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsProjectSettingsIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;

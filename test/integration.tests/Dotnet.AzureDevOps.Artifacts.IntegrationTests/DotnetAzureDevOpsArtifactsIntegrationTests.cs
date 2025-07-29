@@ -1,11 +1,12 @@
-using System.Diagnostics.CodeAnalysis;
 using Dotnet.AzureDevOps.Core.Artifacts;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 
 namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsArtifactsIntegrationTests : IAsyncLifetime
     {
         private readonly ArtifactsClient _artifactsClient;

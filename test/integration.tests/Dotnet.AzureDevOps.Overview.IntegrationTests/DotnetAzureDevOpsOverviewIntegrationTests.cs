@@ -1,12 +1,13 @@
-using System.Diagnostics.CodeAnalysis;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
 
 namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsOverviewIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
@@ -146,6 +147,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         }
 
         private static string UtcStamp() =>
-            DateTime.UtcNow.ToString("O").Replace(':','-');
+            DateTime.UtcNow.ToString("O").Replace(':', '-');
     }
 }

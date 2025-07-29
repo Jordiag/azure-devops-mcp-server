@@ -1,10 +1,12 @@
 ﻿using Dotnet.AzureDevOps.Core.Pipelines;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Dotnet.AzureDevOps.Tests.Common;
+using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Build.WebApi;
 
 namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
     {
         private readonly PipelinesClient _pipelines;
