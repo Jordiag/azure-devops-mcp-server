@@ -3,6 +3,7 @@ using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
 {
@@ -73,6 +74,31 @@ namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
 
             IReadOnlyList<TestSuite> suites = await _testPlansClient.ListTestSuitesAsync(planId);
             Assert.Contains(suites, s => s.Id == suiteId);
+        }
+
+        [Fact]
+        public async Task TestCaseCreateAndAdd_SucceedsAsync()
+        {
+            int planId = await _testPlansClient.CreateTestPlanAsync(new TestPlanCreateOptions
+            {
+                Name = $"it-plan-{UtcStamp()}"
+            });
+            _createdPlanIds.Add(planId);
+
+            TestSuite rootSuite = await _testPlansClient.GetRootSuiteAsync(planId);
+
+            Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem? testCase = await _testPlansClient.CreateTestCaseAsync(
+                new TestCaseCreateOptions
+                {
+                    Title = "Integration Test Case",
+                    Project = _azureDevOpsConfiguration.ProjectName
+                });
+            Assert.NotNull(testCase);
+
+            await _testPlansClient.AddTestCasesAsync(planId, rootSuite.Id, new[] { testCase!.Id });
+
+            IReadOnlyList<WorkItem> list = await _testPlansClient.ListTestCasesAsync(planId, rootSuite.Id);
+            Assert.Contains(list, w => w.Id == testCase.Id);
         }
 
         private static string UtcStamp() =>

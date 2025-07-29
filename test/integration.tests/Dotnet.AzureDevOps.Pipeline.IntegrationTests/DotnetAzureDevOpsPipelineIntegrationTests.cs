@@ -115,6 +115,24 @@ namespace Dotnet.AzuredevOps.Pipeline.IntegrationTests
         }
 
         [Fact]
+        public async Task PipelineLogsAndRevisions_SucceedsAsync()
+        {
+            int buildId = await _pipelines.QueueRunAsync(new BuildQueueOptions
+            {
+                DefinitionId = _definitionId,
+                Branch = _branch
+            });
+            _queuedBuildIds.Add(buildId);
+
+            List<BuildLog> logs = await _pipelines.GetLogsAsync(buildId);
+            Assert.NotNull(logs);
+
+            List<BuildDefinitionRevision> revisions = await _pipelines.GetDefinitionRevisionsAsync(
+                _definitionId);
+            Assert.NotNull(revisions);
+        }
+
+        [Fact]
         public async Task PipelineCrud_SucceedsAsync()
         {
             // ----- create -----

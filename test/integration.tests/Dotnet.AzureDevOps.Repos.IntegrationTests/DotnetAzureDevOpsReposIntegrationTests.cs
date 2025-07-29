@@ -199,6 +199,28 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
         }
 
+        [Fact]
+        public async Task BranchListingAndDiff_SucceedsAsync()
+        {
+            IReadOnlyList<GitRef> branches = await _reposClient.ListBranchesAsync(_repoName);
+            Assert.NotEmpty(branches);
+
+            IReadOnlyList<GitCommitRef> commits = await _reposClient.GetLatestCommitsAsync(
+                _azureDevOpsConfiguration.ProjectName,
+                _repoName,
+                _azureDevOpsConfiguration.MainBranchName,
+                top: 2);
+
+            if(commits.Count < 2)
+                return; // insufficient history
+
+            string baseCommit = commits[1].CommitId;
+            string targetCommit = commits[0].CommitId;
+
+            GitCommitDiffs diffs = await _reposClient.GetCommitDiffAsync(_repoName, baseCommit, targetCommit);
+            Assert.NotNull(diffs);
+        }
+
         [Fact(Skip = "API is in preview, // PREVIEW  https://learn.microsoft.com/en-us/dotnet/api/microsoft." +
             "teamfoundation.sourcecontrol.webapi.githttpclientbase.createpullrequestreviewersasync?view=azure-devops-dotnet")]
         public async Task AdvancedPullRequestWorkflow_SucceedsAsync()
