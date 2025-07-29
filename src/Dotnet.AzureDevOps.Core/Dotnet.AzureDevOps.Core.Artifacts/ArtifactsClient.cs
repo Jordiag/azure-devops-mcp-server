@@ -1,6 +1,8 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
@@ -31,7 +33,7 @@ public class ArtifactsClient : IArtifactsClient
 
     public async Task<Guid> CreateFeedAsync(FeedCreateOptions feedCreateOptions, CancellationToken cancellationToken = default)
     {
-        string feedsUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds?api-version={ApiVersion}";
+        string feedsUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}";
         var payload = new { name = feedCreateOptions.Name, description = feedCreateOptions.Description };
         HttpResponseMessage httpResponseMessage = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
             _http,
@@ -54,7 +56,7 @@ public class ArtifactsClient : IArtifactsClient
             return;
 
         var requestMessage = new HttpRequestMessage(HttpMethod.Patch,
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}?api-version={ApiVersion}")
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}")
         {
             Content = JsonContent.Create(fields)
         };
@@ -67,7 +69,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<Feed?> GetFeedAsync(Guid feedId, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         if(response.StatusCode == System.Net.HttpStatusCode.NotFound)
             return null;
@@ -78,7 +80,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<IReadOnlyList<Feed>> ListFeedsAsync(CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
         FeedList? list = await response.Content.ReadFromJsonAsync<FeedList>(cancellationToken);
@@ -88,7 +90,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task DeleteFeedAsync(Guid feedId, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.DeleteAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
     }
@@ -96,7 +98,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<IReadOnlyList<Package>> ListPackagesAsync(Guid feedId, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/packages?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
         PackageList? list = await response.Content.ReadFromJsonAsync<PackageList>(cancellationToken);
@@ -106,46 +108,82 @@ public class ArtifactsClient : IArtifactsClient
     public async Task DeletePackageAsync(Guid feedId, string packageName, string version, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.DeleteAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/packages/{packageName}/versions/{version}?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages/{packageName}/versions/{version}?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(Guid feedId, CancellationToken cancellationToken = default)
     {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = true
+        };
+
+        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
+
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/permissions?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
-        FeedPermissionList? list = await response.Content.ReadFromJsonAsync<FeedPermissionList>(cancellationToken);
+
+        FeedPermissionList? list = await response.Content.ReadFromJsonAsync<FeedPermissionList>(options, cancellationToken);
         return list?.Value?.ToArray() ?? [];
     }
 
+    /// <summary>
+    /// Updates the permissions for a specified feed asynchronously. TODO : doesn't work yet, need to investigate
+    /// </summary>
+    /// <remarks>This method sends a PATCH request to update the permissions for the specified feed.  The
+    /// permissions are serialized to JSON using camel case naming and are sent as the request body. Ensure that the
+    /// <paramref name="feedPermissions"/> parameter contains valid permissions,  and that the caller has the necessary
+    /// access rights to modify the feed.</remarks>
+    /// <param name="feedId">The unique identifier of the feed whose permissions are being updated.</param>
+    /// <param name="feedPermissions">A collection of <see cref="FeedPermission"/> objects representing the permissions to be applied to the feed.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation. Defaults to <see cref="CancellationToken.None"/> if not
+    /// provided.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SetFeedPermissionsAsync(Guid feedId, IEnumerable<FeedPermission> feedPermissions, CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
-            _http,
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/permissions?api-version={ApiVersion}",
-            feedPermissions,
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        };
+
+        string json = JsonSerializer.Serialize(feedPermissions, options);
+        HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await _http.PatchAsync(
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}",
+            content,
             cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task<FeedView> CreateFeedViewAsync(Guid feedId, FeedView feedView, CancellationToken cancellationToken = default)
     {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
             _http,
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/views?api-version={ApiVersion}",
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}",
             feedView,
             cancellationToken);
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<FeedView>(cancellationToken))!;
+        return (await response.Content.ReadFromJsonAsync<FeedView>(options, cancellationToken))!;
     }
 
     public async Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(Guid feedId, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/views?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
         FeedViewList? list = await response.Content.ReadFromJsonAsync<FeedViewList>(cancellationToken);
@@ -155,7 +193,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task DeleteFeedViewAsync(Guid feedId, string viewId, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.DeleteAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/views/{viewId}?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views/{viewId}?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
     }
@@ -164,7 +202,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PutAsJsonAsync(
             _http,
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}",
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}",
             behavior,
             cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -173,7 +211,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(Guid feedId, string packageName, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<UpstreamingBehavior>(cancellationToken))!;
@@ -182,7 +220,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<Package> GetPackageVersionAsync(Guid feedId, string packageName, string version, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<Package>(cancellationToken))!;
@@ -191,7 +229,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task UpdatePackageVersionAsync(Guid feedId, string packageName, string version, PackageVersionDetails details, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Patch,
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}")
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}")
         {
             Content = JsonContent.Create(details)
         };
@@ -202,7 +240,7 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<Stream> DownloadPackageAsync(Guid feedId, string packageName, string version, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/nuget/packages/{packageName}/versions/{version}/content?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}/content?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -211,21 +249,28 @@ public class ArtifactsClient : IArtifactsClient
     public async Task<FeedRetentionPolicy> GetRetentionPolicyAsync(Guid feedId, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage response = await _http.GetAsync(
-            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/retentionpolicies?api-version={ApiVersion}",
+            requestUri: $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}",
             cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();
+
         return (await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken))!;
     }
 
     public async Task<FeedRetentionPolicy> SetRetentionPolicyAsync(Guid feedId, FeedRetentionPolicy policy, CancellationToken cancellationToken = default)
     {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        };
+
         HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PutAsJsonAsync(
             _http,
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/retentionpolicies?api-version={ApiVersion}",
+            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}",
             policy,
             cancellationToken);
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken))!;
+        return (await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(options, cancellationToken))!;
     }
-
 }
