@@ -1,8 +1,12 @@
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
+using Dotnet.AzureDevOps.Core.Pipelines;
+using Dotnet.AzureDevOps.Core.Pipelines.Options;
+using Microsoft.TeamFoundation.Build.WebApi;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.VisualStudio.Services.TestResults.WebApi;
 
 namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {
@@ -11,13 +15,20 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly TestPlansClient _testPlansClient;
+        private readonly PipelinesClient _pipelinesClient;
         private readonly List<int> _createdPlanIds = [];
+        private readonly List<int> _queuedBuildIds = [];
 
         public DotnetAzureDevOpsTestPlansIntegrationTests()
         {
             _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
             _testPlansClient = new TestPlansClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            _pipelinesClient = new PipelinesClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
@@ -102,6 +113,23 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             Assert.Contains(list, w => w.workItem.Id == testCase.Id);
         }
 
+        [Fact]
+        public async Task TestResultsForQueuedBuild_ReturnsDetailsAsync()
+        {
+            int buildId = await _pipelinesClient.QueueRunAsync(new BuildQueueOptions
+            {
+                DefinitionId = _azureDevOpsConfiguration.PipelineDefinitionId,
+                Branch = _azureDevOpsConfiguration.BuildBranch
+            });
+            _queuedBuildIds.Add(buildId);
+
+            Microsoft.TeamFoundation.TestManagement.WebApi.TestResultsDetails? details = await _testPlansClient.GetTestResultsForBuildAsync(
+                _azureDevOpsConfiguration.ProjectName,
+                buildId);
+
+            Assert.NotNull(details);
+        }
+
         private static string UtcStamp() =>
             DateTime.UtcNow.ToString("yyyyMMddHHmmss");
 
@@ -116,6 +144,20 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
                 catch
                 {
                     // Ignore errors during cleanup; the test plan may have already been deleted or not exist
+                }
+            }
+
+            foreach(int buildId in _queuedBuildIds.AsEnumerable().Reverse())
+            {
+                try
+                {
+                    Build? build = await _pipelinesClient.GetRunAsync(buildId);
+                    if(build != null && build.Status == BuildStatus.InProgress)
+                        await _pipelinesClient.CancelRunAsync(buildId, build.Project);
+                }
+                catch
+                {
+                    // Ignore failures when cancelling queued builds
                 }
             }
         }
