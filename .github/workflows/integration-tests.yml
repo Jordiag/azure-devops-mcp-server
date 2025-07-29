@@ -112,7 +112,7 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           dotnet test "${{ env.solution }}" `
-            --filter "FullyQualifiedName!~End2EndTests" `
+            --filter "FullyQualifiedName\!~End2EndTests" `
             --no-restore --no-build `
             --settings "${{ github.workspace }}/.runsettings" `
             --collect:"Code Coverage" `
