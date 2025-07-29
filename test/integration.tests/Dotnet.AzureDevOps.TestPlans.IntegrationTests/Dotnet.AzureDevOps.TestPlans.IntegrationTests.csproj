@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.TestPlans\Dotnet.AzureDevOps.Core.TestPlans.csproj" />
     <ProjectReference Include="..\..\Dotnet.AzureDevOps.Tests.Common\Dotnet.AzureDevOps.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Pipelines\Dotnet.AzureDevOps.Core.Pipelines.csproj" />
   </ItemGroup>
 
   <ItemGroup>
