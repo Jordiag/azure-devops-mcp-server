@@ -1,10 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Dotnet.AzureDevOps.Core.Pipelines;
+﻿using Dotnet.AzureDevOps.Core.Pipelines;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.Build.WebApi;
 
-namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
+namespace Dotnet.AzuredevOps.Pipeline.IntegrationTests
 {
     public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
     {

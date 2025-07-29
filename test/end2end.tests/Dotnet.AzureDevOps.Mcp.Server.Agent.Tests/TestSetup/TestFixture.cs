@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
-namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.TestSetup;
+namespace Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests.TestSetup;
 
 public class TestFixture : WebApplicationFactory<Program>
 {
