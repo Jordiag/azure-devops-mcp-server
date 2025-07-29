@@ -30,6 +30,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
         Task RemoveLabelAsync(string repositoryId, int pullRequestId, string label);
 
+        Task<IReadOnlyList<WebApiTagDefinition>> GetPullRequestLabelsAsync(string repository, int pullRequestId);
+
         Task RemoveReviewersAsync(string repositoryId, int pullRequestId, params string[] reviewerIds);
 
         Task SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions);
@@ -56,6 +58,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
         Task DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId);
 
+        Task<GitAnnotatedTag> CreateTagAsync(TagCreateOptions tagCreateOptions);
+
         Task<GitAnnotatedTag> GetTagAsync(string repositoryId, string objectId);
 
         Task<GitRefUpdateResult?> DeleteTagAsync(string repositoryId, string tagName);
@@ -77,6 +81,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
         Task<GitRef?> GetBranchAsync(string repositoryId, string branchName);
 
         Task ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId);
+
+        Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string projectName, string repositoryName, string branchName, int top = 1);
 
         Task<IReadOnlyList<GitCommitRef>> SearchCommitsAsync(string repositoryId, GitQueryCommitsCriteria searchCriteria, int top = 100);
 
