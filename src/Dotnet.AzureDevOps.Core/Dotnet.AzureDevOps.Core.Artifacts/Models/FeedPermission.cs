@@ -1,13 +1,15 @@
+using System.Text.Json.Serialization;
+
 namespace Dotnet.AzureDevOps.Core.Artifacts.Models;
 
 public enum FeedRole
 {
-    Custom,
-    None,
-    Reader,
-    Contributor,
-    Administrator,
-    Collaborator
+    custom,
+    none,
+    reader,
+    contributor,
+    administrator,
+    collaborator
 }
 
 public record FeedPermission

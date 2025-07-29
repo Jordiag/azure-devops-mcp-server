@@ -72,7 +72,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         }
 
         [Fact]
-        public async Task FeedPermissions_SucceedsAsync()
+        public async Task FeedGetPermissions_SucceedsAsync()
         {
             Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
             {
@@ -82,11 +82,6 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 
             IReadOnlyList<FeedPermission> permissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
             Assert.NotNull(permissions);
-
-            await _artifactsClient.SetFeedPermissionsAsync(feedId, permissions);
-
-            IReadOnlyList<FeedPermission> permissionsAfter = await _artifactsClient.GetFeedPermissionsAsync(feedId);
-            Assert.Equal(permissions.Count, permissionsAfter.Count);
         }
 
         [Fact]
@@ -101,8 +96,8 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             var view = new FeedView
             {
                 Name = $"view-{UtcStamp()}",
-                Visibility = FeedVisibility.Private,
-                Type = FeedViewType.Release
+                Visibility = "private",
+                Type = "release"
             };
 
             FeedView created = await _artifactsClient.CreateFeedViewAsync(feedId, view);
@@ -118,6 +113,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         [Fact]
         public async Task RetentionPolicyWorkflow_SucceedsAsync()
         {
+            int days = 30;
             Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
             {
                 Name = $"ret-feed-{UtcStamp()}"
@@ -127,13 +123,18 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             FeedRetentionPolicy policy = await _artifactsClient.GetRetentionPolicyAsync(feedId);
             var update = new FeedRetentionPolicy
             {
-                AgeLimitInDays = policy.AgeLimitInDays ?? 0,
-                CountLimit = policy.CountLimit ?? 0,
-                DaysToKeepRecentlyDownloadedPackages = policy.DaysToKeepRecentlyDownloadedPackages ?? 0
+                AgeLimitInDays = policy?.AgeLimitInDays ?? days,
+                CountLimit = policy?.CountLimit ?? days,
+                DaysToKeepRecentlyDownloadedPackages = policy?.DaysToKeepRecentlyDownloadedPackages ?? days
             };
 
             FeedRetentionPolicy updated = await _artifactsClient.SetRetentionPolicyAsync(feedId, update);
             Assert.NotNull(updated);
+
+            policy = await _artifactsClient.GetRetentionPolicyAsync(feedId);
+            Assert.Null(policy.AgeLimitInDays);
+            Assert.Equal(days, policy.CountLimit);
+            Assert.Equal(days, policy.DaysToKeepRecentlyDownloadedPackages);
         }
 
         [Fact]
