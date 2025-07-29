@@ -77,7 +77,7 @@ jobs:
             nuget-
 
       - name: Restore NuGet packages
-        run: nuget restore "${{ env.solution }}"
+        run: dotnet restore "${{ env.solution }}"
       
       - name: Set Sonar PR Analysis Parameters (if pull_request)
         if: github.event_name == 'pull_request'
