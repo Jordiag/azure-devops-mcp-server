@@ -5,6 +5,7 @@ using Microsoft.TeamFoundation.Work.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsProjectSettingsIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;

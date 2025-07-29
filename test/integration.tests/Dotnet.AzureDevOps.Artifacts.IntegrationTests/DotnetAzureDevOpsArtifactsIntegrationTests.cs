@@ -6,6 +6,7 @@ using Dotnet.AzureDevOps.Tests.Common;
 
 namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsArtifactsIntegrationTests : IAsyncLifetime
     {
         private readonly ArtifactsClient _artifactsClient;

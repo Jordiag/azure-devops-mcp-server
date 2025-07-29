@@ -5,9 +5,11 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.Client;
 using Xunit;
+using Dotnet.AzureDevOps.Tests.Common;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests;
 
+[TestType(TestType.End2End)]
 public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
 {
     private readonly TestFixture _fixture;

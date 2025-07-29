@@ -9,6 +9,7 @@ using System.Text.Json;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
+    [TestType(TestType.Integration)]
     public class DotnetAzureDevOpsBoardsIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
