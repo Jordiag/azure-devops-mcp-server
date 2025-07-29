@@ -1,11 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
-namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
+namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {
     public class DotnetAzureDevOpsTestPlansIntegrationTests : IAsyncLifetime
     {
@@ -95,10 +93,11 @@ namespace Dotnet.AzuredevOps.TestPlans.IntegrationTests
                 });
             Assert.NotNull(testCase);
 
-            await _testPlansClient.AddTestCasesAsync(planId, rootSuite.Id, new[] { testCase!.Id });
+            await _testPlansClient.AddTestCasesAsync(planId, rootSuite.Id, [testCase!.Id!.Value]);
 
-            IReadOnlyList<WorkItem> list = await _testPlansClient.ListTestCasesAsync(planId, rootSuite.Id);
-            Assert.Contains(list, w => w.Id == testCase.Id);
+            Microsoft.VisualStudio.Services.WebApi.PagedList<TestCase> list = await _testPlansClient.ListTestCasesAsync(planId, rootSuite.Id);
+
+            Assert.Contains(list, w => w.workItem.Id == testCase.Id);
         }
 
         private static string UtcStamp() =>

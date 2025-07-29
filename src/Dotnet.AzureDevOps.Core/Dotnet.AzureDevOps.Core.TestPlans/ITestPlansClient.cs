@@ -1,5 +1,7 @@
 ﻿using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
+using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.TestPlans
 {
@@ -13,7 +15,7 @@ namespace Dotnet.AzureDevOps.Core.TestPlans
         Task<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite> GetRootSuiteAsync(int planId);
         Task<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan?> GetTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default);
         Task<TestResultsDetails?> GetTestResultsForBuildAsync(string projectName, int buildId, CancellationToken cancellationToken = default);
-        Task<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.WorkItem>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default);
+        Task<PagedList<TestCase>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan>> ListTestPlansAsync(CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> ListTestSuitesAsync(int testPlanId, CancellationToken cancellationToken = default);
     }

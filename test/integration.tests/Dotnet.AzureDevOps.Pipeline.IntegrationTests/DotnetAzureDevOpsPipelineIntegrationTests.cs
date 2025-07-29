@@ -3,7 +3,7 @@ using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.Build.WebApi;
 
-namespace Dotnet.AzuredevOps.Pipeline.IntegrationTests
+namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 {
     public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
     {
