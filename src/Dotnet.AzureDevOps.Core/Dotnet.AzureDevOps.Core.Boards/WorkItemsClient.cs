@@ -19,9 +19,9 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly string _projectName;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
-        private const string _patchMethod = "PATCH";
-        private const string ContentTypeHeader = "Content-Type";
-        private const string JsonPatchContentType = "application/json-patch+json";
+        private const string _patchMethod = Constants.PatchMethod;
+        private const string ContentTypeHeader = Constants.ContentTypeHeader;
+        private const string JsonPatchContentType = Constants.JsonPatchContentType;
 
         public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken)
         {
@@ -173,7 +173,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 patchDocument.Add(new JsonPatchOperation
                 {
                     Operation = Operation.Add,
-                    Path = "/relations/-",
+                    Path = Constants.JsonPatchOperationPath,
                     Value = new
                     {
                         rel = "System.LinkTypes.Hierarchy-Reverse",
@@ -243,7 +243,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 new JsonPatchOperation
                 {
                     Operation = Operation.Add,
-                    Path = "/relations/-",
+                    Path = Constants.JsonPatchOperationPath,
                     Value = new
                     {
                         rel = "AttachedFile",
@@ -294,7 +294,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 new JsonPatchOperation
                 {
                     Operation = Operation.Add,
-                    Path = "/relations/-",
+                    Path = Constants.JsonPatchOperationPath,
                     Value = new
                     {
                         rel = linkType,
@@ -370,7 +370,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 new JsonPatchOperation
                 {
                     Operation = Operation.Add,
-                    Path = "/relations/-",
+                    Path = Constants.JsonPatchOperationPath,
                     Value = new
                     {
                         rel = "ArtifactLink",
@@ -391,8 +391,8 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         public async Task<IReadOnlyList<WorkItemClassificationNode>> CreateIterationsAsync(string projectName, IEnumerable<IterationCreateOptions> iterations, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(projectName);
-            ArgumentNullException.ThrowIfNull(iterations);
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(projectName); // Fix for CA1510
+            ArgumentNullException.ThrowIfNull(iterations); // Fix for CA1510
 
             var created = new List<WorkItemClassificationNode>();
 
@@ -424,7 +424,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         public async Task<IReadOnlyList<TeamSettingsIteration>> AssignIterationsAsync(TeamContext teamContext, IEnumerable<IterationAssignmentOptions> iterations, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(iterations);
+            ArgumentNullException.ThrowIfNull(iterations); // Fix for CA1510
 
             var assigned = new List<TeamSettingsIteration>();
             foreach (IterationAssignmentOptions iteration in iterations)
@@ -920,7 +920,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     new JsonPatchOperation
                     {
                         Operation = Operation.Add,
-                        Path = "/relations/-",
+                        Path = Constants.JsonPatchOperationPath,
                         Value = new
                         {
                             rel = relation,
