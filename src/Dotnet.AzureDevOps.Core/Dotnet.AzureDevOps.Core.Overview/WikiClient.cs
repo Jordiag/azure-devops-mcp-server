@@ -1,8 +1,6 @@
 using System.Text;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview.Options;
-using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi.Contracts;
@@ -15,8 +13,6 @@ namespace Dotnet.AzureDevOps.Core.Overview
     {
         private readonly string _projectName;
         private readonly WikiHttpClient _wikiHttpClient;
-        private readonly ProjectHttpClient _projectHttpClient;
-        private readonly DashboardHttpClient _dashboardHttpClient;
         private readonly string _organizationUrl;
         private readonly string _personalAccessToken;
 
@@ -29,8 +25,6 @@ namespace Dotnet.AzureDevOps.Core.Overview
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(organizationUrl), credentials);
             _wikiHttpClient = connection.GetClient<WikiHttpClient>();
-            _projectHttpClient = connection.GetClient<ProjectHttpClient>();
-            _dashboardHttpClient = connection.GetClient<DashboardHttpClient>();
         }
 
         public async Task<Guid> CreateWikiAsync(WikiCreateOptions wikiCreateOptions, CancellationToken cancellationToken = default)
@@ -142,8 +136,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
                     includeContent: true,
                     cancellationToken: cancellationToken);
 
-                using StreamReader reader = new StreamReader(stream);
-                string content = await reader.ReadToEndAsync();
+                using var reader = new StreamReader(stream);
+                string content = await reader.ReadToEndAsync(cancellationToken);
                 return content;
             }
             catch(VssServiceException)

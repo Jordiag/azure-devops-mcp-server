@@ -11,7 +11,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes project and process management operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public class ProjectSettingsTools
+public static class ProjectSettingsTools
 {
     private static ProjectSettingsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);
