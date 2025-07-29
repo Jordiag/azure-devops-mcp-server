@@ -3,6 +3,7 @@ using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using System.Net.Http;
 
 namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
@@ -68,6 +69,91 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 
             IReadOnlyList<Package> packages = await _artifactsClient.ListPackagesAsync(id);
             Assert.Empty(packages);
+        }
+
+        [Fact]
+        public async Task FeedPermissions_SucceedsAsync()
+        {
+            Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
+            {
+                Name = $"perm-feed-{UtcStamp()}"
+            });
+            _createdFeedIds.Add(feedId);
+
+            IReadOnlyList<FeedPermission> permissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
+            Assert.NotNull(permissions);
+
+            await _artifactsClient.SetFeedPermissionsAsync(feedId, permissions);
+
+            IReadOnlyList<FeedPermission> permissionsAfter = await _artifactsClient.GetFeedPermissionsAsync(feedId);
+            Assert.Equal(permissions.Count, permissionsAfter.Count);
+        }
+
+        [Fact]
+        public async Task FeedViewsWorkflow_SucceedsAsync()
+        {
+            Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
+            {
+                Name = $"view-feed-{UtcStamp()}"
+            });
+            _createdFeedIds.Add(feedId);
+
+            var view = new FeedView
+            {
+                Name = $"view-{UtcStamp()}",
+                Visibility = FeedVisibility.Private,
+                Type = FeedViewType.Release
+            };
+
+            FeedView created = await _artifactsClient.CreateFeedViewAsync(feedId, view);
+            IReadOnlyList<FeedView> views = await _artifactsClient.ListFeedViewsAsync(feedId);
+            Assert.Contains(views, v => v.Id == created.Id);
+
+            await _artifactsClient.DeleteFeedViewAsync(feedId, created.Id);
+
+            IReadOnlyList<FeedView> afterDelete = await _artifactsClient.ListFeedViewsAsync(feedId);
+            Assert.DoesNotContain(afterDelete, v => v.Id == created.Id);
+        }
+
+        [Fact]
+        public async Task RetentionPolicyWorkflow_SucceedsAsync()
+        {
+            Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
+            {
+                Name = $"ret-feed-{UtcStamp()}"
+            });
+            _createdFeedIds.Add(feedId);
+
+            FeedRetentionPolicy policy = await _artifactsClient.GetRetentionPolicyAsync(feedId);
+            var update = new FeedRetentionPolicy
+            {
+                AgeLimitInDays = policy.AgeLimitInDays ?? 0,
+                CountLimit = policy.CountLimit ?? 0,
+                DaysToKeepRecentlyDownloadedPackages = policy.DaysToKeepRecentlyDownloadedPackages ?? 0
+            };
+
+            FeedRetentionPolicy updated = await _artifactsClient.SetRetentionPolicyAsync(feedId, update);
+            Assert.NotNull(updated);
+        }
+
+        [Fact]
+        public async Task PackageAndUpstreaming_Methods_ReturnNotFoundAsync()
+        {
+            Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
+            {
+                Name = $"pkgerr-feed-{UtcStamp()}"
+            });
+            _createdFeedIds.Add(feedId);
+
+            const string packageName = "non-existent";
+            const string version = "1.0.0";
+
+            await Assert.ThrowsAsync<HttpRequestException>(() => _artifactsClient.DeletePackageAsync(feedId, packageName, version));
+            await Assert.ThrowsAsync<HttpRequestException>(() => _artifactsClient.GetPackageVersionAsync(feedId, packageName, version));
+            await Assert.ThrowsAsync<HttpRequestException>(() => _artifactsClient.UpdatePackageVersionAsync(feedId, packageName, version, new PackageVersionDetails()));
+            await Assert.ThrowsAsync<HttpRequestException>(() => _artifactsClient.DownloadPackageAsync(feedId, packageName, version));
+            await Assert.ThrowsAsync<HttpRequestException>(() => _artifactsClient.SetUpstreamingBehaviorAsync(feedId, packageName, UpstreamingBehavior.Block));
+            await Assert.ThrowsAsync<HttpRequestException>(() => _artifactsClient.GetUpstreamingBehaviorAsync(feedId, packageName));
         }
 
         /*────────── IAsyncLifetime ──────────*/
