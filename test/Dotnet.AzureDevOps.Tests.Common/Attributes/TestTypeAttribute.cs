@@ -5,11 +5,9 @@ namespace Dotnet.AzureDevOps.Tests.Common.Attributes;
 
 [TraitDiscoverer("Dotnet.AzureDevOps.Tests.Common.Attributes.TestTypeTraitDiscoverer", "Dotnet.AzureDevOps.Tests.Common")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
-public sealed class TestTypeAttribute : Attribute, ITraitAttribute
+public sealed class TestTypeAttribute(TestType type) : Attribute, ITraitAttribute
 {
-    public TestTypeAttribute(TestType type) => Type = type;
-
-    public TestType Type { get; }
+    public TestType Type { get; } = type;
 }
 
 public enum TestType
