@@ -20,8 +20,8 @@ jobs:
       buildPlatform: 'Any CPU'
       buildConfiguration: 'Release'
       solution: 'Dotnet.AzureDevOps.sln'
-      sonarProjectKey: 'Chanlabs_Dotnet.AzureDevOps'
-      sonarOrganization: 'chanlabs-1'
+      sonarProjectKey: 'Jordiag_azure-devops-mcp-server'
+      sonarOrganization: 'jordiag-mozcode'
       AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
       AZURE_DEVOPS_PIPELINE_ID: ${{ secrets.AZURE_DEVOPS_PIPELINE_ID }}
       AZURE_DEVOPS_PROJECT_ID: ${{ secrets.AZURE_DEVOPS_PROJECT_ID }}
