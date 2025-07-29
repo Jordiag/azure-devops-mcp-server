@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines
 {
-    public partial class PipelinesClient : IPipelinesClient
+    public class PipelinesClient : IPipelinesClient
     {
         private readonly string _projectName;
         private readonly BuildHttpClient _build;

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Tests.Common;
@@ -147,6 +146,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         }
 
         private static string UtcStamp() =>
-            DateTime.UtcNow.ToString("O").Replace(':','-');
+            DateTime.UtcNow.ToString("O").Replace(':', '-');
     }
 }

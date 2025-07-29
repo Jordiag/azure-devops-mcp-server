@@ -1,11 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Dotnet.AzureDevOps.Core.Boards;
+﻿using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {

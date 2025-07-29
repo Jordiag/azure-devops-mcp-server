@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Dotnet.AzureDevOps.Core.Repos;
+﻿using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -288,10 +287,10 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
         public async Task DisposeAsync()
         {
-            foreach (int id in _createdPrIds.AsEnumerable().Reverse()) 
+            foreach(int id in _createdPrIds.AsEnumerable().Reverse())
             {
                 GitPullRequest? pr = await _reposClient.GetPullRequestAsync(_repoName, id);
-                if (pr != null && pr.Status != PullRequestStatus.Completed)
+                if(pr != null && pr.Status != PullRequestStatus.Completed)
                     await _reposClient.AbandonPullRequestAsync(_repoName, id);
             }
         }
