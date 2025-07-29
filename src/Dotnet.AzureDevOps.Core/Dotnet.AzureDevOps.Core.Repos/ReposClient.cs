@@ -387,8 +387,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 string.Equals(label.Name, labelName, StringComparison.OrdinalIgnoreCase)))];
         }
 
-
-
         public async Task CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha)
         {
             var refUpdate = new GitRefUpdate
@@ -398,14 +396,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 NewObjectId = baseCommitSha
             };
 
-            var push = new GitPush
-            {
-                RefUpdates = [refUpdate],
-                Commits = []
-            };
-
-            await _gitHttpClient.CreatePushAsync(
-                push: push,
+            // Use the UpdateRefsAsync method instead
+            await _gitHttpClient.UpdateRefsAsync(
+                refUpdates: new[] { refUpdate },
                 repositoryId: repositoryId,
                 project: _projectName);
         }
@@ -609,7 +602,6 @@ namespace Dotnet.AzureDevOps.Core.Repos
             List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                 project: _projectName,
                 repositoryId: repositoryId,
-                filter: "heads/",
                 includeLinks: true,
                 includeStatuses: null,
                 includeMyBranches: true,

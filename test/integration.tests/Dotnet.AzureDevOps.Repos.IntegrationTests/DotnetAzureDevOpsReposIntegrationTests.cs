@@ -332,7 +332,12 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             IReadOnlyList<GitPullRequestIteration> iterations = await _reposClient.ListIterationsAsync(_repoName, prId);
             Assert.NotEmpty(iterations);
 
-            GitPullRequestIterationChanges changes = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id);
+            if(iterations[0]?.Id == null)
+            {
+                throw new InvalidOperationException("Iteration ID is null, cannot proceed with changes retrieval.");
+            }
+
+            GitPullRequestIterationChanges changes = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id.Value);
             Assert.NotNull(changes);
 
             int threadId = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
@@ -398,7 +403,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
             var searchCriteria = new GitQueryCommitsCriteria
             {
-                FromDate = DateTime.UtcNow.AddMonths(-1),
+                FromDate = DateTime.UtcNow.AddMonths(-1).ToString("o"),
                 ItemVersion = new GitVersionDescriptor
                 {
                     Version = branchName,
