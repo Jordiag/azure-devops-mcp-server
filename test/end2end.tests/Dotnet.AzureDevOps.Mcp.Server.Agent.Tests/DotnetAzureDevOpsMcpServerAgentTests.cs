@@ -1,14 +1,12 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.TestSetup;
+﻿using Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests.TestSetup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.Client;
-using ModelContextProtocol.SemanticKernel.Extensions;
 using Xunit;
 
-namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests;
+namespace Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests;
 
 public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
 {

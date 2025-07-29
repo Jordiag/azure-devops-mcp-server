@@ -1,8 +1,9 @@
 ﻿using Microsoft.SemanticKernel;
 using ModelContextProtocol.Client;
+
 #pragma warning disable SKEXP0001
 
-namespace Dotnet.AzureDevOps.Mcp.Server.Agent.Tests.TestSetup;
+namespace Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests.TestSetup;
 
 internal static class KernelFactory
 {

@@ -15,9 +15,9 @@ on:
 
 jobs:
   integration-tests:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     env:
-      buildPlatform: 'Any CPU'
+      buildPlatform: 'linux-x64'
       buildConfiguration: 'Release'
       solution: 'Dotnet.AzureDevOps.sln'
       sonarProjectKey: 'Chanlabs_Dotnet.AzureDevOps'
@@ -107,20 +107,17 @@ jobs:
             /d:sonar.dotnet.exludeTestProjects=true
       
       - name: Build with Dotnet
-        run: dotnet build "${{ env.solution }}" -c "Release" --no-restore
+        run: dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" -r "${{ env.buildPlatform }}" --no-restore
 
-      - name: Publish with dotnet
-        run: dotnet publish "./src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj" -o "${{ github.workspace }}/artifacts" -c Release --no-build
-      
       - name: Run Tests with Coverage
         run: |
           dotnet test "${{ env.solution }}" `
-            --configuration "Release" `
+            --filter "FullyQualifiedName!~End2EndTests" `
+            --no-restore --no-build `
             --settings "${{ github.workspace }}/.runsettings" `
             --collect:"Code Coverage" `
             --results-directory ./TestResults/ `
-            --logger "trx" `
-            --no-build
+            --logger "trx"
         shell: pwsh
         continue-on-error: true
 
@@ -136,3 +133,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }}
+        with:
+          name: Integration Tests
+          path: coverage.xml    
+          reporter: dotnet-trx
