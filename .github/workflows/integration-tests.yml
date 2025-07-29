@@ -15,9 +15,9 @@ on:
 
 jobs:
   integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
-      buildPlatform: 'linux-x64'
+      buildPlatform: 'Any CPU'
       buildConfiguration: 'Release'
       solution: 'Dotnet.AzureDevOps.sln'
       sonarProjectKey: 'Chanlabs_Dotnet.AzureDevOps'
