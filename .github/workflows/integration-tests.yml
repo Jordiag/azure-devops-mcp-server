@@ -107,7 +107,7 @@ jobs:
             /d:sonar.dotnet.exludeTestProjects=true
       
       - name: Build with Dotnet
-        run: dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" -r "${{ env.buildPlatform }}" --no-restore
+        run: dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" --no-restore
 
       - name: Run Tests with Coverage
         run: |
