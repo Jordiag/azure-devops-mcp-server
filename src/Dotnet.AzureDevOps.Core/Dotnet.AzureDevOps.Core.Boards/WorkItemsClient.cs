@@ -1,10 +1,17 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.Identity.Client;
+using Microsoft.VisualStudio.Services.Organization.Client;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
@@ -19,6 +26,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly string _projectName;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
+        private readonly HttpClient _httpClient;
         private const string _patchMethod = Constants.PatchMethod;
         private const string ContentTypeHeader = Constants.ContentTypeHeader;
         private const string JsonPatchContentType = Constants.JsonPatchContentType;
@@ -28,11 +36,41 @@ namespace Dotnet.AzureDevOps.Core.Boards
             _organizationUrl = organizationUrl;
             _projectName = projectName;
 
+            _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
+
+            string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _workItemClient = connection.GetClient<WorkItemTrackingHttpClient>();
             _workClient = connection.GetClient<WorkHttpClient>();
+        }
+
+        public async Task<bool> IsSystemProcessAsync(CancellationToken cancellationToken = default)
+        {
+            // Include process template details
+            string projectUrl = $"{_organizationUrl}/_apis/projects/{_projectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
+            JsonElement projectResponse = await _httpClient.GetFromJsonAsync<JsonElement>(projectUrl, cancellationToken);
+
+            string? processId = projectResponse
+                .GetProperty("capabilities")
+                .GetProperty("processTemplate")
+                .GetProperty("templateTypeId")
+                .GetString();
+
+            if(string.IsNullOrEmpty(processId))
+            {
+                throw new InvalidOperationException("Unable to determine the process ID for the project.");
+            }
+
+            string processUrl = $"{_organizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
+            JsonElement processResponse = await _httpClient.GetFromJsonAsync<JsonElement>(processUrl, cancellationToken);
+            string? processType = processResponse.GetProperty("type").GetString();
+
+            return string.IsNullOrEmpty(processType)
+                ? throw new InvalidOperationException("Unable to determine process type for the project.")
+                : processType.Equals("system", StringComparison.OrdinalIgnoreCase);
         }
 
         public Task<int?> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
@@ -491,18 +529,27 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 await UpdateWorkItemAsync(id, options, cancellationToken);
             }
         }
-
         /// <summary>
         /// Executes an arbitrary collection of <see cref="WitBatchRequest"/> objects in one $batch call.
         /// </summary>
         public async Task<IReadOnlyList<WitBatchResponse>> ExecuteBatchAsync(
             IEnumerable<WitBatchRequest> requests,
-            CancellationToken cancellationToken = default) => 
-                requests == null
-                ? throw new ArgumentNullException(nameof(requests))
-                : (IReadOnlyList<WitBatchResponse>)await _workItemClient
-                    .ExecuteBatchRequest(requests, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(requests);
+
+            var requestList = requests.ToList(); // Materialise to inspect count, content etc. if needed
+
+            // Optional: log or debug request count
+            Debug.WriteLine($"Executing batch with {requestList.Count} request(s).");
+
+            List<WitBatchResponse> result = await _workItemClient
+                .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return (IReadOnlyList<WitBatchResponse>)result;
+        }
+
 
         /// <summary>
         /// Bulk‑creates many work items of the same type (e.g. hundreds of "User Story" records)
@@ -524,9 +571,8 @@ namespace Dotnet.AzureDevOps.Core.Boards
             foreach(WorkItemCreateOptions item in items)
             {
                 JsonPatchDocument patch = BuildPatchDocument(item);
-
                 WitBatchRequest request = _workItemClient.CreateWorkItemBatchRequest(
-                    idItem,
+                    id: idItem,
                     document: patch,
                     bypassRules: bypassRules,
                     suppressNotifications: suppressNotifications);
@@ -897,6 +943,49 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         public Task<WorkItemQueryResult> GetQueryResultsByIdAsync(Guid queryId, TeamContext teamContext, bool? timePrecision = false, int top = 50, CancellationToken cancellationToken = default)
             => _workItemClient.QueryByIdAsync(teamContext, queryId, timePrecision, top, cancellationToken: cancellationToken);
+
+        public async Task CreateSharedQueryAsync(string projectName, string queryName, string wiql, CancellationToken cancellationToken = default)
+        {
+            var requestBody = new
+            {
+                name = queryName,
+                wiql = wiql,
+                isFolder = false
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
+            string requestUrl = $"{_organizationUrl}/{projectName}/_apis/wit/queries/Shared%20Queries?api-version={GlobalConstants.ApiVersion}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = content
+            };
+
+            HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if(!response.IsSuccessStatusCode)
+            {
+                string responseBody = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Failed to create query: {response.StatusCode} - {responseBody}");
+            }
+        }
+
+        public async Task DeleteSharedQueryAsync(string projectName, string queryName, CancellationToken cancellationToken = default)
+        {
+            string encodedPath = Uri.EscapeDataString($"Shared Queries/{queryName}");
+            string requestUrl = $"{_organizationUrl}/{projectName}/_apis/wit/queries/{encodedPath}?api-version={GlobalConstants.ApiVersion}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
+            HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if(!response.IsSuccessStatusCode)
+            {
+                string responseBody = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Failed to delete query: {response.StatusCode} - {responseBody}");
+            }
+        }
+
 
         public Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsByNameBatchAsync(
             IEnumerable<(int sourceId, int targetId, string type, string? comment)> links,

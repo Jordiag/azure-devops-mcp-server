@@ -87,7 +87,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
-                string url = $"{_organizationUrl}/_apis/projects/{_projectName}/teams/{teamGuid}?api-version={Constants.ApiVersion}";
+                string url = $"{_organizationUrl}/_apis/projects/{_projectName}/teams/{teamGuid}?api-version={GlobalConstants.ApiVersion}";
 
                 HttpResponseMessage response = await client.DeleteAsync(url);
 
@@ -109,7 +109,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 _ => throw new ArgumentException("Unsupported base process name")
             };
 
-            string url = $"{_organizationUrl}/_apis/work/processes?api-version={Constants.ApiVersion}";
+            string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
 
             using var client = new HttpClient();
 
