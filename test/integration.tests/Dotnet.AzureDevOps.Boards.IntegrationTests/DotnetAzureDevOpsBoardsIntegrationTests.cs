@@ -1,8 +1,14 @@
 ﻿using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Repos;
+using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
+using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using System.Linq;
+using System.Text.Json;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -12,7 +18,12 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly WorkItemsClient _workItemsClient;
+        private readonly ReposClient _reposClient;
         private readonly List<int> _createdWorkItemIds = [];
+        private readonly List<int> _createdPullRequestIds = [];
+        private readonly string _repositoryName;
+        private readonly string _sourceBranch;
+        private readonly string _targetBranch;
 
         public DotnetAzureDevOpsBoardsIntegrationTests()
         {
@@ -22,6 +33,15 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
+
+            _reposClient = new ReposClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            _repositoryName = _azureDevOpsConfiguration.RepoName;
+            _sourceBranch = _azureDevOpsConfiguration.SrcBranch;
+            _targetBranch = _azureDevOpsConfiguration.TargetBranch;
         }
 
         /// <summary>
@@ -522,6 +542,426 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.Equal("Closed", second?.Fields?["System.State"].ToString());
         }
 
+        [Fact]
+        public async Task ListBoards_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<BoardReference> boardReferences = await _workItemsClient.ListBoardsAsync(teamContext);
+            Assert.NotNull(boardReferences);
+        }
+
+        [Fact]
+        public async Task GetTeamIteration_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, string.Empty);
+            Assert.NotEmpty(iterations);
+
+            TeamSettingsIteration iteration = iterations.First();
+            TeamSettingsIteration fetched = await _workItemsClient.GetTeamIterationAsync(teamContext, iteration.Id);
+            Assert.Equal(iteration.Id, fetched.Id);
+        }
+
+        [Fact]
+        public async Task GetTeamIterations_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, string.Empty);
+            Assert.NotNull(iterations);
+        }
+
+        [Fact]
+        public async Task ListBoardColumns_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<BoardReference> boards = await _workItemsClient.ListBoardsAsync(teamContext);
+            Assert.NotEmpty(boards);
+
+            Guid boardId = boards.First().Id;
+            List<BoardColumn> columns = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardId);
+            Assert.NotNull(columns);
+        }
+
+        [Fact]
+        public async Task ListBacklogs_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<BacklogLevelConfiguration> backlogs = await _workItemsClient.ListBacklogsAsync(teamContext);
+            Assert.NotNull(backlogs);
+        }
+
+        [Fact]
+        public async Task ListBacklogWorkItems_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<BacklogLevelConfiguration> backlogs = await _workItemsClient.ListBacklogsAsync(teamContext);
+            Assert.NotEmpty(backlogs);
+
+            string backlogId = backlogs.First().Id!;
+            BacklogLevelWorkItems backlogItems = await _workItemsClient.ListBacklogWorkItemsAsync(teamContext, backlogId);
+            Assert.NotNull(backlogItems);
+        }
+
+        [Fact]
+        public async Task ListMyWorkItems_SucceedsAsync()
+        {
+            PredefinedQuery query = await _workItemsClient.ListMyWorkItemsAsync();
+            Assert.NotNull(query);
+        }
+
+        [Fact]
+        public async Task LinkWorkItemToPullRequest_SucceedsAsync()
+        {
+            int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "PR Link", Tags = "IntegrationTest;PR" });
+            Assert.True(workItemId.HasValue);
+            _createdWorkItemIds.Add(workItemId!.Value);
+
+            var prOptions = new PullRequestCreateOptions
+            {
+                RepositoryIdOrName = _repositoryName,
+                Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
+                Description = "PR for link test",
+                SourceBranch = _sourceBranch,
+                TargetBranch = _targetBranch,
+                IsDraft = false
+            };
+
+            int? pullRequestId = await _reposClient.CreatePullRequestAsync(prOptions);
+            Assert.True(pullRequestId.HasValue);
+            _createdPullRequestIds.Add(pullRequestId!.Value);
+
+            await _workItemsClient.LinkWorkItemToPullRequestAsync(
+                _azureDevOpsConfiguration.ProjectId,
+                _azureDevOpsConfiguration.RepositoryId,
+                pullRequestId.Value,
+                workItemId.Value);
+        }
+
+        [Fact]
+        public async Task GetWorkItemsForIteration_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<TeamSettingsIteration> iterations = await _workItemsClient.ListIterationsAsync(teamContext);
+            if (iterations.Count == 0)
+            {
+                Assert.NotNull(iterations);
+                return;
+            }
+
+            TeamSettingsIteration iteration = iterations.First();
+            IterationWorkItems result = await _workItemsClient.GetWorkItemsForIterationAsync(teamContext, iteration.Id);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task ListIterations_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<TeamSettingsIteration> iterations = await _workItemsClient.ListIterationsAsync(teamContext);
+            Assert.NotNull(iterations);
+        }
+
+        [Fact]
+        public async Task CreateIterations_SucceedsAsync()
+        {
+            string name = $"it-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            var iterations = new List<IterationCreateOptions>
+            {
+                new IterationCreateOptions { IterationName = name }
+            };
+
+            IReadOnlyList<WorkItemClassificationNode> created = await _workItemsClient.CreateIterationsAsync(_azureDevOpsConfiguration.ProjectName, iterations);
+            Assert.NotEmpty(created);
+        }
+
+        [Fact]
+        public async Task AssignIterations_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<TeamSettingsIteration> existing = await _workItemsClient.ListIterationsAsync(teamContext);
+            if (existing.Count == 0)
+            {
+                Assert.NotNull(existing);
+                return;
+            }
+
+            TeamSettingsIteration iteration = existing.First();
+            var assignments = new List<IterationAssignmentOptions>
+            {
+                new IterationAssignmentOptions { Identifier = iteration.Id, Path = iteration.Path! }
+            };
+
+            IReadOnlyList<TeamSettingsIteration> result = await _workItemsClient.AssignIterationsAsync(teamContext, assignments);
+            Assert.NotEmpty(result);
+        }
+
+        [Fact]
+        public async Task ListAreas_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
+            Assert.NotNull(areas);
+        }
+
+        [Fact]
+        public async Task CustomFieldWorkflow_SucceedsAsync()
+        {
+            int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Custom Field" });
+            Assert.True(workItemId.HasValue);
+            _createdWorkItemIds.Add(workItemId!.Value);
+
+            await _workItemsClient.SetCustomFieldAsync(workItemId.Value, "Custom.TestField", "Value1");
+            object? fieldValue = await _workItemsClient.GetCustomFieldAsync(workItemId.Value, "Custom.TestField");
+            Assert.NotNull(fieldValue);
+        }
+
+        [Fact]
+        public async Task ExportBoard_SucceedsAsync()
+        {
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            List<BoardReference> boards = await _workItemsClient.ListBoardsAsync(teamContext);
+            Assert.NotEmpty(boards);
+
+            Board? board = await _workItemsClient.ExportBoardAsync(teamContext, boards.First().Id.ToString());
+            Assert.NotNull(board);
+        }
+
+        [Fact]
+        public async Task GetWorkItemCount_SucceedsAsync()
+        {
+            string wiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project";
+            int count = await _workItemsClient.GetWorkItemCountAsync(wiql);
+            Assert.True(count >= 0);
+        }
+
+        [Fact]
+        public async Task ExecuteBatch_SucceedsAsync()
+        {
+            int? id = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Root" });
+            Assert.True(id.HasValue);
+            _createdWorkItemIds.Add(id!.Value);
+
+            var request = new WitBatchRequest
+            {
+                Method = "GET",
+                Uri = $"/_apis/wit/workitems/{id.Value}?api-version=7.1-preview.1"
+            };
+
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.ExecuteBatchAsync(new[] { request });
+            Assert.NotEmpty(responses);
+        }
+
+        [Fact]
+        public async Task CreateWorkItemsBatch_SucceedsAsync()
+        {
+            var items = new List<WorkItemCreateOptions>
+            {
+                new WorkItemCreateOptions { Title = "Batch Item 1" },
+                new WorkItemCreateOptions { Title = "Batch Item 2" }
+            };
+
+            IReadOnlyList<int> created = await _workItemsClient.CreateWorkItemsBatchAsync("Task", items);
+            Assert.Equal(2, created.Count);
+            foreach (int workItem in created)
+            {
+                _createdWorkItemIds.Add(workItem);
+            }
+        }
+
+        [Fact]
+        public async Task CreateWorkItemsBatchViaBatch_SucceedsAsync()
+        {
+            var items = new List<WorkItemCreateOptions>
+            {
+                new WorkItemCreateOptions { Title = "Batch API 1" },
+                new WorkItemCreateOptions { Title = "Batch API 2" }
+            };
+
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CreateWorkItemsBatchAsync("Task", items, true, false);
+            foreach (WitBatchResponse response in responses)
+            {
+                WorkItem? created = JsonSerializer.Deserialize<WorkItem>(response.Body?.ToString() ?? "{}");
+                if (created?.Id != null)
+                {
+                    _createdWorkItemIds.Add(created.Id.Value);
+                }
+            }
+            Assert.Equal(2, responses.Count);
+        }
+
+        [Fact]
+        public async Task UpdateWorkItemsBatch_SucceedsAsync()
+        {
+            int? firstId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Update 1" });
+            int? secondId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Update 2" });
+            Assert.True(firstId.HasValue && secondId.HasValue);
+            _createdWorkItemIds.Add(firstId!.Value);
+            _createdWorkItemIds.Add(secondId!.Value);
+
+            var updates = new List<(int, WorkItemCreateOptions)>
+            {
+                (firstId.Value, new WorkItemCreateOptions { State = "Closed" }),
+                (secondId.Value, new WorkItemCreateOptions { State = "Closed" })
+            };
+
+            IReadOnlyList<WitBatchResponse> batch = await _workItemsClient.UpdateWorkItemsBatchAsync(updates);
+            Assert.Equal(2, batch.Count);
+        }
+
+        [Fact]
+        public async Task LinkWorkItemsBatch_SucceedsAsync()
+        {
+            int? parentId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Parent" });
+            int? childId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Child" });
+            Assert.True(parentId.HasValue && childId.HasValue);
+            _createdWorkItemIds.Add(parentId!.Value);
+            _createdWorkItemIds.Add(childId!.Value);
+
+            var links = new List<(int, int, string)> { (parentId.Value, childId.Value, "System.LinkTypes.Related") };
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.LinkWorkItemsBatchAsync(links);
+            Assert.NotEmpty(responses);
+        }
+
+        [Fact]
+        public async Task CloseWorkItemsBatch_SucceedsAsync()
+        {
+            int? id1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Close 1" });
+            int? id2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Close 2" });
+            Assert.True(id1.HasValue && id2.HasValue);
+            _createdWorkItemIds.Add(id1!.Value);
+            _createdWorkItemIds.Add(id2!.Value);
+
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CloseWorkItemsBatchAsync(new[] { id1.Value, id2.Value });
+            Assert.Equal(2, responses.Count);
+        }
+
+        [Fact]
+        public async Task CloseAndLinkDuplicatesBatch_SucceedsAsync()
+        {
+            int? canonical = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Canonical" });
+            int? duplicate = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Duplicate" });
+            Assert.True(canonical.HasValue && duplicate.HasValue);
+            _createdWorkItemIds.Add(canonical!.Value);
+            _createdWorkItemIds.Add(duplicate!.Value);
+
+            var pairs = new List<(int, int)> { (duplicate.Value, canonical.Value) };
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CloseAndLinkDuplicatesBatchAsync(pairs);
+            Assert.Single(responses);
+        }
+
+        [Fact]
+        public async Task AddChildWorkItemsBatch_SucceedsAsync()
+        {
+            int? parent = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions { Title = "Parent Epic" });
+            Assert.True(parent.HasValue);
+            _createdWorkItemIds.Add(parent!.Value);
+
+            var children = new List<WorkItemCreateOptions>
+            {
+                new WorkItemCreateOptions { Title = "Child 1" },
+                new WorkItemCreateOptions { Title = "Child 2" }
+            };
+
+            List<WorkItem?> created = await _workItemsClient.AddChildWorkItemsBatchAsync(parent.Value, "Task", children);
+            foreach (WorkItem? item in created)
+            {
+                if (item?.Id != null)
+                {
+                    _createdWorkItemIds.Add(item.Id.Value);
+                }
+            }
+
+            Assert.Equal(2, created.Count);
+        }
+
+        [Fact]
+        public async Task GetWorkItemsBatchByIds_SucceedsAsync()
+        {
+            int? item1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "BatchGet 1" });
+            int? item2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "BatchGet 2" });
+            Assert.True(item1.HasValue && item2.HasValue);
+            _createdWorkItemIds.Add(item1!.Value);
+            _createdWorkItemIds.Add(item2!.Value);
+
+            IReadOnlyList<WorkItem> items = await _workItemsClient.GetWorkItemsBatchByIdsAsync(new[] { item1.Value, item2.Value });
+            Assert.Equal(2, items.Count);
+        }
+
+        [Fact]
+        public async Task CreateWorkItem_SucceedsAsync()
+        {
+            var fields = new List<WorkItemFieldValue>
+            {
+                new WorkItemFieldValue { Name = "System.Title", Value = "Arbitrary" }
+            };
+
+            WorkItem? workItem = await _workItemsClient.CreateWorkItemAsync("Task", fields);
+            Assert.NotNull(workItem);
+            if (workItem?.Id != null)
+            {
+                _createdWorkItemIds.Add(workItem.Id.Value);
+            }
+        }
+
+        [Fact]
+        public async Task UpdateWorkItem_SucceedsAsync()
+        {
+            int? itemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Update Arbitrary" });
+            Assert.True(itemId.HasValue);
+            _createdWorkItemIds.Add(itemId!.Value);
+
+            var updates = new List<WorkItemFieldUpdate>
+            {
+                new WorkItemFieldUpdate { Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add, Path = "/fields/System.Title", Value = "Updated" }
+            };
+
+            WorkItem? updated = await _workItemsClient.UpdateWorkItemAsync(itemId.Value, updates);
+            Assert.NotNull(updated);
+        }
+
+        [Fact]
+        public async Task GetWorkItemType_SucceedsAsync()
+        {
+            WorkItemType type = await _workItemsClient.GetWorkItemTypeAsync(_azureDevOpsConfiguration.ProjectName, "Task");
+            Assert.NotNull(type);
+        }
+
+        [Fact]
+        public async Task GetQuery_SucceedsAsync()
+        {
+            QueryHierarchyItem query = await _workItemsClient.GetQueryAsync(_azureDevOpsConfiguration.ProjectName, "Shared Queries");
+            Assert.NotNull(query);
+        }
+
+        [Fact]
+        public async Task GetQueryResultsById_SucceedsAsync()
+        {
+            QueryHierarchyItem query = await _workItemsClient.GetQueryAsync(_azureDevOpsConfiguration.ProjectName, "Shared Queries");
+            Guid id = query.Id;
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+
+            WorkItemQueryResult result = await _workItemsClient.GetQueryResultsByIdAsync(id, teamContext);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task LinkWorkItemsByNameBatch_SucceedsAsync()
+        {
+            int? w1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "LinkName1" });
+            int? w2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "LinkName2" });
+            Assert.True(w1.HasValue && w2.HasValue);
+            _createdWorkItemIds.Add(w1!.Value);
+            _createdWorkItemIds.Add(w2!.Value);
+
+            var links = new List<(int, int, string, string?)>
+            {
+                (w1.Value, w2.Value, "related", "link")
+            };
+
+            IReadOnlyList<WitBatchResponse> resp = await _workItemsClient.LinkWorkItemsByNameBatchAsync(links);
+            Assert.Single(resp);
+        }
+
         /// <summary>
         /// xUnit method for async initialization before any tests run.
         /// Not needed here, so we return a completed task.
@@ -537,6 +977,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             foreach(int id in _createdWorkItemIds.AsEnumerable().Reverse())
             {
                 await _workItemsClient.DeleteWorkItemAsync(id);
+            }
+
+            foreach(int prId in _createdPullRequestIds.AsEnumerable().Reverse())
+            {
+                await _reposClient.AbandonPullRequestAsync(_repositoryName, prId);
             }
         }
     }
