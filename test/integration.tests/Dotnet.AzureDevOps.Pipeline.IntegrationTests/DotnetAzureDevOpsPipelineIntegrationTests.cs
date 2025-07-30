@@ -3,6 +3,7 @@ using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Build.WebApi;
+using Xunit;
 
 namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 {
@@ -158,7 +159,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Contains(list, d => d.Id == _definitionId);
         }
 
-        [Fact]
+        [SkippableFact(DisplayName = "Cancel build while runnning")]
         public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
         {
             var queueOptions = new BuildQueueOptions
