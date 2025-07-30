@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
@@ -697,7 +698,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
             foreach(string commitId in commitIds)
             {
-                string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/commits/{commitId}/pullRequests?api-version=7.0";
+                string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/commits/{commitId}/pullRequests?api-version={GlobalConstants.ApiVersion}";
                 using HttpResponseMessage message = await httpClient.GetAsync(requestUrl);
                 message.EnsureSuccessStatusCode();
                 List<GitPullRequest>? pullRequests = await message.Content.ReadFromJsonAsync<List<GitPullRequest>>();

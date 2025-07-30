@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
-using System.Threading;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
@@ -755,7 +755,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct using api instead of nuget with deprecated api version 5.0.
+        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -768,7 +768,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             var request = new WitBatchRequest
             {
                 Method = "GET",
-                Uri = $"/_apis/wit/workitems/{id.Value}?api-version=7.1-preview.1"
+                Uri = $"/_apis/wit/workitems/{id.Value}?api-version={GlobalConstants.ApiVersion}"
             };
 
             try
@@ -800,7 +800,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct PAT user so doesn't raise exception about permissions.
+        /// TODO: correct PAT user so doesn't raise exception about permissions.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -833,7 +833,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct using api instead of nuget with deprecated api version 5.0.
+        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -863,7 +863,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct using api instead of nuget with deprecated api version 5.0.
+        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -890,7 +890,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
 
         /// <summary>
-        /// TODO correct using api instead of nuget with deprecated api version 5.0.
+        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -915,7 +915,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct using api instead of nuget with deprecated api version 5.0.
+        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -941,7 +941,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct PAT user so doesn't raise exception about permissions.
+        /// TODO: correct PAT user so doesn't raise exception about permissions.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -958,7 +958,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 return;
             }
 
-            string defaultWorkItemType = "Feature"; 
+            string defaultWorkItemType = "Feature";
 
             var children = new List<WorkItemCreateOptions>
             {
@@ -990,7 +990,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             catch(VssServiceException ex)
             {
 
-                Assert.Contains("TF237111: The current user does not have permissions to save work items under the specified area path.",ex.Message);
+                Assert.Contains("TF237111: The current user does not have permissions to save work items under the specified area path.", ex.Message);
             }
         }
 
@@ -1105,7 +1105,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO correct using api instead of nuget with deprecated api version 5.0.
+        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
         /// </summary>
         /// <returns></returns>
         [Fact]
