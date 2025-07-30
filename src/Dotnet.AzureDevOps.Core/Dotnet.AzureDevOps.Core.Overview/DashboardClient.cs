@@ -26,12 +26,12 @@ namespace Dotnet.AzureDevOps.Core.Overview
             return dashboards;
         }
 
-        public async Task<Dashboard?> GetDashboardAsync(Guid dashboardId, CancellationToken cancellationToken = default)
+        public async Task<Dashboard?> GetDashboardAsync(Guid dashboardId, string teamName, CancellationToken cancellationToken = default)
         {
             try
             {
-                TeamContext teamContext = new TeamContext(_projectName);
-                return await _dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
+                var teamContext = new TeamContext(_projectName, teamName);
+                return await _dashboardHttpClient.GetDashboardAsync( teamContext, dashboardId, cancellationToken: cancellationToken);
             }
             catch(VssServiceException)
             {

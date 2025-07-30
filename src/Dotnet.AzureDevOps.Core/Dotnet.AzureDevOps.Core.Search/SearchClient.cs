@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Search.Options;
 
@@ -8,9 +9,10 @@ public class SearchClient : ISearchClient
 {
     private readonly HttpClient _httpClient;
 
-    public SearchClient(string organizationUrl, string personalAccessToken)
+    public SearchClient(string organisation, string personalAccessToken)
     {
-        _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
+        string searchBaseAddress = $"https://almsearch.dev.azure.com/{organisation}/";
+        _httpClient = new HttpClient { BaseAddress = new Uri(searchBaseAddress) };
         string token = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{personalAccessToken}"));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -59,25 +61,24 @@ public class SearchClient : ISearchClient
         return payload;
     }
 
-    private static object BuildWikiPayload(WikiSearchOptions options)
+    private static WikiSearchPayload BuildWikiPayload(WikiSearchOptions options)
     {
         var filters = new Dictionary<string, IReadOnlyList<string>>();
-        if(options.Project != null && options.Project.Count > 0)
+
+        if(options.Project?.Count > 0)
             filters["Project"] = options.Project;
-        if(options.Wiki != null && options.Wiki.Count > 0)
+
+        if(options.Wiki?.Count > 0)
             filters["Wiki"] = options.Wiki;
 
-        var payload = new Dictionary<string, object?>
+        return new WikiSearchPayload
         {
-            ["searchText"] = options.SearchText,
-            ["includeFacets"] = options.IncludeFacets,
-            ["$skip"] = options.Skip,
-            ["$top"] = options.Top
+            SearchText = options.SearchText,
+            IncludeFacets = options.IncludeFacets,
+            Skip = options.Skip,
+            Top = options.Top,
+            Filters = filters.Count > 0 ? filters : null
         };
-        if(filters.Count > 0)
-            payload["filters"] = filters;
-
-        return payload;
     }
 
     private static object BuildWorkItemPayload(WorkItemSearchOptions options)

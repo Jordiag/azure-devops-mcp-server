@@ -101,10 +101,10 @@ public class OverviewTools
         return client.ListDashboardsAsync();
     }
 
-    [McpServerTool, Description("Retrieves a dashboard by identifier.")]
-    public static Task<Dashboard?> GetDashboardAsync(string organizationUrl, string projectName, string personalAccessToken, Guid dashboardId)
+    [McpServerTool, Description("Retrieves a dashboard by identifier and team name.")]
+    public static Task<Dashboard?> GetDashboardAsync(string organizationUrl, string projectName, string personalAccessToken, Guid dashboardId, string teamName)
     {
         DashboardClient client = CreateDashboardClient(organizationUrl, projectName, personalAccessToken);
-        return client.GetDashboardAsync(dashboardId);
+        return client.GetDashboardAsync(dashboardId, teamName);
     }
 }
