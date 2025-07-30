@@ -23,7 +23,7 @@ public class TestFixture : WebApplicationFactory<Program>
             .ConfigureTestServices(services => services
                 .AddSingleton(McpConfiguration.FromConfiguration(configuration))
                 .AddSingleton(AzureDevOpsConfiguration.FromConfiguration(configuration))
-                .AddScoped<Kernel>(provider =>
+                .AddScoped(provider =>
                 {
                     IKernelBuilder builder = Kernel.CreateBuilder();
                     McpConfiguration mcpConfig = provider.GetRequiredService<McpConfiguration>();

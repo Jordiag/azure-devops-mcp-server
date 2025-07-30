@@ -8,6 +8,7 @@ using Microsoft.TeamFoundation.Wiki.WebApi;
 namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 {
     [TestType(TestType.Integration)]
+    [Component(Component.Overview)]
     public class DotnetAzureDevOpsOverviewIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;

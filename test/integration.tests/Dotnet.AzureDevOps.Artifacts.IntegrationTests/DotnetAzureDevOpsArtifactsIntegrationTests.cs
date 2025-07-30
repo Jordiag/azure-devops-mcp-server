@@ -3,11 +3,11 @@ using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
-using System.Net.Http;
 
 namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
     [TestType(TestType.Integration)]
+    [Component(Component.Artifacts)]
     public class DotnetAzureDevOpsArtifactsIntegrationTests : IAsyncLifetime
     {
         private readonly ArtifactsClient _artifactsClient;
