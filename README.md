@@ -28,15 +28,36 @@ If you choose to build on top of this project during the preview phase, be prepa
 The repository contains multiple C# projects that wrap the Microsoft Azure DevOps SDK and REST APIs. Each Azure DevOps tab—Boards, Repos, Pipelines, Artifacts and others—has a project under `/src/` exposing a simplified client interface. These thin wrappers are consumed by `Dotnet.AzureDevOps.Mcp.Server` to surface Model Context Protocol (MCP) tools. While most calls forward to the official SDKs or, when necessary, the REST endpoints, this layer keeps the MCP server decoupled from Azure DevOps so it can evolve independently or swap implementations in the future.
 The solution is organized as a multi‑project workspace targeting **.NET 9**. Each service area of Azure DevOps has its own client library:
 
-* <img width="30px" align="center" alt="Azure Devops Overview" src="https://cdn.vsassets.io/ext/ms.vss-tfs-web/platform-content/Nav-Dashboard.S24hPD.png"/> **Overview** – Wiki creation, search, project summary, and dashboard management, query code, wikis, or work items.
-* <img width="30px" align="center" alt="Azure Devops Boards" src="https://cdn.vsassets.io/ext/ms.vss-work-web/common-content/Content/Nav-Plan.XB8qU6.png"/> **Boards** – CRUD operations for Epics, Features, User Stories, and Tasks.
-  Includes listing boards and columns, exporting boards, and retrieving
-  iterations.
-* <img width="30px" align="center" alt="Azure Devops Repos" src="https://cdn.vsassets.io/ext/ms.vss-code-web/common-content/Nav-Code.0tJczm.png"/> **Repos** – Pull request workflows, reviewers, comments, labels, tags, and repository management.
-* <img width="30px" align="center" alt="Azure Devops Pipelines" src="https://cdn.vsassets.io/ext/ms.vss-build-web/common-library/Nav-Launch.3tiJhd.png"/> **Pipelines** – Queue, cancel, and retry runs; download logs; and manage pipeline definitions.
-* <img width="30px" align="center" alt="Azure Devops Artifacts" src="https://ms.gallerycdn.vsassets.io/extensions/ms/azure-artifacts/20.258.0.1723809258/1750881068685/root/img/artifacts-icon.png"/> **Artifacts** – Create/update feeds and list/delete packages.
-* <img width="30px" align="center" alt="Azure Devops Test Plans" src="https://cdn.vsassets.io/ext/ms.vss-test-web/common-content/Nav-Test.CLbC8L.png"/> **Test Plans** – Manage test plans, suites, and test case assignments.
-* <img width="30px" align="center" alt="Azure Devops Project Settings" src="https://chanlabs.com/img/2965279.png"/> **Project Settings** – Create, update, and delete teams as well as manage inherited processes.
+* <img width="30px" align="center" alt="Azure Devops Overview" src="https://cdn.vsassets.io/ext/ms.vss-tfs-web/platform-content/Nav-Dashboard.S24hPD.png"/> **Overview** – manage wikis and pages.
+  - Create, read, list and delete wikis
+  - Create or update pages, list pages and fetch page text
+* <img width="30px" align="center" alt="Azure Devops Boards" src="https://cdn.vsassets.io/ext/ms.vss-work-web/common-content/Content/Nav-Plan.XB8qU6.png"/> **Boards** – manage work items and boards.
+  - Create and update Epics, Features, Stories and Tasks
+  - Query work items, manage comments, attachments and links
+  - Bulk updates and exports, list boards, columns and iterations
+  - Manage iterations and areas and get work item counts
+* <img width="30px" align="center" alt="Azure Devops Repos" src="https://cdn.vsassets.io/ext/ms.vss-code-web/common-content/Nav-Code.0tJczm.png"/> **Repos** – pull request and repository management.
+  - Create, complete and list pull requests with labels and comments
+  - Create tags, list branches and diffs, create and delete repositories
+  - Update pull request iterations and search commits
+* <img width="30px" align="center" alt="Azure Devops Pipelines" src="https://cdn.vsassets.io/ext/ms.vss-build-web/common-library/Nav-Launch.3tiJhd.png"/> **Pipelines** – build and pipeline operations.
+  - Queue, cancel and retry builds, list runs and download logs
+  - Retrieve changes, logs and build reports
+  - List definitions and full pipeline CRUD
+* <img width="30px" align="center" alt="Azure Devops Artifacts" src="https://ms.gallerycdn.vsassets.io/extensions/ms/azure-artifacts/20.258.0.1723809258/1750881068685/root/img/artifacts-icon.png"/> **Artifacts** – manage feeds and packages.
+  - Create, update, list and delete feeds
+  - List packages, view permissions and retention policies
+  - Manage feed views and attempt package and upstreaming operations
+* <img width="30px" align="center" alt="Azure Devops Test Plans" src="https://cdn.vsassets.io/ext/ms.vss-test-web/common-content/Nav-Test.CLbC8L.png"/> **Test Plans** – work with test plans and suites.
+  - Create, read, list and delete test plans and suites
+  - Create test cases, add them to suites and fetch test results
+* <img width="30px" align="center" alt="Azure Devops Project Settings" src="https://chanlabs.com/img/2965279.png"/> **Project Settings** – team and process configuration.
+  - Create, update and delete teams
+  - Retrieve board settings and iterations
+  - Create and delete inherited processes
+* <img width="30px" align="center" alt="Azure Devops Search" src="https://cdn.vsassets.io/ext/ms.vss-search-web/common-content/nav-search.svg"/> **Search** – search Azure DevOps artifacts.
+  - Search wiki pages
+  - Search work items
 
 The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server is implemented as a console application that hosts an ASP.NET Core web server using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. You can run it directly or adapt it to your preferred hosting environment—such as a container image, Azure Functions, or a Windows service. AI assistants can discover available tools at runtime and invoke them using structured function calls.
 
