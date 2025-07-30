@@ -36,6 +36,7 @@ jobs:
       AZURE_DEVOPS_COMMIT_SHA: ${{ vars.AZURE_DEVOPS_COMMIT_SHA }}
       AZURE_DEVOPS_MAIN_BRANCH_NAME: ${{ vars.AZURE_DEVOPS_MAIN_BRANCH_NAME }}
       AZURE_DEVOPS_ORG_URL: ${{ vars.AZURE_DEVOPS_ORG_URL }}
+      AZURE_DEVOPS_ORG:  ${{ vars.AZURE_DEVOPS_ORG }}
       AZURE_DEVOPS_PROJECT_NAME: ${{ vars.AZURE_DEVOPS_PROJECT_NAME }}
       AZURE_DEVOPS_REPO_NAME: ${{ vars.AZURE_DEVOPS_REPO_NAME }}
       AZURE_DEVOPS_SRC_BRANCH: ${{ vars.AZURE_DEVOPS_SRC_BRANCH }}
@@ -120,13 +121,13 @@ jobs:
             --results-directory ./TestResults/ `
             --logger "trx"
         shell: pwsh
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Convert Coverage to XML
         run: |
           dotnet-coverage merge ./TestResults/**/*.coverage --output coverage.xml --output-format xml
         shell: pwsh
-        continue-on-error: true
+        continue-on-error: false
 
       - name: End SonarCloud Analysis
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
@@ -134,3 +135,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
