@@ -55,7 +55,7 @@ The solution is organized as a multi‑project workspace targeting **.NET 9**. E
   - Create, update and delete teams
   - Retrieve board settings and iterations
   - Create and delete inherited processes
-* <img width="30px" align="center" alt="Azure Devops Search" src="https://cdn.vsassets.io/ext/ms.vss-search-web/common-content/nav-search.svg"/> **Search** – search Azure DevOps artifacts.
+* <img width="30px" align="center" alt="Azure Devops Search" src="https://chanlabs.com/img/861627.png"/> **Search** – search Azure DevOps artifacts.
   - Search wiki pages
   - Search work items
 
