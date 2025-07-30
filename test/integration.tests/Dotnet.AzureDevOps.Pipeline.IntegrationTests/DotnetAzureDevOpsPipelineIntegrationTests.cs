@@ -143,7 +143,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             }
 
             BuildReportMetadata? report = await _pipelines.GetBuildReportAsync(buildId);
-            Assert.True(report == null || report.Id == buildId);
+            Assert.True(report == null || report.BuildId == buildId);
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         }
 
         [Fact]
-        public async Task UpdateBuildStage_InvalidStage_ThrowsAsync()
+        public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
         {
             var queueOptions = new BuildQueueOptions
             {
@@ -170,9 +170,41 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             int buildId = await _pipelines.QueueRunAsync(queueOptions);
             _queuedBuildIds.Add(buildId);
 
-            await Assert.ThrowsAsync<HttpRequestException>(
-                () => _pipelines.UpdateBuildStageAsync(buildId, "non-existent", StageUpdateType.Cancel));
+            Build? build = await WaitForBuildStatusAsync(buildId, BuildStatus.InProgress, maxAttempts: 20, delayMs: 500);
+            Assert.NotNull(build);
+
+            await _pipelines.UpdateBuildStageAsync(buildId, "SimpleStage", StageUpdateType.Cancel);
+
+            build = await WaitForBuildToCompleteAsync(buildId, maxAttempts: 15, delayMs: 1000);
+
+            Assert.NotNull(build);
+            Assert.Equal(BuildResult.Canceled, build!.Result);
         }
+
+        private async Task<Build?> WaitForBuildStatusAsync(int buildId, BuildStatus targetStatus, int maxAttempts, int delayMs)
+        {
+            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                Build? build = await _pipelines.GetRunAsync(buildId);
+                if(build?.Status == targetStatus)
+                    return build;
+                await Task.Delay(delayMs);
+            }
+            return null;
+        }
+
+        private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs)
+        {
+            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                Build? build = await _pipelines.GetRunAsync(buildId);
+                if(build?.Status is BuildStatus.Completed || build ?.Result is BuildResult.Canceled)
+                    return build;
+                await Task.Delay(delayMs);
+            }
+            return await _pipelines.GetRunAsync(buildId); // Return final state
+        }
+
 
         [Fact]
         public async Task PipelineLogsAndRevisions_SucceedsAsync()
