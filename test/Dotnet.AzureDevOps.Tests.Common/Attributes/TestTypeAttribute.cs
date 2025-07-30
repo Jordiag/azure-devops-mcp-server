@@ -32,7 +32,8 @@ public enum Component
     Pipelines,
     ProjectSettings,
     Repos,
-    TestPlans
+    TestPlans,
+    Search
 }
 
 public sealed class TestTypeTraitDiscoverer : ITraitDiscoverer
