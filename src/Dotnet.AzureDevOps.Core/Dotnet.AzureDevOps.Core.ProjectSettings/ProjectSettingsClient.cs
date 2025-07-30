@@ -138,7 +138,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
         public async Task<bool> DeleteInheritedProcessAsync(string processId)
         {
-            string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version=7.1-preview.1";
+            string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
 
             using var client = new HttpClient();
             string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));

@@ -605,7 +605,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = _patchMethod,
-                    Uri = $"/_apis/wit/workitems/{id}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
                     Headers = new Dictionary<string, string>
                     {
                         { ContentTypeHeader, JsonPatchContentType }
@@ -665,7 +665,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = "PATCH",
-                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version=7.1-preview.1" +
+                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}" +
                               $"&bypassRules={bypassRules.ToString().ToLowerInvariant()}" +
                               $"&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
                     Headers = new Dictionary<string, string>
@@ -722,7 +722,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = "PATCH",
-                    Uri = $"/_apis/wit/workitems/{id}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
                     Headers = new Dictionary<string, string>
                     {
                         { "Content-Type", "application/json-patch+json" }
@@ -786,7 +786,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = "PATCH",
-                    Uri = $"/_apis/wit/workitems/{duplicateId}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{duplicateId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
                     Headers = new Dictionary<string, string>
                     {
                         { "Content-Type", "application/json-patch+json" }
@@ -1022,7 +1022,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 WitBatchRequest request = new WitBatchRequest
                 {
                     Method = _patchMethod,
-                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version=7.1-preview.1&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
                     Headers = new Dictionary<string, string>
                     {
                         { ContentTypeHeader, JsonPatchContentType }
