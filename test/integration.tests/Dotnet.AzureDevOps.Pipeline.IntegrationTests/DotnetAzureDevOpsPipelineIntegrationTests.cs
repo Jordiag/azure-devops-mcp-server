@@ -119,6 +119,62 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         }
 
         [Fact]
+        public async Task BuildReport_Changes_LogLines_CanBeRetrievedAsync()
+        {
+            var queueOptions = new BuildQueueOptions
+            {
+                DefinitionId = _definitionId,
+                Branch = _branch,
+                CommitSha = _commitSha
+            };
+
+            int buildId = await _pipelines.QueueRunAsync(queueOptions);
+            _queuedBuildIds.Add(buildId);
+
+            List<Change> changes = await _pipelines.GetChangesAsync(buildId);
+            Assert.NotNull(changes);
+
+            List<BuildLog> logs = await _pipelines.GetLogsAsync(buildId);
+            if (logs.Count > 0)
+            {
+                int logId = logs[0].Id;
+                List<string> lines = await _pipelines.GetLogLinesAsync(buildId, logId);
+                Assert.NotNull(lines);
+            }
+
+            BuildReportMetadata? report = await _pipelines.GetBuildReportAsync(buildId);
+            Assert.True(report == null || report.Id == buildId);
+        }
+
+        [Fact]
+        public async Task ListDefinitions_FiltersByIdAsync()
+        {
+            BuildDefinitionListOptions options = new BuildDefinitionListOptions
+            {
+                DefinitionIds = new List<int> { _definitionId }
+            };
+
+            IReadOnlyList<BuildDefinitionReference> list = await _pipelines.ListDefinitionsAsync(options);
+            Assert.Contains(list, d => d.Id == _definitionId);
+        }
+
+        [Fact]
+        public async Task UpdateBuildStage_InvalidStage_ThrowsAsync()
+        {
+            var queueOptions = new BuildQueueOptions
+            {
+                DefinitionId = _definitionId,
+                Branch = _branch
+            };
+
+            int buildId = await _pipelines.QueueRunAsync(queueOptions);
+            _queuedBuildIds.Add(buildId);
+
+            await Assert.ThrowsAsync<HttpRequestException>(
+                () => _pipelines.UpdateBuildStageAsync(buildId, "non-existent", StageUpdateType.Cancel));
+        }
+
+        [Fact]
         public async Task PipelineLogsAndRevisions_SucceedsAsync()
         {
             int buildId = await _pipelines.QueueRunAsync(new BuildQueueOptions
