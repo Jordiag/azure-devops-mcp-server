@@ -114,7 +114,7 @@ jobs:
         run: |
           dotnet test "${{ env.solution }}" `
             -c "${{ env.buildConfiguration }}" `
-            --filter "FullyQualifiedName!~End2EndTests" `
+            --filter "TestType!=end2end" `
             --no-restore --no-build `
             --settings "${{ github.workspace }}/.runsettings" `
             --collect:"Code Coverage" `
