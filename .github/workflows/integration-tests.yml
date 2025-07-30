@@ -7,7 +7,7 @@ on:
       - completed
 
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - '.github/workflows/**'
 
