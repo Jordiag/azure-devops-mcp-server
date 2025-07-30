@@ -1,6 +1,5 @@
 ﻿using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
-using System.IO;
 
 namespace Dotnet.AzureDevOps.Core.Artifacts;
 
