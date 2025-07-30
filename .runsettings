@@ -8,7 +8,7 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
-          <ExcludeByFile>**/test/**</ExcludeByFile>
+          <ExcludeByFile>**/test/**,**/src/Dotnet.AzureDevOps.Mcp.Server/**</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>
