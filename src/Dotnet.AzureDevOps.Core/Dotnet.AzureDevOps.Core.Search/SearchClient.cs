@@ -27,7 +27,7 @@ public class SearchClient : ISearchClient
 
     private async Task<string> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
     {
-        string url = $"_apis/search/{resource}?api-version={Constants.ApiVersion}";
+        string url = $"_apis/search/{resource}?api-version={GlobalConstants.ApiVersion}";
         using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);

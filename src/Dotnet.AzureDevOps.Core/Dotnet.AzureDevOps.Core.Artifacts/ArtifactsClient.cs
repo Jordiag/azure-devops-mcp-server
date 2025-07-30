@@ -12,7 +12,7 @@ namespace Dotnet.AzureDevOps.Core.Artifacts;
 
 public class ArtifactsClient : IArtifactsClient
 {
-    private const string ApiVersion = Constants.ApiVersion;
+    private const string ApiVersion = GlobalConstants.ApiVersion;
 
     private readonly string _projectName;
     private readonly HttpClient _http;
