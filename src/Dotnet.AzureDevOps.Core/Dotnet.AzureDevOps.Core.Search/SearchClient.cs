@@ -76,6 +76,7 @@ public class SearchClient : ISearchClient
         };
         if(filters.Count > 0)
             payload["filters"] = filters;
+
         return payload;
     }
 
