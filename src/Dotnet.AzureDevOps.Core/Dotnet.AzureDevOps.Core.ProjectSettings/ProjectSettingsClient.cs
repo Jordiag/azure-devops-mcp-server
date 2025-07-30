@@ -58,6 +58,11 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             }
         }
 
+        public async Task<List<WebApiTeam>> GetAllTeamsAsync()
+        {
+            return await _teamClient.GetAllTeamsAsync();
+        }
+
         public async Task<bool> UpdateTeamDescriptionAsync(string teamName, string newDescription)
         {
             try

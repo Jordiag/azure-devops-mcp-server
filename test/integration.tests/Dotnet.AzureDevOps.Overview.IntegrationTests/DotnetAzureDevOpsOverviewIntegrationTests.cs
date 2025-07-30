@@ -1,9 +1,12 @@
+using System.Threading;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
+using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Core.Search;
-using Dotnet.AzureDevOps.Core.Search.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
 
@@ -16,12 +19,18 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly WikiClient _wikiClient;
         private readonly List<Guid> _createdWikis = [];
+        private readonly ProjectSettingsClient _projectSettingsClient;
 
         public DotnetAzureDevOpsOverviewIntegrationTests()
         {
             _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
 
             _wikiClient = new WikiClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            _projectSettingsClient = new ProjectSettingsClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
@@ -149,11 +158,20 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             IReadOnlyList<Dashboard> dashboards = await dashboardClient.ListDashboardsAsync();
             Assert.NotEmpty(dashboards);
+            string teamName = "Dotnet.McpIntegrationTest Team";
+            List<WebApiTeam> teams = await _projectSettingsClient.GetAllTeamsAsync();
+            WebApiTeam? team = teams.FirstOrDefault(t => t.Name == teamName);
+            Dashboard? dashboard = dashboards.FirstOrDefault(d => d.OwnerId == team?.Id) ?? dashboards[0];
+            Guid dashboardId = dashboard?.Id ?? Guid.Empty;
+            if (dashboardId == Guid.Empty)
+            {
+                throw new InvalidOperationException("No dashboard found for the specified team or project.");
+            }
 
-            Dashboard? dashboard = await dashboardClient.GetDashboardAsync(dashboards[0].Id);
+            dashboard = await dashboardClient.GetDashboardAsync(dashboardId, teamName);
             Assert.NotNull(dashboard);
 
-            SummaryClient summaryClient = new SummaryClient(
+            var summaryClient = new SummaryClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
@@ -161,24 +179,35 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             TeamProject? projectSummary = await summaryClient.GetProjectSummaryAsync();
             Assert.NotNull(projectSummary);
 
-            var wikiOptions = new WikiCreateOptions
+            IReadOnlyList<WikiV2> wikis = await _wikiClient.ListWikisAsync();
+            Guid wikiId;
+            string wikiname;
+            if(wikis.Count == 0)
             {
-                Name = $"pages-wiki-{UtcStamp()}",
-                ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
-                Type = WikiType.CodeWiki,
-                RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
-                Version = new GitVersionDescriptor
+                var wikiOptions = new WikiCreateOptions
                 {
-                    VersionType = GitVersionType.Branch,
-                    Version = _azureDevOpsConfiguration.MainBranchName
-                },
-                MappedPath = "/"
-            };
-
-            Guid wikiId = await _wikiClient.CreateWikiAsync(wikiOptions);
+                    Name = $"pages-wiki-{UtcStamp()}",
+                    ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
+                    Type = WikiType.CodeWiki,
+                    RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
+                    Version = new GitVersionDescriptor
+                    {
+                        VersionType = GitVersionType.Branch,
+                        Version = _azureDevOpsConfiguration.MainBranchName
+                    },
+                    MappedPath = $"/",
+                };
+                wikiname = wikiOptions.Name;
+                wikiId = await _wikiClient.CreateWikiAsync(wikiOptions);
+            }
+            else
+            {
+                wikiname = wikis[0].Name;
+                wikiId = wikis[0].Id;
+            }
             _createdWikis.Add(wikiId);
 
-            const string wikiPath = "/Home.md";
+            string wikiPath = $"/Home-{UtcStamp()}.md";
             var createPage = new WikiPageUpdateOptions
             {
                 Path = wikiPath,
@@ -203,15 +232,15 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             string? text = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
             Assert.Contains("Searchable", text);
 
-            SearchClient searchClient = new SearchClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
+            var searchClient = new SearchClient(
+                _azureDevOpsConfiguration.Organisation,
                 _azureDevOpsConfiguration.PersonalAccessToken);
 
             var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
             {
                 SearchText = "Searchable",
-                Project = [ _azureDevOpsConfiguration.ProjectName ],
-                Wiki = [ wikiOptions.Name ],
+                Project = [_azureDevOpsConfiguration.ProjectName],
+                Wiki = [wikiname],
                 IncludeFacets = false,
                 Skip = 0,
                 Top = 1
@@ -219,6 +248,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             string result = await searchClient.SearchWikiAsync(searchOptions);
             Assert.False(string.IsNullOrEmpty(result));
+            Assert.True(result.Length > 0, "Expected result to contain at least one item, but it was empty.");
         }
 
         public Task InitializeAsync() => Task.CompletedTask;
