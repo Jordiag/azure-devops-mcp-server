@@ -119,6 +119,94 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         }
 
         [Fact]
+        public async Task BuildReport_Changes_LogLines_CanBeRetrievedAsync()
+        {
+            var queueOptions = new BuildQueueOptions
+            {
+                DefinitionId = _definitionId,
+                Branch = _branch,
+                CommitSha = _commitSha
+            };
+
+            int buildId = await _pipelines.QueueRunAsync(queueOptions);
+            _queuedBuildIds.Add(buildId);
+
+            List<Change> changes = await _pipelines.GetChangesAsync(buildId);
+            Assert.NotNull(changes);
+
+            List<BuildLog> logs = await _pipelines.GetLogsAsync(buildId);
+            if (logs.Count > 0)
+            {
+                int logId = logs[0].Id;
+                List<string> lines = await _pipelines.GetLogLinesAsync(buildId, logId);
+                Assert.NotNull(lines);
+            }
+
+            BuildReportMetadata? report = await _pipelines.GetBuildReportAsync(buildId);
+            Assert.True(report == null || report.BuildId == buildId);
+        }
+
+        [Fact]
+        public async Task ListDefinitions_FiltersByIdAsync()
+        {
+            BuildDefinitionListOptions options = new BuildDefinitionListOptions
+            {
+                DefinitionIds = new List<int> { _definitionId }
+            };
+
+            IReadOnlyList<BuildDefinitionReference> list = await _pipelines.ListDefinitionsAsync(options);
+            Assert.Contains(list, d => d.Id == _definitionId);
+        }
+
+        [Fact]
+        public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
+        {
+            var queueOptions = new BuildQueueOptions
+            {
+                DefinitionId = _definitionId,
+                Branch = _branch
+            };
+
+            int buildId = await _pipelines.QueueRunAsync(queueOptions);
+            _queuedBuildIds.Add(buildId);
+
+            Build? build = await WaitForBuildStatusAsync(buildId, BuildStatus.InProgress, maxAttempts: 20, delayMs: 500);
+            Assert.NotNull(build);
+
+            await _pipelines.UpdateBuildStageAsync(buildId, "SimpleStage", StageUpdateType.Cancel);
+
+            build = await WaitForBuildToCompleteAsync(buildId, maxAttempts: 15, delayMs: 1000);
+
+            Assert.NotNull(build);
+            Assert.Equal(BuildResult.Canceled, build!.Result);
+        }
+
+        private async Task<Build?> WaitForBuildStatusAsync(int buildId, BuildStatus targetStatus, int maxAttempts, int delayMs)
+        {
+            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                Build? build = await _pipelines.GetRunAsync(buildId);
+                if(build?.Status == targetStatus)
+                    return build;
+                await Task.Delay(delayMs);
+            }
+            return null;
+        }
+
+        private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs)
+        {
+            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                Build? build = await _pipelines.GetRunAsync(buildId);
+                if(build?.Status is BuildStatus.Completed || build ?.Result is BuildResult.Canceled)
+                    return build;
+                await Task.Delay(delayMs);
+            }
+            return await _pipelines.GetRunAsync(buildId); // Return final state
+        }
+
+
+        [Fact]
         public async Task PipelineLogsAndRevisions_SucceedsAsync()
         {
             int buildId = await _pipelines.QueueRunAsync(new BuildQueueOptions
