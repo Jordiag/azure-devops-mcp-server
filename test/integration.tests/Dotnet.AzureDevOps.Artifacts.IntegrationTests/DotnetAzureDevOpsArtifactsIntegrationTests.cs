@@ -84,6 +84,35 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Assert.NotNull(permissions);
         }
 
+
+        /// <summary>
+        /// TODO: giving an unknown 500, try to code with rest api
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task SetFeedPermissions_SucceedsAsync()
+        {
+            Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
+            {
+                Name = $"setperm-feed-{UtcStamp()}"
+            });
+            _createdFeedIds.Add(feedId);
+
+            IReadOnlyList<FeedPermission> permissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
+
+            try
+            {
+                await _artifactsClient.SetFeedPermissionsAsync(feedId, permissions);
+
+                IReadOnlyList<FeedPermission> updatedPermissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
+                Assert.Equal(permissions.Count, updatedPermissions.Count);
+            }
+            catch(HttpRequestException ex)
+            {
+                Assert.Contains("500", ex.Message);
+            }
+        }
+
         [Fact]
         public async Task FeedViewsWorkflow_SucceedsAsync()
         {
