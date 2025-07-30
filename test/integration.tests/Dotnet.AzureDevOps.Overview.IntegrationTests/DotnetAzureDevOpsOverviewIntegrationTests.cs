@@ -1,5 +1,7 @@
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
+using Dotnet.AzureDevOps.Core.Search;
+using Dotnet.AzureDevOps.Core.Search.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
@@ -135,6 +137,88 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Assert.Contains("Updated", page!.Page.Content); // confirm update
 
             await _wikiClient.DeletePageAsync(id, path, gitVersionDescriptor);
+        }
+
+        [Fact]
+        public async Task DashboardSummaryAndWikiHelpers_SucceedAsync()
+        {
+            DashboardClient dashboardClient = new DashboardClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            IReadOnlyList<Dashboard> dashboards = await dashboardClient.ListDashboardsAsync();
+            Assert.NotEmpty(dashboards);
+
+            Dashboard? dashboard = await dashboardClient.GetDashboardAsync(dashboards[0].Id);
+            Assert.NotNull(dashboard);
+
+            SummaryClient summaryClient = new SummaryClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            TeamProject? projectSummary = await summaryClient.GetProjectSummaryAsync();
+            Assert.NotNull(projectSummary);
+
+            var wikiOptions = new WikiCreateOptions
+            {
+                Name = $"pages-wiki-{UtcStamp()}",
+                ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
+                Type = WikiType.CodeWiki,
+                RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
+                Version = new GitVersionDescriptor
+                {
+                    VersionType = GitVersionType.Branch,
+                    Version = _azureDevOpsConfiguration.MainBranchName
+                },
+                MappedPath = "/"
+            };
+
+            Guid wikiId = await _wikiClient.CreateWikiAsync(wikiOptions);
+            _createdWikis.Add(wikiId);
+
+            const string wikiPath = "/Home.md";
+            var createPage = new WikiPageUpdateOptions
+            {
+                Path = wikiPath,
+                Content = "# Searchable",
+                Version = string.Empty
+            };
+
+            var versionDescriptor = new GitVersionDescriptor
+            {
+                VersionType = GitVersionType.Branch,
+                Version = _azureDevOpsConfiguration.MainBranchName
+            };
+
+            await _wikiClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+
+            IReadOnlyList<WikiPageDetail> pages = await _wikiClient.ListPagesAsync(
+                wikiId,
+                new WikiPagesBatchOptions { Top = 10 },
+                null);
+            Assert.Contains(pages, p => p.Path == wikiPath);
+
+            string? text = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
+            Assert.Contains("Searchable", text);
+
+            SearchClient searchClient = new SearchClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
+            {
+                SearchText = "Searchable",
+                Project = [ _azureDevOpsConfiguration.ProjectName ],
+                Wiki = [ wikiOptions.Name ],
+                IncludeFacets = false,
+                Skip = 0,
+                Top = 1
+            };
+
+            string result = await searchClient.SearchWikiAsync(searchOptions);
+            Assert.False(string.IsNullOrEmpty(result));
         }
 
         public Task InitializeAsync() => Task.CompletedTask;
