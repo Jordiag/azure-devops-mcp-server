@@ -146,44 +146,6 @@ namespace Dotnet.AzureDevOps.Core.Overview
             }
         }
 
-        public async Task<string> SearchWikiAsync(WikiSearchOptions searchOptions, CancellationToken cancellationToken = default)
-        {
-            using HttpClient httpClient = new HttpClient { BaseAddress = new Uri(_organizationUrl) };
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
-
-            Dictionary<string, string[]> filters = new Dictionary<string, string[]>();
-            if(searchOptions.Project is { Count: > 0 })
-            {
-                filters["Project"] = searchOptions.Project.ToArray();
-            }
-            if(searchOptions.Wiki is { Count: > 0 })
-            {
-                filters["Wiki"] = searchOptions.Wiki.ToArray();
-            }
-
-            var body = new Dictionary<string, object?>
-            {
-                ["searchText"] = searchOptions.SearchText,
-                ["includeFacets"] = searchOptions.IncludeFacets,
-                ["$skip"] = searchOptions.Skip,
-                ["$top"] = searchOptions.Top
-            };
-            if(filters.Count > 0)
-            {
-                body["filters"] = filters;
-            }
-
-            using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(
-                httpClient,
-                requestUri: $"_apis/search/wikisearchresults?api-version={Constants.ApiVersion}",
-                value: body,
-                cancellationToken: cancellationToken);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync(cancellationToken);
-        }
-
-
         public Task DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default) =>
             _wikiHttpClient.DeletePageAsync(project: _projectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
     }

@@ -12,8 +12,6 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
         Task<string?> GetPageTextAsync(Guid wikiId, string path, CancellationToken cancellationToken = default);
 
-        Task<string> SearchWikiAsync(WikiSearchOptions searchOptions, CancellationToken cancellationToken = default);
-
         Task<Guid> CreateWikiAsync(WikiCreateOptions wikiCreateOptions, CancellationToken cancellationToken = default);
 
         Task DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default);

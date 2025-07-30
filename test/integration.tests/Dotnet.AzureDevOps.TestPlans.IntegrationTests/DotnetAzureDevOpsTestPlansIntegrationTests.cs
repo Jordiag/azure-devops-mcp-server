@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Services.TestResults.WebApi;
 namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {
     [TestType(TestType.Integration)]
+    [Component(Component.TestPlans)]
     public class DotnetAzureDevOpsTestPlansIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;

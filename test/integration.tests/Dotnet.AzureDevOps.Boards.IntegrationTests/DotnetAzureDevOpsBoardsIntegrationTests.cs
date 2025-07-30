@@ -7,6 +7,7 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
     [TestType(TestType.Integration)]
+    [Component(Component.Boards)]
     public class DotnetAzureDevOpsBoardsIntegrationTests : IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;

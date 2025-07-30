@@ -5,12 +5,10 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.Client;
 using Xunit;
-using Dotnet.AzureDevOps.Tests.Common.Attributes;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Agent.End2EndTests;
 
-[TestType(TestType.End2End)]
-public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
+public class McpAgentIntegrationTests : IClassFixture<TestFixture>
 {
     private readonly TestFixture _fixture;
     private readonly Kernel _kernel;
@@ -25,6 +23,7 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
         _kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
     }
 
+    [Trait("TestType", "End2End")]
     [SkippableFact(DisplayName = "Server exposes at least one MCP tool")]
     public async Task Server_ShouldExpose_Tools()
     {
@@ -43,6 +42,7 @@ public sealed class McpAgentIntegrationTests : IClassFixture<TestFixture>
         Assert.Contains("deleteworkitem", text, StringComparison.InvariantCultureIgnoreCase);
     }
 
+    [Trait("TestType", "End2End")]
     [SkippableTheory(DisplayName = "LLM calls ‘echo’ tool via function‑calling")]
     [InlineData(EchoToolName, EchoMessage)]
     public async Task Llm_ShouldInvoke_EchoTool(string toolName, string message)

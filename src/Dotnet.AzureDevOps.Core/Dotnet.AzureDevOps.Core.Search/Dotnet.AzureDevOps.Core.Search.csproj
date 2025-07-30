@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core.Common\Dotnet.AzureDevOps.Core.Common.csproj" />

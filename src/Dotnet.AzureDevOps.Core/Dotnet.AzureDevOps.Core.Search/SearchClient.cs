@@ -1,6 +1,4 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Search.Options;
 
@@ -30,7 +28,7 @@ public class SearchClient : ISearchClient
     private async Task<string> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
     {
         string url = $"_apis/search/{resource}?api-version={Constants.ApiVersion}";
-        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(url, payload, cancellationToken);
+        using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
@@ -38,10 +36,14 @@ public class SearchClient : ISearchClient
     private static object BuildCodePayload(CodeSearchOptions options)
     {
         var filters = new Dictionary<string, IReadOnlyList<string>>();
-        if (options.Project != null && options.Project.Count > 0) filters["Project"] = options.Project;
-        if (options.Repository != null && options.Repository.Count > 0) filters["Repository"] = options.Repository;
-        if (options.Path != null && options.Path.Count > 0) filters["Path"] = options.Path;
-        if (options.Branch != null && options.Branch.Count > 0) filters["Branch"] = options.Branch;
+        if(options.Project != null && options.Project.Count > 0)
+            filters["Project"] = options.Project;
+        if(options.Repository != null && options.Repository.Count > 0)
+            filters["Repository"] = options.Repository;
+        if(options.Path != null && options.Path.Count > 0)
+            filters["Path"] = options.Path;
+        if(options.Branch != null && options.Branch.Count > 0)
+            filters["Branch"] = options.Branch;
 
         var payload = new Dictionary<string, object?>
         {
@@ -51,7 +53,7 @@ public class SearchClient : ISearchClient
             ["$top"] = options.Top
         };
 
-        if (filters.Count > 0)
+        if(filters.Count > 0)
             payload["filters"] = filters;
 
         return payload;
@@ -60,8 +62,10 @@ public class SearchClient : ISearchClient
     private static object BuildWikiPayload(WikiSearchOptions options)
     {
         var filters = new Dictionary<string, IReadOnlyList<string>>();
-        if (options.Project != null && options.Project.Count > 0) filters["Project"] = options.Project;
-        if (options.Wiki != null && options.Wiki.Count > 0) filters["Wiki"] = options.Wiki;
+        if(options.Project != null && options.Project.Count > 0)
+            filters["Project"] = options.Project;
+        if(options.Wiki != null && options.Wiki.Count > 0)
+            filters["Wiki"] = options.Wiki;
 
         var payload = new Dictionary<string, object?>
         {
@@ -70,19 +74,25 @@ public class SearchClient : ISearchClient
             ["$skip"] = options.Skip,
             ["$top"] = options.Top
         };
-        if (filters.Count > 0)
+        if(filters.Count > 0)
             payload["filters"] = filters;
+
         return payload;
     }
 
     private static object BuildWorkItemPayload(WorkItemSearchOptions options)
     {
         var filters = new Dictionary<string, IReadOnlyList<string>>();
-        if (options.Project != null && options.Project.Count > 0) filters["System.TeamProject"] = options.Project;
-        if (options.AreaPath != null && options.AreaPath.Count > 0) filters["System.AreaPath"] = options.AreaPath;
-        if (options.WorkItemType != null && options.WorkItemType.Count > 0) filters["System.WorkItemType"] = options.WorkItemType;
-        if (options.State != null && options.State.Count > 0) filters["System.State"] = options.State;
-        if (options.AssignedTo != null && options.AssignedTo.Count > 0) filters["System.AssignedTo"] = options.AssignedTo;
+        if(options.Project != null && options.Project.Count > 0)
+            filters["System.TeamProject"] = options.Project;
+        if(options.AreaPath != null && options.AreaPath.Count > 0)
+            filters["System.AreaPath"] = options.AreaPath;
+        if(options.WorkItemType != null && options.WorkItemType.Count > 0)
+            filters["System.WorkItemType"] = options.WorkItemType;
+        if(options.State != null && options.State.Count > 0)
+            filters["System.State"] = options.State;
+        if(options.AssignedTo != null && options.AssignedTo.Count > 0)
+            filters["System.AssignedTo"] = options.AssignedTo;
 
         var payload = new Dictionary<string, object?>
         {
@@ -91,7 +101,7 @@ public class SearchClient : ISearchClient
             ["$skip"] = options.Skip,
             ["$top"] = options.Top
         };
-        if (filters.Count > 0)
+        if(filters.Count > 0)
             payload["filters"] = filters;
         return payload;
     }

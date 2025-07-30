@@ -8,6 +8,7 @@ using Microsoft.TeamFoundation.SourceControl.WebApi;
 namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 {
     [TestType(TestType.Integration)]
+    [Component(Component.Repos)]
     public class DotnetAzureDevOpsReposIntegrationTests : IAsyncLifetime
     {
         private readonly ReposClient _reposClient;

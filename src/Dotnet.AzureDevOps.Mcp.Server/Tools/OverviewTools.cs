@@ -87,13 +87,6 @@ public class OverviewTools
         return client.GetPageTextAsync(wikiId, path);
     }
 
-    [McpServerTool, Description("Searches wikis for text.")]
-    public static Task<string> SearchWikiAsync(string organizationUrl, string projectName, string personalAccessToken, WikiSearchOptions options)
-    {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        return client.SearchWikiAsync(options);
-    }
-
     [McpServerTool, Description("Retrieves project summary information.")]
     public static Task<TeamProject?> GetProjectSummaryAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
