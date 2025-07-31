@@ -713,7 +713,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO: create a non system project before
+        /// Requires a custom process to be created first, as it uses a custom field.
         /// </summary>
         /// <returns></returns>
         [Fact]
