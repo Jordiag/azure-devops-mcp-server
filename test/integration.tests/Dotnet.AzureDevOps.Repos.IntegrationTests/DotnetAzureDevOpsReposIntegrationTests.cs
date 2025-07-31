@@ -186,8 +186,6 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         [Fact]
         public async Task Tags_CreateListDelete_Workflow_SucceedsAsync()
         {
-            /* ---------- Arrange ---------- */
-
             IReadOnlyList<GitCommitRef> latestCommits = await _reposClient.GetLatestCommitsAsync(
                 _azureDevOpsConfiguration.ProjectName,
                 _repoName,
@@ -210,15 +208,12 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 TaggerEmail = "bot@example.com"
             });
 
-            /* ---------- Assert – list finds annotated tag ---------- */
             GitAnnotatedTag tag = await _reposClient.GetTagAsync(_repoName, gitAnnotatedTag.ObjectId);
 
             Assert.True(tag.Name == annTag);
 
-            /* ---------- Act – delete both tags ---------- */
             GitRefUpdateResult? result = await _reposClient.DeleteTagAsync(_repoName, annTag);
 
-            /* ---------- Assert – annotated tag no longer returned ---------- */
             Assert.NotNull(result);
             Assert.True(result.Success);
         }
