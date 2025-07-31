@@ -135,7 +135,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         public static Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType, IEnumerable<WorkItemCreateOptions> items)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            Task<IReadOnlyList<int>> result = client.CreateWorkItemsBatchAsync(workItemType: workItemType, items: items, default);
+            Task<IReadOnlyList<int>> result = client.CreateWorkItemsMultipleCallsAsync(workItemType: workItemType, items: items, default);
 
             return result;
         }

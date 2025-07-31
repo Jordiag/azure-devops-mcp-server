@@ -622,11 +622,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.NotNull(query);
         }
 
-        /// <summary>
-        /// TODO: This test is flaky on CI, needs investigation.
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "Flaky on CI - will fix later")]
+        [Fact]
         public async Task LinkWorkItemToPullRequest_SucceedsAsync()
         {
             int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "PR Link", Tags = "IntegrationTest;PR" });
@@ -646,6 +642,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             int? pullRequestId = await _reposClient.CreatePullRequestAsync(prOptions);
             Assert.True(pullRequestId.HasValue);
             _createdPullRequestIds.Add(pullRequestId!.Value);
+
+            await Task.Delay(2000); // Wait a bit for the PR to be fully created
 
             await _workItemsClient.LinkWorkItemToPullRequestAsync(
                 _azureDevOpsConfiguration.ProjectId,
@@ -817,10 +815,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(count >= 0);
         }
 
-        /// <summary>
-        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
-        /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task ExecuteBatch_SucceedsAsync()
         {
@@ -834,15 +828,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Uri = $"/_apis/wit/workitems/{id.Value}?api-version={GlobalConstants.ApiVersion}"
             };
 
-            try
-            {
-                IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.ExecuteBatchAsync(new[] { request });
-                Assert.NotEmpty(responses);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.ExecuteBatchAsync(new[] { request });
+           Assert.NotEmpty(responses);
         }
 
         [Fact]
@@ -854,7 +841,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 new() { Title = "Batch Item 2" }
             };
 
-            IReadOnlyList<int> created = await _workItemsClient.CreateWorkItemsBatchAsync("Task", items, CancellationToken.None);
+            IReadOnlyList<int> created = await _workItemsClient.CreateWorkItemsMultipleCallsAsync("Task", items, CancellationToken.None);
             Assert.Equal(2, created.Count);
             foreach(int workItem in created)
             {
@@ -862,43 +849,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             }
         }
 
-        /// <summary>
-        /// TODO: correct PAT user so doesn't raise exception about permissions.
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CreateWorkItemsBatchViaBatch_SucceedsAsync()
-        {
-            var items = new List<WorkItemCreateOptions>
-            {
-                new WorkItemCreateOptions { Title = "Batch API 1" },
-                new WorkItemCreateOptions { Title = "Batch API 2" }
-            };
-
-            try
-            {
-                IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CreateWorkItemsBatchAsync("Task", items, true, false);
-                foreach(WitBatchResponse response in responses)
-                {
-                    WorkItem? created = JsonSerializer.Deserialize<WorkItem>(response.Body?.ToString() ?? "{}");
-                    if(created?.Id != null)
-                    {
-                        _createdWorkItemIds.Add(created.Id.Value);
-                    }
-                }
-                Assert.Equal(2, responses.Count);
-            }
-            catch(VssServiceException ex)
-            {
-
-                Assert.Contains("TF237111: The current user does not have permissions to save work items under the specified area path.", ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
-        /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task UpdateWorkItemsBatch_SucceedsAsync()
         {
@@ -914,21 +864,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 (secondId.Value, new WorkItemCreateOptions { State = "Closed" })
             };
 
-            try
-            {
-                IReadOnlyList<WitBatchResponse> batch = await _workItemsClient.UpdateWorkItemsBatchAsync(updates);
-                Assert.Equal(2, batch.Count);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> batch = await _workItemsClient.UpdateWorkItemsBatchAsync(updates);
+            Assert.Equal(2, batch.Count);
         }
 
-        /// <summary>
-        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
-        /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task LinkWorkItemsBatch_SucceedsAsync()
         {
@@ -940,22 +879,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             var links = new List<(int, int, string)> { (parentId.Value, childId.Value, "System.LinkTypes.Related") };
 
-            try
-            {
-                IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.LinkWorkItemsBatchAsync(links);
-                Assert.NotEmpty(responses);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.LinkWorkItemsBatchAsync(links);
+            Assert.NotEmpty(responses);
         }
 
 
-        /// <summary>
-        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
-        /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CloseWorkItemsBatch_SucceedsAsync()
         {
@@ -966,21 +894,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             _createdWorkItemIds.Add(id2!.Value);
 
 
-            try
-            {
-                IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CloseWorkItemsBatchAsync(new[] { id1.Value, id2.Value });
-                Assert.Equal(2, responses.Count);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CloseWorkItemsBatchAsync(new[] { id1.Value, id2.Value });
+            Assert.Equal(2, responses.Count);
         }
 
-        /// <summary>
-        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
-        /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CloseAndLinkDuplicatesBatch_SucceedsAsync()
         {
@@ -992,69 +909,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             var pairs = new List<(int, int)> { (duplicate.Value, canonical.Value) };
 
-            try
-            {
-                IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CloseAndLinkDuplicatesBatchAsync(pairs);
-                Assert.Single(responses);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// TODO: correct PAT user so doesn't raise exception about permissions.
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task AddChildWorkItemsBatch_SucceedsAsync()
-        {
-            int? parent = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions { Title = "Parent Epic" });
-            Assert.True(parent.HasValue);
-            _createdWorkItemIds.Add(parent!.Value);
-
-            WorkItem? epic = await _workItemsClient.GetWorkItemAsync(parent.Value);
-            if(epic?.Id == null)
-            {
-                Assert.Fail("Failed to retrieve created Epic for child work items.");
-                return;
-            }
-
-            string defaultWorkItemType = "Feature";
-
-            var children = new List<WorkItemCreateOptions>
-            {
-                new WorkItemCreateOptions
-                {
-                    Title = "Child 1",
-                    AreaPath = epic.Fields["System.AreaPath"].ToString()
-                },
-                new WorkItemCreateOptions
-                {
-                    Title = "Child 2",
-                    AreaPath = epic.Fields["System.AreaPath"].ToString()
-                }
-            };
-
-            try
-            {
-                List<WorkItem?> created = await _workItemsClient.AddChildWorkItemsBatchAsync(parent.Value, defaultWorkItemType, children);
-                foreach(WorkItem? item in created)
-                {
-                    if(item?.Id != null)
-                    {
-                        _createdWorkItemIds.Add(item.Id.Value);
-                    }
-                }
-
-                Assert.Equal(2, created.Count);
-            }
-            catch(VssServiceException ex)
-            {
-
-                Assert.Contains("TF237111: The current user does not have permissions to save work items under the specified area path.", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.CloseAndLinkDuplicatesBatchAsync(pairs);
+            Assert.Single(responses);
         }
 
         [Fact]
@@ -1167,10 +1023,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             return null;
         }
 
-        /// <summary>
-        /// TODO: correct using api instead of nuget with deprecated api version 5.0.
-        /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task LinkWorkItemsByNameBatch_SucceedsAsync()
         {
@@ -1185,16 +1037,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 (w1.Value, w2.Value, "related", "link")
             };
 
-
-            try
-            {
-                IReadOnlyList<WitBatchResponse> resp = await _workItemsClient.LinkWorkItemsByNameBatchAsync(links);
-                Assert.Single(resp);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> resp = await _workItemsClient.LinkWorkItemsByNameBatchAsync(links);
+            Assert.Single(resp);
         }
 
         /// <summary>

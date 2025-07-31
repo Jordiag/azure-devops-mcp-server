@@ -310,7 +310,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             return updates;
         }
 
-        public async Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string workItemType, IEnumerable<WorkItemCreateOptions> items, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<int>> CreateWorkItemsMultipleCallsAsync(string workItemType, IEnumerable<WorkItemCreateOptions> items, CancellationToken cancellationToken = default)
         {
             var createdIds = new List<int>();
             foreach(WorkItemCreateOptions itemOptions in items)
@@ -562,49 +562,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
             var requestList = requests.ToList(); // Materialise to inspect count, content etc. if needed
 
-            // Optional: log or debug request count
-            Debug.WriteLine($"Executing batch with {requestList.Count} request(s).");
-
             List<WitBatchResponse> result = await _workItemClient
                 .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return (IReadOnlyList<WitBatchResponse>)result;
+            return result;
         }
 
-
-        /// <summary>
-        /// Bulk‑creates many work items of the same type (e.g. hundreds of "User Story" records)
-        /// using a single $batch request.
-        /// </summary>
-        public Task<IReadOnlyList<WitBatchResponse>> CreateWorkItemsBatchAsync(
-            string workItemType,
-            IEnumerable<WorkItemCreateOptions> items,
-            bool suppressNotifications = true,
-            bool bypassRules = false,
-            CancellationToken cancellationToken = default)
-        {
-            if(string.IsNullOrWhiteSpace(workItemType))
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(workItemType));
-            ArgumentNullException.ThrowIfNull(items);
-
-            var batch = new List<WitBatchRequest>();
-            int idItem = 1;
-            foreach(WorkItemCreateOptions item in items)
-            {
-                JsonPatchDocument patch = BuildPatchDocument(item);
-                WitBatchRequest request = _workItemClient.CreateWorkItemBatchRequest(
-                    id: idItem,
-                    document: patch,
-                    bypassRules: bypassRules,
-                    suppressNotifications: suppressNotifications);
-
-                batch.Add(request);
-                idItem++;
-            }
-
-            return ExecuteBatchAsync(batch, cancellationToken);
-        }
 
         /// <summary>
         /// Bulk‑updates an arbitrary set of existing work items in one $batch call.
@@ -627,12 +591,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = _patchMethod,
-                    Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}",
                     Headers = new Dictionary<string, string>
                     {
                         { ContentTypeHeader, JsonPatchContentType }
                     },
-                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                    Body = JsonSerializer.Serialize(patch)
                 };
 
                 batch.Add(request);
@@ -694,7 +658,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 {
                     { "Content-Type", "application/json-patch+json" }
                 },
-                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                    Body = JsonSerializer.Serialize(patch)
                 };
 
                 batch.Add(request);
@@ -744,12 +708,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = "PATCH",
-                    Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}",
                     Headers = new Dictionary<string, string>
                     {
                         { "Content-Type", "application/json-patch+json" }
                     },
-                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                    Body = JsonSerializer.Serialize(patch)
                 };
 
                 batch.Add(request);
@@ -808,54 +772,18 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 var request = new WitBatchRequest
                 {
                     Method = "PATCH",
-                    Uri = $"/_apis/wit/workitems/{duplicateId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{duplicateId}?api-version={GlobalConstants.ApiVersion}",
                     Headers = new Dictionary<string, string>
                     {
                         { "Content-Type", "application/json-patch+json" }
                     },
-                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                    Body = JsonSerializer.Serialize(patch)
                 };
 
                 batch.Add(request);
             }
 
             return ExecuteBatchAsync(batch, cancellationToken);
-        }
-        /// <summary>
-        /// Convenience macro: creates a set of child work items **and** links them to the given parent
-        /// in two back‑to‑back $batch calls.  Returns the <see cref="WorkItem"/> instances for the
-        /// newly created children.
-        /// </summary>
-        public async Task<List<WorkItem?>> AddChildWorkItemsBatchAsync(
-            int parentId,
-            string childType,
-            IEnumerable<WorkItemCreateOptions> children,
-            bool suppressNotifications = true,
-            bool bypassRules = false,
-            CancellationToken cancellationToken = default)
-        {
-            // 1. Create the children (first $batch)
-            IReadOnlyList<WitBatchResponse> createResponses = await CreateWorkItemsBatchAsync(
-                childType, children, suppressNotifications, bypassRules, cancellationToken);
-
-            var newChildren = createResponses
-                .Select(r => JsonSerializer.Deserialize<WorkItem>(r.Body?.ToString() ?? "{}"))
-                .Where(wi => wi != null)
-                .ToList();
-
-            // 2. Link them to the parent (second $batch)
-            var links = new List<(int parentId, int id, string)>();
-            foreach(WorkItem? w in newChildren)
-            {
-                if(w != null && w.Id != null)
-                {
-                    links.Add((parentId, w.Id.Value, "System.LinkTypes.Hierarchy-Forward"));
-                }
-            }
-
-            await LinkWorkItemsBatchAsync(links, suppressNotifications, bypassRules, cancellationToken);
-
-            return newChildren;
         }
 
         /// <summary>
@@ -1044,12 +972,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 WitBatchRequest request = new WitBatchRequest
                 {
                     Method = _patchMethod,
-                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
+                    Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}",
                     Headers = new Dictionary<string, string>
                     {
                         { ContentTypeHeader, JsonPatchContentType }
                     },
-                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(patch)
+                    Body = JsonSerializer.Serialize(patch)
                 };
 
                 batch.Add(request);

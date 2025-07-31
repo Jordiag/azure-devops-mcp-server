@@ -59,6 +59,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IAsyncLifetime
             }
         };
 
+        await Task.Delay(10000);
         Guid wikiId = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
         _createdWikis.Add(wikiId);
 
@@ -93,30 +94,41 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TODO: for some reason this test fails with 404 Not Found, but the search API works fine in other tests.
+    /// Requires code search to be enabled in Azure DevOps organization settings.
+    /// Pre installation required in azure DevOps https://marketplace.visualstudio.com/items?itemName=ms.vss-code-search
+    /// Requires code with the text to find committed.
     /// </summary>
     /// <returns></returns>
     [Fact]
     public async Task CodeSearch_ReturnsResultsAsync()
     {
+        bool codeSearchEnabled = await _searchClient.IsCodeSearchEnabledAsync();
+
         var codeSearchOptions = new CodeSearchOptions
         {
-            SearchText = "Azure DevOps",
+            SearchText = "var findme",
             Project = [_azureDevOpsConfiguration.ProjectName],
             Repository = [_azureDevOpsConfiguration.RepoName],
             Branch = [_azureDevOpsConfiguration.MainBranchName],
-            IncludeFacets = false,
+            IncludeFacets = true,
             Skip = 0,
             Top = 1
         };
         try
         {
             string result = await _searchClient.SearchCodeAsync(codeSearchOptions);
-            Assert.False(string.IsNullOrWhiteSpace(result));
+            Assert.Contains("codesearch.cs", result);
         }
         catch(HttpRequestException ex) when(ex.StatusCode == HttpStatusCode.NotFound)
         {
-            Assert.True(true);
+            if(codeSearchEnabled)
+            {
+                throw new Exception("Code search is enabled but returned 404 Not Found.", ex);
+            }
+            else
+            {
+                Assert.True(true, "Code search is not enabled, as expected.");
+            }
         }
         catch
         {
@@ -155,12 +167,12 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        foreach (Guid id in _createdWikis.AsEnumerable().Reverse())
+        foreach(Guid id in _createdWikis.AsEnumerable().Reverse())
         {
             await _wikiClient.DeleteWikiAsync(id);
         }
 
-        foreach (int id in _createdWorkItemIds.AsEnumerable().Reverse())
+        foreach(int id in _createdWorkItemIds.AsEnumerable().Reverse())
         {
             await _workItemsClient.DeleteWorkItemAsync(id);
         }
