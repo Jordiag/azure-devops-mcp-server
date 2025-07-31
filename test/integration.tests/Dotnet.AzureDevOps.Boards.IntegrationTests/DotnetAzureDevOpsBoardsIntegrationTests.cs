@@ -634,18 +634,14 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 RepositoryIdOrName = _repositoryName,
                 Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
                 Description = "PR for link test",
-                SourceBranch = _sourceBranch,
+                SourceBranch = $"{_sourceBranch}2",
                 TargetBranch = _targetBranch,
                 IsDraft = false
             };
 
-            await Task.Delay(4000); 
-
             int? pullRequestId = await _reposClient.CreatePullRequestAsync(prOptions);
             Assert.True(pullRequestId.HasValue);
             _createdPullRequestIds.Add(pullRequestId!.Value);
-
-            await Task.Delay(2000); 
 
             await _workItemsClient.LinkWorkItemToPullRequestAsync(
                 _azureDevOpsConfiguration.ProjectId,
