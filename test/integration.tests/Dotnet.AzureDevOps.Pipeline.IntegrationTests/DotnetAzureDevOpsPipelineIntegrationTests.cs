@@ -39,7 +39,6 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         [Fact]
         public async Task QueueAndCancelBuild_SucceedsAsync()
         {
-            // Arrange
             var buildQueueOptions = new BuildQueueOptions
             {
                 DefinitionId = _definitionId,
@@ -47,18 +46,13 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
                 CommitSha = _commitSha
             };
 
-            // Act – queue build
             int buildId = await _pipelines.QueueRunAsync(buildQueueOptions);
             _queuedBuildIds.Add(buildId);
-
-            // Assert – build exists
             Build? run = await _pipelines.GetRunAsync(buildId);
             Assert.NotNull(run);
 
-            // Act – cancel
             await _pipelines.CancelRunAsync(buildId, run.Project);
 
-            // Assert – status now Cancelling
             run = await _pipelines.GetRunAsync(buildId);
             Assert.Equal(BuildStatus.Cancelling, run!.Status);
         }
@@ -66,16 +60,12 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         [Fact]
         public async Task RetryBuild_SucceedsAsync()
         {
-            // Arrange – queue original
             int queuedBuild = await _pipelines.QueueRunAsync(
                 new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
             _queuedBuildIds.Add(queuedBuild);
 
-            // Act – retry
             int retryQueuedBuild = await _pipelines.RetryRunAsync(queuedBuild);
             _queuedBuildIds.Add(retryQueuedBuild);
-
-            // Assert
             Assert.NotEqual(queuedBuild, retryQueuedBuild);
 
             Build? retried = await _pipelines.GetRunAsync(retryQueuedBuild);
@@ -86,12 +76,10 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         [Fact]
         public async Task ListBuilds_Filter_WorksAsync()
         {
-            // Arrange – ensure at least one queued build exists
             int buildId = await _pipelines.QueueRunAsync(
                 new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
             _queuedBuildIds.Add(buildId);
 
-            // Act
             IReadOnlyList<Build> list = await _pipelines.ListRunsAsync(new BuildListOptions
             {
                 DefinitionId = _definitionId,
@@ -99,23 +87,17 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
                 Status = BuildStatus.NotStarted, // will match our queued run
                 Top = 10
             });
-
-            // Assert
             Assert.Contains(list, b => b.Id == buildId);
         }
 
         [Fact]
         public async Task DownloadConsoleLog_SucceedsAsync()
         {
-            // Arrange – queue build
             int queuedBuildId = await _pipelines.QueueRunAsync(
                 new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
             _queuedBuildIds.Add(queuedBuildId);
 
-            // Act – try to fetch log (may be empty if build hasn’t started)
             string? consoleLog = await _pipelines.DownloadConsoleLogAsync(queuedBuildId);
-
-            // Assert – no exception; log either null or contains header line
             Assert.True(string.IsNullOrEmpty(consoleLog) || consoleLog.Length > 0);
         }
 

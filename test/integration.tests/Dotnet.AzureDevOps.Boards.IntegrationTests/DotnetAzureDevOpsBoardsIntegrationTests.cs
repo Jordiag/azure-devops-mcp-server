@@ -51,7 +51,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task CreateEpic_SucceedsAsync()
         {
-            // Arrange
             var options = new WorkItemCreateOptions
             {
                 Title = "Integration Test Epic",
@@ -59,10 +58,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Tags = "IntegrationTest"
             };
 
-            // Act
             int? epicId = await _workItemsClient.CreateEpicAsync(options);
-
-            // Assert
             Assert.True(epicId.HasValue, "Failed to create Epic. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
         }
