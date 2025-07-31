@@ -2,6 +2,7 @@
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
@@ -20,8 +21,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly WorkItemsClient _workItemsClient;
         private readonly ReposClient _reposClient;
+        private readonly ProjectSettingsClient _projectSettingsClient;
         private readonly List<int> _createdWorkItemIds = [];
         private readonly List<int> _createdPullRequestIds = [];
+        private readonly List<Guid> _createdProjectIds = [];
         private readonly string _repositoryName;
         private readonly string _sourceBranch;
         private readonly string _targetBranch;
@@ -36,6 +39,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 _azureDevOpsConfiguration.PersonalAccessToken);
 
             _reposClient = new ReposClient(
+                _azureDevOpsConfiguration.OrganisationUrl,
+                _azureDevOpsConfiguration.ProjectName,
+                _azureDevOpsConfiguration.PersonalAccessToken);
+
+            _projectSettingsClient = new ProjectSettingsClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
@@ -705,26 +713,45 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         /// <summary>
-        /// TODO: create a non system project before
+        /// Requires a custom process to be created first, as it uses a custom field.
         /// </summary>
         /// <returns></returns>
         [Fact]
         public async Task CustomFieldWorkflow_SucceedsAsync()
         {
-            if(!await _workItemsClient.IsSystemProcessAsync())
-            {
-                int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Custom Field" });
-                Assert.True(workItemId.HasValue);
-                _createdWorkItemIds.Add(workItemId!.Value);
+            WorkItemsClient client = _workItemsClient;
+            string fieldName = "CustomIntegrationTestField";
+            string referenceName = "TestField.ForIntegration";
 
-                await _workItemsClient.SetCustomFieldAsync(workItemId.Value, "Custom.TestField", "Value1");
-                object? fieldValue = await _workItemsClient.GetCustomFieldAsync(workItemId.Value, "Custom.TestField");
-                Assert.NotNull(fieldValue);
-            }
-            else
+            if(await _workItemsClient.IsSystemProcessAsync())
             {
-                Assert.True(true, "Skipping custom field test for system process.");
+                string processName = $"it-proc-{UtcStamp()}";
+                bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
+                Assert.True(processCreated);
+
+                string? processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                Assert.False(string.IsNullOrEmpty(processId));
+
+                string projectName = $"it-proj-{UtcStamp()}";
+                Guid? projectId = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
+                Assert.True(projectId.HasValue);
+                _createdProjectIds.Add(projectId!.Value);
+
+                client = new WorkItemsClient(
+                    _azureDevOpsConfiguration.OrganisationUrl,
+                    projectName,
+                    _azureDevOpsConfiguration.PersonalAccessToken);
             }
+
+            int? workItemId = await client.CreateTaskAsync(new WorkItemCreateOptions { Title = "Custom Field" });
+            Assert.True(workItemId.HasValue);
+            _createdWorkItemIds.Add(workItemId!.Value);
+
+            await client.CreateCustomFieldIfDoesntExistAsync(fieldName, referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String, "test field");
+
+            WorkItem workItem = await client.SetCustomFieldAsync(workItemId.Value, fieldName, "Value1");
+            object? fieldValue = await client.GetCustomFieldAsync(workItemId.Value, referenceName);
+            Assert.NotNull(fieldValue);
         }
 
         [Fact]
@@ -1147,6 +1174,14 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             {
                 await _reposClient.AbandonPullRequestAsync(_repositoryName, prId);
             }
+
+            foreach(Guid projectId in _createdProjectIds.AsEnumerable().Reverse())
+            {
+                await _projectSettingsClient.DeleteProjectAsync(projectId);
+            }
         }
+
+        private static string UtcStamp() =>
+            DateTime.UtcNow.ToString("O").Replace(':', '-');
     }
 }

@@ -1,9 +1,11 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.Operations;
 using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
@@ -13,6 +15,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         private readonly string _organizationUrl;
         private readonly string _projectName;
         private readonly TeamHttpClient _teamClient;
+        private readonly ProjectHttpClient _projectClient;
+        private readonly OperationsHttpClient _operationsClient;
         private readonly string _personalAccessToken;
 
         public ProjectSettingsClient(string organizationUrl, string projectName, string personalAccessToken)
@@ -24,6 +28,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _teamClient = connection.GetClient<TeamHttpClient>();
+            _projectClient = connection.GetClient<ProjectHttpClient>();
+            _operationsClient = connection.GetClient<OperationsHttpClient>();
         }
 
         public async Task<bool> CreateTeamAsync(string teamName, string teamDescription)
@@ -147,6 +153,73 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             HttpResponseMessage response = await client.DeleteAsync(url);
 
             return response.IsSuccessStatusCode;
+        }
+
+        public async Task<string?> GetProcessIdAsync(string processName)
+        {
+            string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
+
+            using var client = new HttpClient();
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+            JsonElement response = await client.GetFromJsonAsync<JsonElement>(url);
+
+            foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
+            {
+                string? name = element.GetProperty("name").GetString();
+                if(string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return element.GetProperty("typeId").GetString();
+                }
+            }
+
+            return null;
+        }
+
+        public async Task<Guid?> CreateProjectAsync(string projectName, string description, string processId)
+        {
+            var teamProject = new TeamProject
+            {
+                Name = projectName,
+                Description = description,
+                Capabilities = new Dictionary<string, Dictionary<string, string>>
+                {
+                    ["versioncontrol"] = new Dictionary<string, string> { ["sourceControlType"] = "Git" },
+                    ["processTemplate"] = new Dictionary<string, string> { ["templateTypeId"] = processId }
+                }
+            };
+
+            OperationReference operationReference = await _projectClient.QueueCreateProject(teamProject, userState: null);
+
+            Operation operation = await WaitForOperationAsync(operationReference.Id);
+            if(operation.Status != OperationStatus.Succeeded)
+            {
+                return null;
+            }
+
+            TeamProject? createdProject = await _projectClient.GetProject(projectName);
+            return createdProject?.Id;
+        }
+
+        public async Task<bool> DeleteProjectAsync(Guid projectId)
+        {
+            OperationReference operationReference = await _projectClient.QueueDeleteProject(projectId, userState: null);
+            Operation operation = await WaitForOperationAsync(operationReference.Id);
+            return operation.Status == OperationStatus.Succeeded;
+        }
+
+        private async Task<Operation> WaitForOperationAsync(Guid operationId)
+        {
+            Operation operation;
+            do
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                operation = await _operationsClient.GetOperation(operationId, userState: null);
+            }
+            while(operation.Status == OperationStatus.InProgress || operation.Status == OperationStatus.Queued);
+
+            return operation;
         }
     }
 }

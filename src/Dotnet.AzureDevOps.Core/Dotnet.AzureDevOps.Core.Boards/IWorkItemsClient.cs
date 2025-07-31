@@ -42,7 +42,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         Task<IReadOnlyList<TeamSettingsIteration>> AssignIterationsAsync(TeamContext teamContext, IEnumerable<IterationAssignmentOptions> iterations, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string wiql, CancellationToken cancellationToken = default);
         Task RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default);
-        Task SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default);
+        Task<WorkItem> SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default);
         Task<int?> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
         Task<int?> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
         Task<int?> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default);
@@ -53,7 +53,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         Task<IReadOnlyList<WitBatchResponse>> UpdateWorkItemsBatchAsync(IEnumerable<(int id, WorkItemCreateOptions options)> updates, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsBatchAsync(IEnumerable<(int sourceId, int targetId, string relation)> links, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WitBatchResponse>> CloseWorkItemsBatchAsync(IEnumerable<int> workItemIds, string closedState = "Closed", string? closedReason = "Duplicate", bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
-                Task<IReadOnlyList<WitBatchResponse>> CloseAndLinkDuplicatesBatchAsync(IEnumerable<(int duplicateId, int canonicalId)> pairs, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<WitBatchResponse>> CloseAndLinkDuplicatesBatchAsync(IEnumerable<(int duplicateId, int canonicalId)> pairs, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
         Task<List<WorkItem?>> AddChildWorkItemsBatchAsync(int parentId, string childType, IEnumerable<WorkItemCreateOptions> children, bool suppressNotifications = true, bool bypassRules = false, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WorkItem>> GetWorkItemsBatchByIdsAsync(IEnumerable<int> ids, WorkItemExpand expand = WorkItemExpand.All, IEnumerable<string>? fields = null, CancellationToken cancellationToken = default);
 

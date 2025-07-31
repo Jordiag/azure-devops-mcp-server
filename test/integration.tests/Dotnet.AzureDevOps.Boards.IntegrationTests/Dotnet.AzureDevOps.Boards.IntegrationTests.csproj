@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Boards\Dotnet.AzureDevOps.Core.Boards.csproj" />
+    <ProjectReference Include="..\..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.ProjectSettings\Dotnet.AzureDevOps.Core.ProjectSettings.csproj" />
     <ProjectReference Include="..\..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Repos\Dotnet.AzureDevOps.Core.Repos.csproj" />
     <ProjectReference Include="..\..\Dotnet.AzureDevOps.Tests.Common\Dotnet.AzureDevOps.Tests.Common.csproj" />
   </ItemGroup>

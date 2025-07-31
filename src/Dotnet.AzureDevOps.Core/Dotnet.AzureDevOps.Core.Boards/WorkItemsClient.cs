@@ -10,8 +10,6 @@ using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.Identity.Client;
-using Microsoft.VisualStudio.Services.Organization.Client;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
@@ -434,7 +432,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
             var created = new List<WorkItemClassificationNode>();
 
-            foreach (IterationCreateOptions iteration in iterations)
+            foreach(IterationCreateOptions iteration in iterations)
             {
                 var node = new WorkItemClassificationNode
                 {
@@ -442,9 +440,9 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     Attributes = new Dictionary<string, object?>()
                 };
 
-                if (iteration.StartDate.HasValue)
+                if(iteration.StartDate.HasValue)
                     node.Attributes["startDate"] = iteration.StartDate.Value;
-                if (iteration.FinishDate.HasValue)
+                if(iteration.FinishDate.HasValue)
                     node.Attributes["finishDate"] = iteration.FinishDate.Value;
 
                 WorkItemClassificationNode result = await _workItemClient.CreateOrUpdateClassificationNodeAsync(
@@ -462,10 +460,10 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         public async Task<IReadOnlyList<TeamSettingsIteration>> AssignIterationsAsync(TeamContext teamContext, IEnumerable<IterationAssignmentOptions> iterations, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(iterations); // Fix for CA1510
+            ArgumentNullException.ThrowIfNull(iterations);
 
             var assigned = new List<TeamSettingsIteration>();
-            foreach (IterationAssignmentOptions iteration in iterations)
+            foreach(IterationAssignmentOptions iteration in iterations)
             {
                 var data = new TeamSettingsIteration
                 {
@@ -497,7 +495,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <param name="value"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default)
+        public async Task<WorkItem> SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default)
         {
             var patch = new JsonPatchDocument
             {
@@ -509,7 +507,31 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 }
             };
 
-            _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+           return await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+        }
+
+        public async Task<WorkItemField2> CreateCustomFieldIfDoesntExistAsync(string fieldName, string referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type, string? description = null, CancellationToken cancellationToken = default)
+        {
+            var field = new WorkItemField2
+            {
+                Name = fieldName,
+                ReferenceName = referenceName,
+                Type = type,                   // "string", "integer", "boolean", "dateTime", etc.
+                Description = description,
+                Usage = FieldUsage.WorkItem
+            };
+            try
+            {
+                return await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
+            }
+            catch(VssServiceException ex)
+            {
+                if(ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
+                {
+                    return field;
+                }
+                throw;
+            }
         }
 
         public Task<Board?> ExportBoardAsync(TeamContext teamContext, string boardId, CancellationToken cancellationToken = default)
@@ -871,7 +893,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
             JsonPatchDocument patchDocument = new JsonPatchDocument();
 
-            foreach (WorkItemFieldValue field in fields)
+            foreach(WorkItemFieldValue field in fields)
             {
                 patchDocument.Add(new JsonPatchOperation
                 {
@@ -880,7 +902,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     Value = field.Value
                 });
 
-                if (!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
+                if(!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
                 {
                     patchDocument.Add(new JsonPatchOperation
                     {
@@ -906,7 +928,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
             JsonPatchDocument patchDocument = new JsonPatchDocument();
 
-            foreach (WorkItemFieldUpdate update in updates)
+            foreach(WorkItemFieldUpdate update in updates)
             {
                 patchDocument.Add(new JsonPatchOperation
                 {
@@ -915,7 +937,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     Value = update.Value
                 });
 
-                if (!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
+                if(!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
                 {
                     string formatPath = $"/multilineFieldsFormat{update.Path.Replace("/fields", string.Empty, StringComparison.OrdinalIgnoreCase)}";
                     patchDocument.Add(new JsonPatchOperation
@@ -993,14 +1015,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
             bool bypassRules = false,
             CancellationToken cancellationToken = default)
         {
-            if (links == null)
+            if(links == null)
             {
                 throw new ArgumentNullException(nameof(links));
             }
 
             var batch = new List<WitBatchRequest>();
 
-            foreach ((int sourceId, int targetId, string type, string? comment) in links)
+            foreach((int sourceId, int targetId, string type, string? comment) in links)
             {
                 string relation = GetRelationFromName(type);
 
