@@ -86,9 +86,8 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 
 
         /// <summary>
-        /// TODO: giving an unknown 500, try to code with rest api
+        /// Verifies that feed permissions can be updated using the REST API.
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task SetFeedPermissions_SucceedsAsync()
         {
@@ -100,17 +99,10 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 
             IReadOnlyList<FeedPermission> permissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
 
-            try
-            {
-                await _artifactsClient.SetFeedPermissionsAsync(feedId, permissions);
+            await _artifactsClient.SetFeedPermissionsAsync(feedId, permissions);
 
-                IReadOnlyList<FeedPermission> updatedPermissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
-                Assert.Equal(permissions.Count, updatedPermissions.Count);
-            }
-            catch(HttpRequestException ex)
-            {
-                Assert.Contains("500", ex.Message);
-            }
+            IReadOnlyList<FeedPermission> updatedPermissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
+            Assert.Equal(permissions.Count, updatedPermissions.Count);
         }
 
         [Fact]
