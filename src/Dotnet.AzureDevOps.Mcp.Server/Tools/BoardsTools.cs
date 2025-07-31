@@ -397,19 +397,6 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             return client.CloseAndLinkDuplicatesBatchAsync(pairs, suppressNotifications, bypassRules);
         }
 
-        [McpServerTool, Description("Creates child work items and links them to a parent in two back-to-back batches.")]
-        public static Task<List<WorkItem?>> AddChildWorkItemsBatchAsync(
-            string organizationUrl, string projectName, string personalAccessToken,
-            int parentId,
-            string childType,
-            IEnumerable<WorkItemCreateOptions> children,
-            bool suppressNotifications = true,
-            bool bypassRules = false)
-        {
-            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            return client.AddChildWorkItemsBatchAsync(parentId, childType, children, suppressNotifications, bypassRules);
-        }
-
         [McpServerTool, Description("Retrieves up to 200 work items in one /workitemsbatch POST.")]
         public static Task<IReadOnlyList<WorkItem>> GetWorkItemsBatchByIdsAsync(
             string organizationUrl, string projectName, string personalAccessToken,
