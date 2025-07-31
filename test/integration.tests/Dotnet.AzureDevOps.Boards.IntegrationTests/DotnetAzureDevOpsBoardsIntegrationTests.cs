@@ -2,9 +2,9 @@
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
-using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
@@ -720,6 +720,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task CustomFieldWorkflow_SucceedsAsync()
         {
             WorkItemsClient client = _workItemsClient;
+            string fieldName = "CustomIntegrationTestField";
+            string referenceName = "TestField.ForIntegration";
 
             if(await _workItemsClient.IsSystemProcessAsync())
             {
@@ -745,8 +747,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(workItemId.HasValue);
             _createdWorkItemIds.Add(workItemId!.Value);
 
-            await client.SetCustomFieldAsync(workItemId.Value, "Custom.TestField", "Value1");
-            object? fieldValue = await client.GetCustomFieldAsync(workItemId.Value, "Custom.TestField");
+            await client.CreateCustomFieldIfDoesntExistAsync(fieldName, referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String, "test field");
+
+            WorkItem workItem = await client.SetCustomFieldAsync(workItemId.Value, fieldName, "Value1");
+            object? fieldValue = await client.GetCustomFieldAsync(workItemId.Value, referenceName);
             Assert.NotNull(fieldValue);
         }
 
