@@ -57,4 +57,25 @@ public static class ProjectSettingsTools
         ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.DeleteInheritedProcessAsync(processId);
     }
+
+    [McpServerTool, Description("Gets a process identifier by name.")]
+    public static Task<string?> GetProcessIdAsync(string organizationUrl, string projectName, string personalAccessToken, string processName)
+    {
+        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetProcessIdAsync(processName);
+    }
+
+    [McpServerTool, Description("Creates a new project using a specified process.")]
+    public static Task<Guid?> CreateProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string newProjectName, string description, string processId)
+    {
+        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.CreateProjectAsync(newProjectName, description, processId);
+    }
+
+    [McpServerTool, Description("Deletes a project by identifier.")]
+    public static Task<bool> DeleteProjectAsync(string organizationUrl, string projectName, string personalAccessToken, Guid projectId)
+    {
+        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.DeleteProjectAsync(projectId);
+    }
 }
