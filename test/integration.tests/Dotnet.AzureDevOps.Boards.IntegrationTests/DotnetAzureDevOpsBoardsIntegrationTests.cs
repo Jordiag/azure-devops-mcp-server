@@ -713,11 +713,13 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         }
 
         [Fact]
-        public async Task CreateCustomFieldIfDoesntExist_SucceedsAsync()
+        public async Task CreateCustomFieldIfDoesNotExist_SucceedsAsync()
         {
             WorkItemsClient client = _workItemsClient;
-            string fieldName = $"CustomField{UtcStamp()}";
-            string referenceName = $"Custom.Reference.{UtcStamp()}";
+            string fieldName = $"CustomField{UtcStamp()}".Replace(".","").Replace("-", "");
+            ;
+            string referenceName = $"Custom.Reference.{UtcStamp()}".Replace(".", "").Replace("-", "");
+            ;
 
             if(await _workItemsClient.IsSystemProcessAsync())
             {
@@ -1078,7 +1080,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             WorkItem? workItem = await _workItemsClient.CreateWorkItemAsync("Task", fields);
             Assert.NotNull(workItem);
-            if(workItem?.Id != null)
+            if(workItem.Id != null)
             {
                 _createdWorkItemIds.Add(workItem.Id.Value);
             }
