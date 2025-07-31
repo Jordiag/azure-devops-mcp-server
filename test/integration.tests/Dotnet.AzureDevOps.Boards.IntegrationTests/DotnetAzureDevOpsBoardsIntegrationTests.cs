@@ -639,11 +639,13 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 IsDraft = false
             };
 
+            await Task.Delay(4000); 
+
             int? pullRequestId = await _reposClient.CreatePullRequestAsync(prOptions);
             Assert.True(pullRequestId.HasValue);
             _createdPullRequestIds.Add(pullRequestId!.Value);
 
-            await Task.Delay(2000); // Wait a bit for the PR to be fully created
+            await Task.Delay(2000); 
 
             await _workItemsClient.LinkWorkItemToPullRequestAsync(
                 _azureDevOpsConfiguration.ProjectId,
