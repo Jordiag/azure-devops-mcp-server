@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Linq;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
@@ -155,10 +154,7 @@ public class ArtifactsClient : IArtifactsClient
             Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         };
 
-        // The REST API expects the permissions collection wrapped inside a 'value' object.
-        var payload = new { value = feedPermissions.ToArray() };
-        string json = JsonSerializer.Serialize(payload, options);
-
+        string json = JsonSerializer.Serialize(feedPermissions, options);
         using var request = new HttpRequestMessage(HttpMethod.Patch,
             $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}")
         {
