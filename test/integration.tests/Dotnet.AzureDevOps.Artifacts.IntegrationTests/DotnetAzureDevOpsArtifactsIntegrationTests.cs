@@ -81,7 +81,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             _createdFeedIds.Add(feedId);
 
             IReadOnlyList<FeedPermission> permissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
-            Assert.NotNull(permissions);
+            Assert.NotEmpty(permissions);
         }
 
 
