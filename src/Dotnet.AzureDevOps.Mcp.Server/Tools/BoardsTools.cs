@@ -252,6 +252,21 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             return client.SetCustomFieldAsync(workItemId, fieldName, value);
         }
 
+        [McpServerTool, Description("Creates a custom field if it doesn't already exist.")]
+        public static Task<WorkItemField2> CreateCustomFieldIfDoesntExistAsync(
+            string organizationUrl,
+            string projectName,
+            string personalAccessToken,
+            string fieldName,
+            string referenceName,
+            Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type,
+            string? description = null,
+            CancellationToken cancellationToken = default)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CreateCustomFieldIfDoesntExistAsync(fieldName, referenceName, type, description, cancellationToken);
+        }
+
         [McpServerTool, Description("Exports a team boardId configuration.")]
         public static Task<Board?> ExportBoardAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string board)
         {

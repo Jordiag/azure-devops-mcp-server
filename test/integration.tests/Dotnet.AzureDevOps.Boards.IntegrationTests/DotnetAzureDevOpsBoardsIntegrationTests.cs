@@ -712,6 +712,50 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.NotEmpty(areas.Values);
         }
 
+        [Fact]
+        public async Task CreateCustomFieldIfDoesNotExist_SucceedsAsync()
+        {
+            WorkItemsClient client = _workItemsClient;
+            string fieldName = $"CustomField{UtcStamp()}".Replace(".","").Replace("-", "");
+            ;
+            string referenceName = $"Custom.Reference.{UtcStamp()}".Replace(".", "").Replace("-", "");
+            ;
+
+            if(await _workItemsClient.IsSystemProcessAsync())
+            {
+                string processName = $"it-proc-{UtcStamp()}";
+                bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
+                Assert.True(processCreated);
+
+                string? processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                Assert.False(string.IsNullOrEmpty(processId));
+
+                string projectName = $"it-proj-{UtcStamp()}";
+                Guid? projectId = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
+                Assert.True(projectId.HasValue);
+                _createdProjectIds.Add(projectId!.Value);
+
+                client = new WorkItemsClient(
+                    _azureDevOpsConfiguration.OrganisationUrl,
+                    projectName,
+                    _azureDevOpsConfiguration.PersonalAccessToken);
+            }
+
+            WorkItemField2 first = await client.CreateCustomFieldIfDoesntExistAsync(
+                fieldName,
+                referenceName,
+                Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String,
+                "integration test field");
+            Assert.Equal(referenceName, first.ReferenceName);
+
+            WorkItemField2 second = await client.CreateCustomFieldIfDoesntExistAsync(
+                fieldName,
+                referenceName,
+                Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String,
+                "integration test field");
+            Assert.Equal(referenceName, second.ReferenceName);
+        }
+
         /// <summary>
         /// Requires a custom process to be created first, as it uses a custom field.
         /// </summary>
@@ -1036,7 +1080,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             WorkItem? workItem = await _workItemsClient.CreateWorkItemAsync("Task", fields);
             Assert.NotNull(workItem);
-            if(workItem?.Id != null)
+            if(workItem.Id != null)
             {
                 _createdWorkItemIds.Add(workItem.Id.Value);
             }
