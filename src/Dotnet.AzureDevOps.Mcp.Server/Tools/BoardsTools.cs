@@ -135,7 +135,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         public static Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType, IEnumerable<WorkItemCreateOptions> items)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            Task<IReadOnlyList<int>> result = client.CreateWorkItemsBatchAsync(workItemType: workItemType, items: items, default);
+            Task<IReadOnlyList<int>> result = client.CreateWorkItemsMultipleCallsAsync(workItemType: workItemType, items: items, default);
 
             return result;
         }
@@ -395,19 +395,6 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.CloseAndLinkDuplicatesBatchAsync(pairs, suppressNotifications, bypassRules);
-        }
-
-        [McpServerTool, Description("Creates child work items and links them to a parent in two back-to-back batches.")]
-        public static Task<List<WorkItem?>> AddChildWorkItemsBatchAsync(
-            string organizationUrl, string projectName, string personalAccessToken,
-            int parentId,
-            string childType,
-            IEnumerable<WorkItemCreateOptions> children,
-            bool suppressNotifications = true,
-            bool bypassRules = false)
-        {
-            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            return client.AddChildWorkItemsBatchAsync(parentId, childType, children, suppressNotifications, bypassRules);
         }
 
         [McpServerTool, Description("Retrieves up to 200 work items in one /workitemsbatch POST.")]

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
@@ -19,17 +20,22 @@ public class SearchClient : ISearchClient
     }
 
     public Task<string> SearchCodeAsync(CodeSearchOptions options, CancellationToken cancellationToken = default)
-        => SendSearchRequestAsync("codesearchresults", BuildCodePayload(options), cancellationToken);
+    {
+        string? projectName = options.Project?[0];
+        return projectName == null
+            ? throw new ArgumentException("Project name must be specified in CodeSearchOptions.", nameof(options))
+            : SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
+    }
 
     public Task<string> SearchWikiAsync(WikiSearchOptions options, CancellationToken cancellationToken = default)
-        => SendSearchRequestAsync("wikisearchresults", BuildWikiPayload(options), cancellationToken);
+        => SendSearchRequestAsync("_apis/search/wikisearchresults", BuildWikiPayload(options), cancellationToken);
 
     public Task<string> SearchWorkItemsAsync(WorkItemSearchOptions options, CancellationToken cancellationToken = default)
-        => SendSearchRequestAsync("workitemsearchresults", BuildWorkItemPayload(options), cancellationToken);
+        => SendSearchRequestAsync("_apis/search/workitemsearchresults", BuildWorkItemPayload(options), cancellationToken);
 
     private async Task<string> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
     {
-        string url = $"_apis/search/{resource}?api-version={GlobalConstants.ApiVersion}";
+        string url = $"{resource}?api-version={GlobalConstants.ApiVersion}";
         using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
@@ -105,5 +111,39 @@ public class SearchClient : ISearchClient
         if(filters.Count > 0)
             payload["filters"] = filters;
         return payload;
+    }
+
+    public async Task<bool> IsCodeSearchEnabledAsync()
+    {
+        try
+        {
+            // Check for the Code Search extension specifically
+            string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
+
+            using HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            if(response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false; // Extension not installed
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            string content = await response.Content.ReadAsStringAsync();
+            JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
+
+            // Check if the extension is installed and enabled
+            if(extension.TryGetProperty("installState", out JsonElement installState))
+            {
+                return installState.TryGetProperty("flags", out JsonElement flags) &&
+                       flags.GetString()?.Contains("trusted") == true;
+            }
+
+            return true; // If we got here, it's likely installed
+        }
+        catch(HttpRequestException)
+        {
+            return false;
+        }
     }
 }
