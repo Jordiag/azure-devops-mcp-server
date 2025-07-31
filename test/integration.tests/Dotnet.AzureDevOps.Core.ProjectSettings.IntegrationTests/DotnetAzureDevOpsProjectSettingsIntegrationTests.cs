@@ -36,19 +36,20 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
             await _projectSettingsClient.CreateTeamAsync(testTeamName, "description1");
             await _projectSettingsClient.UpdateTeamDescriptionAsync(testTeamName, "description2");
             List<BoardReference> boardReferenceList = await _workItemsClient.ListBoardsAsync(teamContext, boardName);
+            Assert.NotEmpty(boardReferenceList);
             List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, "");
+            Assert.NotEmpty(iterations);
 
             IReadOnlyList<BoardColumn> cols = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardReferenceList[0].Id, testTeamName);
             await _projectSettingsClient.DeleteTeamAsync(await _projectSettingsClient.GetTeamIdAsync(testTeamName));
 
-            Assert.NotNull(cols);
+            Assert.NotEmpty(cols);
 
             IReadOnlyList<TeamSettingsIteration> iterationList = await _workItemsClient.ListIterationsAsync(teamContext, "current", _azureDevOpsConfiguration.ProjectName);
-            Assert.NotNull(iterations);
-            Assert.NotNull(iterationList);
+            Assert.NotEmpty(iterationList);
 
             TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
-            Assert.NotNull(areas);
+            Assert.NotEmpty(areas.Values);
         }
 
         [Fact]

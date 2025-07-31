@@ -544,7 +544,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             List<BoardReference> boardReferences = await _workItemsClient.ListBoardsAsync(teamContext);
-            Assert.NotNull(boardReferences);
+            Assert.NotEmpty(boardReferences);
         }
 
         [Fact]
@@ -564,7 +564,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, string.Empty);
-            Assert.NotNull(iterations);
+            Assert.NotEmpty(iterations);
         }
 
         [Fact]
@@ -576,7 +576,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             Guid boardId = boards.First().Id;
             List<BoardColumn> columns = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardId);
-            Assert.NotNull(columns);
+            Assert.NotEmpty(columns);
         }
 
         /// <summary>
@@ -588,7 +588,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, "Dotnet.McpIntegrationTest Team");
             List<BacklogLevelConfiguration> backlogs = await _workItemsClient.ListBacklogsAsync(teamContext);
-            Assert.NotNull(backlogs);
+            Assert.NotEmpty(backlogs);
         }
 
         /// <summary>
@@ -651,11 +651,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             List<TeamSettingsIteration> iterations = await _workItemsClient.ListIterationsAsync(teamContext);
-            if(iterations.Count == 0)
-            {
-                Assert.NotNull(iterations);
-                return;
-            }
+            Assert.NotEmpty(iterations);
 
             TeamSettingsIteration iteration = iterations.First();
             IterationWorkItems result = await _workItemsClient.GetWorkItemsForIterationAsync(teamContext, iteration.Id);
@@ -667,7 +663,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             List<TeamSettingsIteration> iterations = await _workItemsClient.ListIterationsAsync(teamContext);
-            Assert.NotNull(iterations);
+            Assert.NotEmpty(iterations);
         }
 
         [Fact]
@@ -688,11 +684,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             List<TeamSettingsIteration> existing = await _workItemsClient.ListIterationsAsync(teamContext);
-            if(existing.Count == 0)
-            {
-                Assert.NotNull(existing);
-                return;
-            }
+            Assert.NotEmpty(existing);
 
             TeamSettingsIteration iteration = existing.First();
             var assignments = new List<IterationAssignmentOptions>
@@ -709,7 +701,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
-            Assert.NotNull(areas);
+            Assert.NotEmpty(areas.Values);
         }
 
         /// <summary>

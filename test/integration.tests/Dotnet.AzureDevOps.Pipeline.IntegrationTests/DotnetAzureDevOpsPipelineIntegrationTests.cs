@@ -204,11 +204,11 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             _queuedBuildIds.Add(buildId);
 
             List<BuildLog> logs = await _pipelines.GetLogsAsync(buildId);
-            Assert.NotNull(logs);
+            Assert.NotEmpty(logs);
 
             List<BuildDefinitionRevision> revisions = await _pipelines.GetDefinitionRevisionsAsync(
                 _definitionId);
-            Assert.NotNull(revisions);
+            Assert.NotEmpty(revisions);
         }
 
         [Fact]
