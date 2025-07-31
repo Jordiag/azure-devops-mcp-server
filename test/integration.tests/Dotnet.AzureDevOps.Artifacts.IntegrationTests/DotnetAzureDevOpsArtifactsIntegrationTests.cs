@@ -84,27 +84,6 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Assert.NotEmpty(permissions);
         }
 
-
-        /// <summary>
-        /// Verifies that feed permissions can be updated using the REST API.
-        /// </summary>
-        [Fact]
-        public async Task SetFeedPermissions_SucceedsAsync()
-        {
-            Guid feedId = await _artifactsClient.CreateFeedAsync(new FeedCreateOptions
-            {
-                Name = $"setperm-feed-{UtcStamp()}"
-            });
-            _createdFeedIds.Add(feedId);
-
-            IReadOnlyList<FeedPermission> permissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
-
-            await _artifactsClient.SetFeedPermissionsAsync(feedId, permissions);
-
-            IReadOnlyList<FeedPermission> updatedPermissions = await _artifactsClient.GetFeedPermissionsAsync(feedId);
-            Assert.Equal(permissions.Count, updatedPermissions.Count);
-        }
-
         [Fact]
         public async Task FeedViewsWorkflow_SucceedsAsync()
         {

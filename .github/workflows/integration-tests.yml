@@ -1,5 +1,3 @@
-name: Integration Tests
-
 on:
   push:
     branches:
@@ -7,8 +5,16 @@ on:
     paths-ignore:
       - '.github/workflows/**'
       - 'README.md'
-      - 'README.*.md'   # for files like README.en.md, README.fr.md, etc.
-      - '**/README.md'  # for README files in subdirectories
+      - 'README.*.md'
+      - '**/README.md'
+      - '**/README.*.md'
+
+  pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'README.md'
+      - 'README.*.md'
+      - '**/README.md'
       - '**/README.*.md'
 
   workflow_dispatch:
