@@ -723,6 +723,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
                 Assert.True(processCreated);
 
+                await Task.Delay(4000); // Ensure process is created before fetching ID
+
                 string? processId = await _projectSettingsClient.GetProcessIdAsync(processName);
                 Assert.False(string.IsNullOrEmpty(processId));
 
