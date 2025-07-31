@@ -1186,15 +1186,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             };
 
 
-            try
-            {
-                IReadOnlyList<WitBatchResponse> resp = await _workItemsClient.LinkWorkItemsByNameBatchAsync(links);
-                Assert.Single(resp);
-            }
-            catch(VssServiceException ex)
-            {
-                Assert.Contains("Not Found", ex.Message);
-            }
+            IReadOnlyList<WitBatchResponse> resp = await _workItemsClient.LinkWorkItemsByNameBatchAsync(links);
+            Assert.Single(resp);
         }
 
         /// <summary>

@@ -560,16 +560,39 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             ArgumentNullException.ThrowIfNull(requests);
 
-            var requestList = requests.ToList(); // Materialise to inspect count, content etc. if needed
+            IList<WitBatchRequest> requestList = requests as IList<WitBatchRequest> ?? requests.ToList();
 
-            // Optional: log or debug request count
             Debug.WriteLine($"Executing batch with {requestList.Count} request(s).");
 
-            List<WitBatchResponse> result = await _workItemClient
-                .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            string requestUrl = $"{_organizationUrl}/{_projectName}/_apis/wit/$batch?api-version={GlobalConstants.ApiVersion}";
 
-            return (IReadOnlyList<WitBatchResponse>)result;
+            var payload = new { requests = requestList };
+
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(payload);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = content
+            };
+
+            HttpResponseMessage response = await _httpClient.SendAsync(requestMessage, cancellationToken);
+
+            if(!response.IsSuccessStatusCode)
+            {
+                string body = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException($"Batch request failed: {response.StatusCode} - {body}");
+            }
+
+            string responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+            BatchResponseWrapper? batchResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<BatchResponseWrapper>(responseText);
+
+            return batchResponse?.Responses ?? [];
+        }
+
+        private sealed class BatchResponseWrapper
+        {
+            [Newtonsoft.Json.JsonProperty("responses")]
+            public List<WitBatchResponse>? Responses { get; set; }
         }
 
 
