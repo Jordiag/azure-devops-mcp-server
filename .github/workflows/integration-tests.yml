@@ -1,15 +1,15 @@
 name: Integration Tests
 
 on:
-  workflow_run:
-    workflows: ["Build on main"]
-    types:
-      - completed
-
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - main
     paths-ignore:
       - '.github/workflows/**'
+      - 'README.md'
+      - 'README.*.md'   # for files like README.en.md, README.fr.md, etc.
+      - '**/README.md'  # for README files in subdirectories
+      - '**/README.*.md'
 
   workflow_dispatch:
 
