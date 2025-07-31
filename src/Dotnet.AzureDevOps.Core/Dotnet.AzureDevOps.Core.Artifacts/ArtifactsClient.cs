@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Linq;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
@@ -131,37 +132,6 @@ public class ArtifactsClient : IArtifactsClient
 
         FeedPermissionList? list = await response.Content.ReadFromJsonAsync<FeedPermissionList>(options, cancellationToken);
         return list?.Value?.ToArray() ?? [];
-    }
-
-    /// <summary>
-    /// Updates the permissions for a specified feed asynchronously. TODO : doesn't work yet, need to investigate
-    /// </summary>
-    /// <remarks>This method sends a PATCH request to update the permissions for the specified feed.  The
-    /// permissions are serialized to JSON using camel case naming and are sent as the request body. Ensure that the
-    /// <paramref name="feedPermissions"/> parameter contains valid permissions,  and that the caller has the necessary
-    /// access rights to modify the feed.</remarks>
-    /// <param name="feedId">The unique identifier of the feed whose permissions are being updated.</param>
-    /// <param name="feedPermissions">A collection of <see cref="FeedPermission"/> objects representing the permissions to be applied to the feed.</param>
-    /// <param name="cancellationToken">A token that can be used to cancel the operation. Defaults to <see cref="CancellationToken.None"/> if not
-    /// provided.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task SetFeedPermissionsAsync(Guid feedId, IEnumerable<FeedPermission> feedPermissions, CancellationToken cancellationToken = default)
-    {
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
-            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-        };
-
-        string json = JsonSerializer.Serialize(feedPermissions, options);
-        HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        HttpResponseMessage response = await _http.PatchAsync(
-            $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}",
-            content,
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
     }
 
     public async Task<FeedView> CreateFeedViewAsync(Guid feedId, FeedView feedView, CancellationToken cancellationToken = default)

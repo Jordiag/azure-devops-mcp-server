@@ -71,13 +71,6 @@ public class ArtifactsTools
         return client.GetFeedPermissionsAsync(feedId);
     }
 
-    [McpServerTool, Description("Sets permissions on a feed.")]
-    public static Task SetFeedPermissionsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, IEnumerable<FeedPermission> permissions)
-    {
-        ArtifactsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.SetFeedPermissionsAsync(feedId, permissions);
-    }
-
     [McpServerTool, Description("Creates a feed view.")]
     public static Task<FeedView> CreateFeedViewAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, FeedView view)
     {
