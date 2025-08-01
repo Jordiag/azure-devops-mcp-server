@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -170,11 +171,18 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     Id = info.guid
                 })];
 
-            await _gitHttpClient.CreatePullRequestReviewersAsync(
-                reviewers: reviewers,
-                repositoryId: repositoryId,
-                pullRequestId: pullRequestId,
-                project: _projectName);
+            using HttpClient httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(_organizationUrl)
+            };
+
+            string authToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
+
+            string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers?api-version={GlobalConstants.ApiVersion}";
+
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(requestUrl, reviewers);
+            response.EnsureSuccessStatusCode();
         }
 
         public async Task SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote)
