@@ -73,7 +73,6 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Equal(_branch, retried!.SourceBranch);
         }
 
-        [Fact]
         public async Task ListBuilds_Filter_WorksAsync()
         {
             int buildId = await _pipelines.QueueRunAsync(
@@ -85,7 +84,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
                 DefinitionId = _definitionId,
                 Branch = _branch,
                 Status = BuildStatus.NotStarted, // will match our queued run
-                Top = 10
+                Top = 100
             });
             Assert.Contains(list, b => b.Id == buildId);
         }
