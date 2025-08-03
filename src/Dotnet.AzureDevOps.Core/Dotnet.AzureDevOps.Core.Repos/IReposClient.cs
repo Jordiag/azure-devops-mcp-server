@@ -10,7 +10,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         Task<IList<WebApiTagDefinition>> AddLabelsAsync(string repository, int pullRequestId, params string[] labels);
         Task<bool> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer);
         Task<bool> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers);
-        Task<GitPullRequest> CompletePullRequestAsync(string repositoryId, int pullRequestId, bool squashMerge = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null);
+        Task<GitPullRequest> CompletePullRequestAsync(string repositoryId, int pullRequestId, bool squashMerge = false, bool deleteSourceBranch = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null);
         Task<List<GitRefUpdateResult>> CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha);
         Task<int> CreateCommentThreadAsync(CommentThreadOptions commentThreadOptions);
         Task<int?> CreatePullRequestAsync(PullRequestCreateOptions pullRequestCreateOptions);

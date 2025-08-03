@@ -88,7 +88,12 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.NotNull(gtPullRequest);
             Assert.Equal(PullRequestStatus.Active, gtPullRequest!.Status);
 
-            await _reposClient.CompletePullRequestAsync(_repoName, pullRequestId.Value, squashMerge: true, gtPullRequest.LastMergeSourceCommit);
+            await _reposClient.CompletePullRequestAsync(
+                _repoName,
+                pullRequestId.Value,
+                squashMerge: true,
+                deleteSourceBranch: false,
+                lastMergeSourceCommit: gtPullRequest.LastMergeSourceCommit);
 
             GitPullRequest? completed = await WaitForCompletePullRequestAsync(pullRequestId.Value);
 

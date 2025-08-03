@@ -38,10 +38,10 @@ public class ReposTools
     }
 
     [McpServerTool, Description("Completes a pull request.")]
-    public static Task CompletePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, bool squashMerge = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null)
+    public static Task CompletePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, bool squashMerge = false, bool deleteSourceBranch = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null)
     {
         ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.CompletePullRequestAsync(repositoryId, pullRequestId, squashMerge, lastMergeSourceCommit, commitMessage);
+        return client.CompletePullRequestAsync(repositoryId, pullRequestId, squashMerge, deleteSourceBranch, lastMergeSourceCommit, commitMessage);
     }
 
     [McpServerTool, Description("Abandons a pull request.")]
