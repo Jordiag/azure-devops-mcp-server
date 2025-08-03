@@ -1,6 +1,7 @@
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 
@@ -80,6 +81,17 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
 
             bool deleted = await _projectSettingsClient.DeleteInheritedProcessAsync("00000000-0000-0000-0000-000000000000");
             Assert.False(deleted);
+        }
+
+        [Fact]
+        public async Task GetProjectAsync_ReturnsProject_WhenProjectExistsAsync()
+        {
+            string projectName = _azureDevOpsConfiguration.ProjectName;
+
+            TeamProject? retrievedProject = await _projectSettingsClient.GetProjectAsync(projectName);
+
+            Assert.NotNull(retrievedProject);
+            Assert.Equal(projectName, retrievedProject!.Name);
         }
 
         private static string UtcStamp() =>

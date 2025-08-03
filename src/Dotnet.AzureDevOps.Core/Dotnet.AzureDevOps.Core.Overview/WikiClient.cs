@@ -65,7 +65,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
             return wikis;
         }
 
-        public Task DeleteWikiAsync(Guid wikiId, CancellationToken cancellationToken = default) => _wikiHttpClient.DeleteWikiAsync(wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+        public Task<WikiV2> DeleteWikiAsync(Guid wikiId, CancellationToken cancellationToken = default) => _wikiHttpClient.DeleteWikiAsync(wikiIdentifier: wikiId, cancellationToken: cancellationToken);
 
         public async Task<int?> CreateOrUpdatePageAsync(Guid wikiId, WikiPageUpdateOptions wikiPageUpdateOptions, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default)
         {
@@ -146,7 +146,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
             }
         }
 
-        public Task DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default) =>
+        public Task<WikiPageResponse> DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default) => 
             _wikiHttpClient.DeletePageAsync(project: _projectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
     }
 }

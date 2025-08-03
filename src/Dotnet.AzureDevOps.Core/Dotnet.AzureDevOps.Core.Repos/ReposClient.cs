@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -16,6 +16,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         private readonly GitHttpClient _gitHttpClient;
         private readonly string _organizationUrl;
         private readonly string _personalAccessToken;
+        private readonly HttpClient _httpClient;
 
         public ReposClient(string organizationUrl, string projectName, string personalAccessToken)
         {
@@ -26,6 +27,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(organizationUrl), credentials);
             _gitHttpClient = connection.GetClient<GitHttpClient>();
+            _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
+            string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
         }
 
         /// <summary>
@@ -54,14 +58,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
         /// <summary>
         /// Abandons (effectively closes) an existing pull request by ID.
         /// </summary>
-        public async Task AbandonPullRequestAsync(string repositoryIdOrName, int pullRequestId)
+        public async Task<GitPullRequest> AbandonPullRequestAsync(string repositoryIdOrName, int pullRequestId)
         {
             var pullRequestUpdate = new GitPullRequest
             {
                 Status = PullRequestStatus.Abandoned
             };
 
-            await _gitHttpClient.UpdatePullRequestAsync(
+            return await _gitHttpClient.UpdatePullRequestAsync(
                 gitPullRequestToUpdate: pullRequestUpdate,
                 repositoryId: repositoryIdOrName,
                 pullRequestId: pullRequestId,
@@ -88,7 +92,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
 
 
-        public async Task CompletePullRequestAsync(
+        public async Task<GitPullRequest> CompletePullRequestAsync(
             string repositoryId,
             int pullRequestId,
             bool squashMerge = false,
@@ -108,7 +112,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
 
-            await _gitHttpClient.UpdatePullRequestAsync(
+            return await _gitHttpClient.UpdatePullRequestAsync(
                 gitPullRequestToUpdate: pullRequestUpdate,
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -116,7 +120,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 );
         }
 
-        public async Task UpdatePullRequestAsync(
+        public async Task<GitPullRequest> UpdatePullRequestAsync(
             string repositoryId,
             int pullRequestId,
             PullRequestUpdateOptions pullRequestUpdateOptions)
@@ -131,7 +135,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             if(pullRequestUpdateOptions.ReviewerIds is { } reviewers)
                 pullRequestUpdate.Reviewers = [.. reviewers.Select(id => new IdentityRefWithVote { Id = id })];
 
-            await _gitHttpClient.UpdatePullRequestAsync(
+            return await _gitHttpClient.UpdatePullRequestAsync(
                 gitPullRequestToUpdate: pullRequestUpdate,
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -160,32 +164,58 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
 
-        public async Task AddReviewersAsync(string repositoryId, int pullRequestId, (string guid, string name)[] reviewerInfos)
+        public async Task<bool> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer)
         {
-            if(reviewerInfos.Length == 0)
-                return;
+            if(string.IsNullOrEmpty(reviewer.localId))
+                return false;
 
-            IdentityRef[] reviewers = [.. reviewerInfos
-                .Select(info => new IdentityRef
-                {
-                    Id = info.guid
-                })];
-
-            using HttpClient httpClient = new HttpClient
+            var reviewerPayload = new
             {
-                BaseAddress = new Uri(_organizationUrl)
+                localId = reviewer.localId,
+                DisplayName = reviewer.name ?? string.Empty
             };
 
-            string authToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
+            string requestUrl = $"{_organizationUrl}/{_projectName}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewer.localId}?api-version={GlobalConstants.ApiVersion}";
 
-            string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers?api-version={GlobalConstants.ApiVersion}";
+            string content = JsonSerializer.Serialize(reviewerPayload);
+            var httpContent = new StringContent(content, Encoding.UTF8, "application/json");
 
-            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(requestUrl, reviewers);
-            response.EnsureSuccessStatusCode();
+            using HttpResponseMessage response = await _httpClient.PutAsync(requestUrl, httpContent);
+            try
+            {
+                response.EnsureSuccessStatusCode();
+                return true;
+            }
+            catch(HttpRequestException)
+            {
+                return false;
+            }
         }
 
-        public async Task SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote)
+        public async Task<bool> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers)
+        {
+            bool allAdded = true;
+
+            if(reviewers is null || reviewers.Length == 0)
+                return false;
+
+            foreach((string localId, string name) reviewer in reviewers)
+            {
+                if(string.IsNullOrEmpty(reviewer.localId))
+                {
+                    allAdded = false;
+                    continue;
+                }
+
+                bool added = await AddReviewerAsync(repositoryId, pullRequestId, reviewer);
+                if(!added)
+                    allAdded = false;
+            }
+
+            return allAdded;
+        }
+
+        public async Task<IdentityRefWithVote> SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote)
         {
             var reviewerUpdate = new IdentityRefWithVote
             {
@@ -193,7 +223,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 Vote = vote
             };
 
-            await _gitHttpClient.CreatePullRequestReviewerAsync(
+            return await _gitHttpClient.CreatePullRequestReviewerAsync(
                 reviewer: reviewerUpdate,
                 repositoryId: repositoryId,
                 reviewerId: reviewerId,
@@ -330,7 +360,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
 
 
-        public async Task SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions)
+        public async Task<GitPullRequestStatus> SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions)
         {
             var status = new GitPullRequestStatus
             {
@@ -340,7 +370,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 TargetUrl = pullRequestStatusOptions.TargetUrl
             };
 
-            await _gitHttpClient.CreatePullRequestStatusAsync(
+            return await _gitHttpClient.CreatePullRequestStatusAsync(
                 status: status,
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -349,18 +379,20 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
 
 
-        public async Task EnableAutoCompleteAsync(
+        public async Task<GitPullRequest> EnableAutoCompleteAsync(
             string repositoryId,
             int pullRequestId,
+            string displayName,
+            string localId,
             GitPullRequestCompletionOptions gitPullRequestCompletionOptions)
         {
             var pullRequestUpdate = new GitPullRequest
             {
-                AutoCompleteSetBy = new IdentityRef { DisplayName = "bot" },
+                AutoCompleteSetBy = new IdentityRef { DisplayName = displayName, Id = localId },
                 CompletionOptions = gitPullRequestCompletionOptions
             };
 
-            await _gitHttpClient.UpdatePullRequestAsync(
+            return await _gitHttpClient.UpdatePullRequestAsync(
                 gitPullRequestToUpdate: pullRequestUpdate,
                 repositoryId: repositoryId,
                 pullRequestId: pullRequestId,
@@ -396,7 +428,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 string.Equals(label.Name, labelName, StringComparison.OrdinalIgnoreCase)))];
         }
 
-        public async Task CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha)
+        public async Task<List<GitRefUpdateResult>> CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha)
         {
             var refUpdate = new GitRefUpdate
             {
@@ -406,7 +438,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             };
 
             // Use the UpdateRefsAsync method instead
-            await _gitHttpClient.UpdateRefsAsync(
+            return await _gitHttpClient.UpdateRefsAsync(
                 refUpdates: new[] { refUpdate },
                 repositoryId: repositoryId,
                 project: _projectName);
@@ -465,10 +497,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task EditCommentAsync(CommentEditOptions commentEditOptions)
+        public async Task<Comment> EditCommentAsync(CommentEditOptions commentEditOptions)
         {
             var update = new Comment { Content = commentEditOptions.NewContent };
-            await _gitHttpClient.UpdateCommentAsync(
+            return await _gitHttpClient.UpdateCommentAsync(
                 comment: update,
                 repositoryId: commentEditOptions.Repository,
                 pullRequestId: commentEditOptions.PullRequest,
@@ -669,7 +701,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             return refs.FirstOrDefault();
         }
 
-        public async Task ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId)
+        public async Task<GitPullRequestCommentThread> ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId)
         {
             var update = new GitPullRequestCommentThread
             {
@@ -677,7 +709,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 Status = CommentThreadStatus.Fixed
             };
 
-            await _gitHttpClient.UpdateThreadAsync(
+            return await _gitHttpClient.UpdateThreadAsync(
                 commentThread: update,
                 project: _projectName,
                 repositoryId: repositoryId,
@@ -694,29 +726,57 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 top: top
             );
 
-        public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByCommitsAsync(string repositoryId, IEnumerable<string> commitIds)
+
+
+        public async Task<string> CommitAddFileAsync(FileCommitOptions fileCommitOptions)
         {
-            var result = new List<GitPullRequest>();
-            using var httpClient = new HttpClient
-            {
-                BaseAddress = new Uri(_organizationUrl)
-            };
-            string authToken = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
+            GitRef? branch = await GetBranchAsync(fileCommitOptions.RepositoryName, fileCommitOptions.BranchName) ??
+                throw new InvalidOperationException($"Branch '{fileCommitOptions.BranchName}' not found in repository '{fileCommitOptions.RepositoryName}'.");
 
-            foreach(string commitId in commitIds)
+            var change = new GitChange
             {
-                string requestUrl = $"{_projectName}/_apis/git/repositories/{repositoryId}/commits/{commitId}/pullRequests?api-version={GlobalConstants.ApiVersion}";
-                using HttpResponseMessage message = await httpClient.GetAsync(requestUrl);
-                message.EnsureSuccessStatusCode();
-                List<GitPullRequest>? pullRequests = await message.Content.ReadFromJsonAsync<List<GitPullRequest>>();
-                if(pullRequests is not null)
+                ChangeType = VersionControlChangeType.Add,
+                Item = new GitItem
                 {
-                    result.AddRange(pullRequests);
+                    Path = fileCommitOptions.FilePath
+                },
+                NewContent = new ItemContent
+                {
+                    Content = fileCommitOptions.Content,
+                    ContentType = ItemContentType.RawText
                 }
-            }
+            };
 
-            return result;
+            var commit = new GitCommitRef
+            {
+                Comment = fileCommitOptions.CommitMessage,
+                Changes = [change]
+
+            };
+
+            var referenceUpdate = new GitRefUpdate
+            {
+                Name = $"refs/heads/{fileCommitOptions.BranchName}",
+                OldObjectId = branch.ObjectId
+            };
+
+            var push = new GitPush
+            {
+                RefUpdates = [referenceUpdate],
+                Commits = [commit]
+            };
+
+            GitPush result = await _gitHttpClient.CreatePushAsync(
+                push,
+                project: _projectName,
+                repositoryId: fileCommitOptions.RepositoryName,
+                userState: null
+            );
+
+            GitCommitRef pushedCommit = result.Commits.Last();
+            return pushedCommit.CommitId;
         }
     }
 }
+
+

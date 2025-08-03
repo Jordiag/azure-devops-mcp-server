@@ -7,6 +7,7 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Operations;
 using Microsoft.VisualStudio.Services.WebApi;
+using static System.Net.WebRequestMethods;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
@@ -14,22 +15,27 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
     {
         private readonly string _organizationUrl;
         private readonly string _projectName;
+        private readonly HttpClient _httClient;
         private readonly TeamHttpClient _teamClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly OperationsHttpClient _operationsClient;
-        private readonly string _personalAccessToken;
+
 
         public ProjectSettingsClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
-            _personalAccessToken = personalAccessToken;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _teamClient = connection.GetClient<TeamHttpClient>();
             _projectClient = connection.GetClient<ProjectHttpClient>();
             _operationsClient = connection.GetClient<OperationsHttpClient>();
+
+            _httClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
+
+            string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
+            _httClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
         }
 
         public async Task<bool> CreateTeamAsync(string teamName, string teamDescription)
@@ -94,13 +100,9 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                using var client = new HttpClient();
-                string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
                 string url = $"{_organizationUrl}/_apis/projects/{_projectName}/teams/{teamGuid}?api-version={GlobalConstants.ApiVersion}";
 
-                HttpResponseMessage response = await client.DeleteAsync(url);
+                HttpResponseMessage response = await _httClient.DeleteAsync(url);
 
                 return response.IsSuccessStatusCode;
             }
@@ -122,12 +124,6 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
 
-            using var client = new HttpClient();
-
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
             var payload = new
             {
                 name = newProcessName,
@@ -137,7 +133,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await client.PostAsync(url, content);
+            HttpResponseMessage response = await _httClient.PostAsync(url, content);
 
             return response.IsSuccessStatusCode;
         }
@@ -146,11 +142,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
 
-            using var client = new HttpClient();
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
-            HttpResponseMessage response = await client.DeleteAsync(url);
+            HttpResponseMessage response = await _httClient.DeleteAsync(url);
 
             return response.IsSuccessStatusCode;
         }
@@ -159,11 +151,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
 
-            using var client = new HttpClient();
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_personalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
-            JsonElement response = await client.GetFromJsonAsync<JsonElement>(url);
+            JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url);
 
             foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
             {
@@ -200,6 +188,18 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             TeamProject? createdProject = await _projectClient.GetProject(projectName);
             return createdProject?.Id;
+        }
+
+        public async Task<TeamProject?> GetProjectAsync(string projectName)
+        {
+            try
+            {
+                return await _projectClient.GetProject(projectName);
+            }
+            catch(ProjectDoesNotExistWithNameException)
+            {
+                return null;
+            }
         }
 
         public async Task<bool> DeleteProjectAsync(Guid projectId)

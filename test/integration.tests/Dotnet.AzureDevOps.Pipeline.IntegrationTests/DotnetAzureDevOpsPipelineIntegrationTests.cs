@@ -141,11 +141,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             Assert.Contains(list, d => d.Id == _definitionId);
         }
 
-        /// <summary>
-        /// TODO: This test is flaky on CI, needs investigation.
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "Flaky on CI - will fix later")]
+        [Fact]
         public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
         {
             var queueOptions = new BuildQueueOptions
