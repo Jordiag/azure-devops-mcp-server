@@ -37,6 +37,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             _identityClient = fixture.IdentityClient;
         }
 
+        [Fact]
         public async Task CreateReadCompletePullRequest_SucceedsAsync()
         {
             var createOptions = new PullRequestCreateOptions
