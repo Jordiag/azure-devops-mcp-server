@@ -10,6 +10,7 @@ using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
@@ -628,13 +629,31 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "PR Link", Tags = "IntegrationTest;PR" });
             Assert.True(workItemId.HasValue);
             _createdWorkItemIds.Add(workItemId!.Value);
+            string sourceBranch = $"{_sourceBranch}2";
+            GitRef? gitRef = await _reposClient.GetBranchAsync(_repositoryName, sourceBranch);
+
+            if(string.IsNullOrEmpty(gitRef?.Name))
+            {
+                string targetBranchName = _targetBranch.Replace("refs/heads/", string.Empty);
+                IReadOnlyList<GitCommitRef> latestCommits = await _reposClient.GetLatestCommitsAsync(
+                    _azureDevOpsConfiguration.ProjectName,
+                    _repositoryName,
+                    targetBranchName,
+                    top: 1);
+
+                if(latestCommits.Count == 0)
+                    return;
+
+                string commitSha = latestCommits[0].CommitId;
+                await _reposClient.CreateBranchAsync(_repositoryName, sourceBranch, commitSha);
+            }
 
             var prOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repositoryName,
                 Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
                 Description = "PR for link test",
-                SourceBranch = $"{_sourceBranch}2",
+                SourceBranch = sourceBranch,
                 TargetBranch = _targetBranch,
                 IsDraft = false
             };
