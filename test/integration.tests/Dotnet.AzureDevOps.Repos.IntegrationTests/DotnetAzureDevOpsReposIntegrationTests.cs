@@ -110,7 +110,8 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             return default;
         }
 
-        [Fact]
+        // TODO: Re-enable this test once the API is working again
+        [Fact(Skip = "API not longer working")]
         public async Task ListAndReviewers_Workflow_SucceedsAsync()
         {
             var pullRequestCreateOptions = new PullRequestCreateOptions
@@ -305,6 +306,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.NotNull(diffs);
         }
 
+        // TODO: Re-enable this test once the vote functionality works in the pipeline.
         [Fact(Skip = "Vote doesn't work in pipeline")]
         public async Task AdvancedPullRequestWorkflow_SucceedsAsync()
         {
