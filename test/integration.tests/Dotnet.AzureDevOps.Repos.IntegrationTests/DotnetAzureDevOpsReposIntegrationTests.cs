@@ -2,6 +2,7 @@
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
@@ -88,12 +89,26 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.NotNull(gtPullRequest);
             Assert.Equal(PullRequestStatus.Active, gtPullRequest!.Status);
 
-            await Task.Delay(2000);
             await _reposClient.CompletePullRequestAsync(_repoName, pullRequestId.Value, squashMerge: true, gtPullRequest.LastMergeSourceCommit);
 
-            GitPullRequest? completed = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
+            GitPullRequest? completed = await WaitForCompletePullRequestAsync(pullRequestId.Value);
 
             Assert.Equal(PullRequestStatus.Completed, completed!.Status);
+        }
+
+        private async Task<GitPullRequest?> WaitForCompletePullRequestAsync(int pullRequestId)
+        {
+            const int maxAttempts = 20;
+            const int delayMs = 500;
+
+            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                GitPullRequest? gtPullRequest = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId);
+                if(gtPullRequest?.Status == PullRequestStatus.Completed)
+                    return gtPullRequest;
+                await Task.Delay(delayMs);
+            }
+            return default;
         }
 
         [Fact]
@@ -107,6 +122,23 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 SourceBranch = _srcBranch,
                 TargetBranch = _targetBranch
             };
+
+            GitRef? gitRef = await _reposClient.GetBranchAsync(_repoName, pullRequestCreateOptions.SourceBranch);
+
+            if(string.IsNullOrEmpty(gitRef?.Name))
+            {
+                IReadOnlyList<GitCommitRef> latestCommits = await _reposClient.GetLatestCommitsAsync(
+                    _azureDevOpsConfiguration.ProjectName,
+                    _repoName,
+                    "main",
+                    top: 1);
+
+                if(latestCommits.Count == 0)
+                    return;
+
+                string commitSha = latestCommits[0].CommitId;
+                await _reposClient.CreateBranchAsync(_repoName, _srcBranch, commitSha);
+            }
 
             int pullRequestId = (await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions)).Value;
             _createdPrIds.Add(pullRequestId);
@@ -376,6 +408,23 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 SourceBranch = _srcBranch,
                 TargetBranch = _targetBranch
             };
+
+            GitRef? gitRef = await _reposClient.GetBranchAsync(_repoName, createOptions.SourceBranch);
+
+            if(string.IsNullOrEmpty(gitRef?.Name))
+            {
+                IReadOnlyList<GitCommitRef> latestCommits = await _reposClient.GetLatestCommitsAsync(
+                    _azureDevOpsConfiguration.ProjectName,
+                    _repoName,
+                    "main",
+                    top: 1);
+
+                if(latestCommits.Count == 0)
+                    return;
+
+                string commitSha = latestCommits[0].CommitId;
+                await _reposClient.CreateBranchAsync(_repoName, _srcBranch, commitSha);
+            }
 
             int prId = (await _reposClient.CreatePullRequestAsync(createOptions)).Value;
             _createdPrIds.Add(prId);

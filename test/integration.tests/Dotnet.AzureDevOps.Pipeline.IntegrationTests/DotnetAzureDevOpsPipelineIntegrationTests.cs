@@ -158,7 +158,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 
             await _pipelines.UpdateBuildStageAsync(buildId, "SimpleStage", StageUpdateType.Cancel);
 
-            build = await WaitForBuildToCompleteAsync(buildId, maxAttempts: 15, delayMs: 1000);
+            build = await WaitForBuildToCompleteAsync(buildId, maxAttempts: 20, delayMs: 500);
 
             Assert.NotNull(build);
             Assert.Equal(BuildResult.Canceled, build!.Result);
@@ -181,11 +181,11 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
             for(int attempt = 0; attempt < maxAttempts; attempt++)
             {
                 Build? build = await _pipelines.GetRunAsync(buildId);
-                if(build?.Status is BuildStatus.Completed || build ?.Result is BuildResult.Canceled)
+                if(build?.Result is BuildResult.Canceled)
                     return build;
                 await Task.Delay(delayMs);
             }
-            return await _pipelines.GetRunAsync(buildId); // Return final state
+            return await _pipelines.GetRunAsync(buildId); 
         }
 
 

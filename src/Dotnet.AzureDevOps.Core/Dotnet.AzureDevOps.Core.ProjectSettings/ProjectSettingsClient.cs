@@ -122,7 +122,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 _ => throw new ArgumentException("Unsupported base process name")
             };
 
-            string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
+            string url = $"{_organizationUrl}_apis/projects?api-version={GlobalConstants.ApiVersion}";
 
             var payload = new
             {
