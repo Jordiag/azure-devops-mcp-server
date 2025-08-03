@@ -79,6 +79,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
             bool created = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "desc", "Agile");
             Assert.True(created);
 
+            await Task.Delay(2000);
+
             bool deleted = await _projectSettingsClient.DeleteInheritedProcessAsync("00000000-0000-0000-0000-000000000000");
             Assert.False(deleted);
         }
