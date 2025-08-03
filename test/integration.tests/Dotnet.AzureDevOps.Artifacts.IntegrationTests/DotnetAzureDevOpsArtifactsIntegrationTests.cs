@@ -8,20 +8,16 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
     [TestType(TestType.Integration)]
     [Component(Component.Artifacts)]
-    public class DotnetAzureDevOpsArtifactsIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsArtifactsIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly ArtifactsClient _artifactsClient;
         private readonly List<Guid> _createdFeedIds = [];
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
 
-        public DotnetAzureDevOpsArtifactsIntegrationTests()
+        public DotnetAzureDevOpsArtifactsIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
-
-            _artifactsClient = new ArtifactsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _azureDevOpsConfiguration = fixture.Configuration;
+            _artifactsClient = fixture.ArtifactsClient;
         }
 
         [Fact]

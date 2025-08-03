@@ -10,7 +10,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 {
     [TestType(TestType.Integration)]
     [Component(Component.Repos)]
-    public class DotnetAzureDevOpsReposIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsReposIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly ReposClient _reposClient;
         private readonly IdentityClient _identityClient;
@@ -25,21 +25,16 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         // Track created PRs so we can abandon if something fails
         private readonly List<int> _createdPrIds = [];
 
-        public DotnetAzureDevOpsReposIntegrationTests()
+        public DotnetAzureDevOpsReposIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
+            _azureDevOpsConfiguration = fixture.Configuration;
             _repoName = _azureDevOpsConfiguration.RepoName ?? string.Empty;
             _srcBranch = _azureDevOpsConfiguration.SrcBranch;
             _targetBranch = _azureDevOpsConfiguration.TargetBranch;
             _userEmail = _azureDevOpsConfiguration.BotUserEmail;
 
-            _reposClient = new ReposClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-            _identityClient = new IdentityClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _reposClient = fixture.ReposClient;
+            _identityClient = fixture.IdentityClient;
         }
 
         public async Task CreateReadCompletePullRequest_SucceedsAsync()

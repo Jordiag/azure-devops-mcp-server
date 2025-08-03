@@ -14,26 +14,18 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 {
     [TestType(TestType.Integration)]
     [Component(Component.Overview)]
-    public class DotnetAzureDevOpsOverviewIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsOverviewIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly WikiClient _wikiClient;
         private readonly List<Guid> _createdWikis = [];
         private readonly ProjectSettingsClient _projectSettingsClient;
 
-        public DotnetAzureDevOpsOverviewIntegrationTests()
+        public DotnetAzureDevOpsOverviewIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
-
-            _wikiClient = new WikiClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-
-            _projectSettingsClient = new ProjectSettingsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _azureDevOpsConfiguration = fixture.Configuration;
+            _wikiClient = fixture.WikiClient;
+            _projectSettingsClient = fixture.ProjectSettingsClient;
         }
 
         [Fact]

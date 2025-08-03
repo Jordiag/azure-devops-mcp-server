@@ -14,7 +14,7 @@ namespace Dotnet.AzureDevOps.Search.IntegrationTests;
 
 [TestType(TestType.Integration)]
 [Component(Component.Search)]
-public class DotnetAzureDevOpsSearchIntegrationTests : IAsyncLifetime
+public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
 {
     private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
     private readonly WikiClient _wikiClient;
@@ -23,23 +23,12 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IAsyncLifetime
     private readonly List<Guid> _createdWikis = [];
     private readonly List<int> _createdWorkItemIds = [];
 
-    public DotnetAzureDevOpsSearchIntegrationTests()
+    public DotnetAzureDevOpsSearchIntegrationTests(IntegrationTestFixture fixture)
     {
-        _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
-
-        _wikiClient = new WikiClient(
-            _azureDevOpsConfiguration.OrganisationUrl,
-            _azureDevOpsConfiguration.ProjectName,
-            _azureDevOpsConfiguration.PersonalAccessToken);
-
-        _workItemsClient = new WorkItemsClient(
-            _azureDevOpsConfiguration.OrganisationUrl,
-            _azureDevOpsConfiguration.ProjectName,
-            _azureDevOpsConfiguration.PersonalAccessToken);
-
-        _searchClient = new SearchClient(
-            _azureDevOpsConfiguration.Organisation,
-            _azureDevOpsConfiguration.PersonalAccessToken);
+        _azureDevOpsConfiguration = fixture.Configuration;
+        _wikiClient = fixture.WikiClient;
+        _workItemsClient = fixture.WorkItemsClient;
+        _searchClient = fixture.SearchClient;
     }
 
     [Fact]
