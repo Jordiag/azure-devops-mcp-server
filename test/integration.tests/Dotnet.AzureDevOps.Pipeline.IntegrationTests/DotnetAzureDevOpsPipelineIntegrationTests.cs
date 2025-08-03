@@ -163,26 +163,37 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
 
         private async Task<Build?> WaitForBuildStatusAsync(int buildId, BuildStatus targetStatus, int maxAttempts, int delayMs)
         {
-            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            Build? build = null;
+            try
             {
-                Build? build = await _pipelines.GetRunAsync(buildId);
-                if(build?.Status == targetStatus)
-                    return build;
-                await Task.Delay(delayMs);
+                await WaitHelper.WaitUntilAsync(async () =>
+                {
+                    build = await _pipelines.GetRunAsync(buildId);
+                    return build?.Status == targetStatus;
+                }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
             }
-            return null;
+            catch(TimeoutException)
+            {
+            }
+            return build;
         }
 
         private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs)
         {
-            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            Build? build = null;
+            try
             {
-                Build? build = await _pipelines.GetRunAsync(buildId);
-                if(build?.Result is BuildResult.Canceled)
-                    return build;
-                await Task.Delay(delayMs);
+                await WaitHelper.WaitUntilAsync(async () =>
+                {
+                    build = await _pipelines.GetRunAsync(buildId);
+                    return build?.Result is BuildResult.Canceled;
+                }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
             }
-            return await _pipelines.GetRunAsync(buildId); 
+            catch(TimeoutException)
+            {
+                build = await _pipelines.GetRunAsync(buildId);
+            }
+            return build;
         }
 
 

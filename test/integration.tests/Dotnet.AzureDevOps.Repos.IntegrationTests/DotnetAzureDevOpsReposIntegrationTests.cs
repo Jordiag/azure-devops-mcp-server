@@ -100,14 +100,19 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             const int maxAttempts = 20;
             const int delayMs = 500;
 
-            for(int attempt = 0; attempt < maxAttempts; attempt++)
+            GitPullRequest? gtPullRequest = null;
+            try
             {
-                GitPullRequest? gtPullRequest = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId);
-                if(gtPullRequest?.Status == PullRequestStatus.Completed)
-                    return gtPullRequest;
-                await Task.Delay(delayMs);
+                await WaitHelper.WaitUntilAsync(async () =>
+                {
+                    gtPullRequest = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId);
+                    return gtPullRequest?.Status == PullRequestStatus.Completed;
+                }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
             }
-            return default;
+            catch(TimeoutException)
+            {
+            }
+            return gtPullRequest;
         }
 
         // TODO: Re-enable this test once the API is working again

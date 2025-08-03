@@ -47,8 +47,18 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
                 Version = _azureDevOpsConfiguration.MainBranchName
             }
         };
-
-        await Task.Delay(10000);
+        await WaitHelper.WaitUntilAsync(async () =>
+        {
+            try
+            {
+                await _wikiClient.ListWikisAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
         Guid wikiId = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
         _createdWikis.Add(wikiId);
 
