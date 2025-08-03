@@ -730,10 +730,12 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 string processName = $"it-proc-{UtcStamp()}";
                 bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
                 Assert.True(processCreated);
-
-                await Task.Delay(4000); // Ensure process is created before fetching ID
-
-                string? processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                string? processId = null;
+                await WaitHelper.WaitUntilAsync(async () =>
+                {
+                    processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                    return !string.IsNullOrEmpty(processId);
+                }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
                 Assert.False(string.IsNullOrEmpty(processId));
 
                 string projectName = $"it-proj-{UtcStamp()}";
@@ -781,22 +783,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Assert.True(processCreated);
 
                 string? processId = null;
-                int maxAttempts = 5;
-                int attempt = 0;
-
-                while(processId == null && attempt < maxAttempts)
+                await WaitHelper.WaitUntilAsync(async () =>
                 {
                     processId = await _projectSettingsClient.GetProcessIdAsync(processName);
-
-                    if(processId == null)
-                    {
-                        attempt++;
-                        if(attempt < maxAttempts)
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(2));
-                        }
-                    }
-                }
+                    return processId != null;
+                }, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2));
 
                 Assert.False(string.IsNullOrEmpty(processId));
 

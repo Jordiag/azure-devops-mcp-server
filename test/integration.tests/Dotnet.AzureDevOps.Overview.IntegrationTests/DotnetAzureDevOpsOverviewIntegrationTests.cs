@@ -60,9 +60,12 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             await _wikiClient.DeleteWikiAsync(id);
             _createdWikis.Remove(id);
-
-            await Task.Delay(3000); // wait for deletion to propagate
-            WikiV2? afterDelete = await _wikiClient.GetWikiAsync(id);
+            WikiV2? afterDelete = null;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                afterDelete = await _wikiClient.GetWikiAsync(id);
+                return afterDelete is null;
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
             Assert.Null(afterDelete);
         }
 
