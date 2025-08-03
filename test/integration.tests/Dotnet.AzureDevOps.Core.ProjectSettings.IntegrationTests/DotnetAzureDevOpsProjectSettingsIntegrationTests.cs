@@ -31,26 +31,32 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         [Fact]
         public async Task TeamAndBoardConfiguration_SucceedsAsync()
         {
-            string testTeamName = "Dotnet.McpIntegrationTest Team";
+            string testTeamName = $"it-team-{UtcStamp()}";
             var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, testTeamName);
-            string boardName = $"{_azureDevOpsConfiguration.ProjectName} Team";
             await _projectSettingsClient.CreateTeamAsync(testTeamName, "description1");
-            await _projectSettingsClient.UpdateTeamDescriptionAsync(testTeamName, "description2");
-            List<BoardReference> boardReferenceList = await _workItemsClient.ListBoardsAsync(teamContext, boardName);
-            Assert.NotEmpty(boardReferenceList);
-            List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, "");
-            Assert.NotEmpty(iterations);
+            Guid teamId = await _projectSettingsClient.GetTeamIdAsync(testTeamName);
 
-            IReadOnlyList<BoardColumn> cols = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardReferenceList[0].Id, testTeamName);
-            await _projectSettingsClient.DeleteTeamAsync(await _projectSettingsClient.GetTeamIdAsync(testTeamName));
+            try
+            {
+                await _projectSettingsClient.UpdateTeamDescriptionAsync(testTeamName, "description2");
+                List<BoardReference> boardReferenceList = await _workItemsClient.ListBoardsAsync(teamContext);
+                Assert.NotEmpty(boardReferenceList);
+                List<TeamSettingsIteration> iterations = await _workItemsClient.GetTeamIterationsAsync(teamContext, "");
+                Assert.NotEmpty(iterations);
 
-            Assert.NotEmpty(cols);
+                IReadOnlyList<BoardColumn> cols = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardReferenceList[0].Id, testTeamName);
+                Assert.NotEmpty(cols);
 
-            IReadOnlyList<TeamSettingsIteration> iterationList = await _workItemsClient.ListIterationsAsync(teamContext, "current", _azureDevOpsConfiguration.ProjectName);
-            Assert.NotEmpty(iterationList);
+                IReadOnlyList<TeamSettingsIteration> iterationList = await _workItemsClient.ListIterationsAsync(teamContext, "current", _azureDevOpsConfiguration.ProjectName);
+                Assert.NotEmpty(iterationList);
 
-            TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
-            Assert.NotEmpty(areas.Values);
+                TeamFieldValues areas = await _workItemsClient.ListAreasAsync(teamContext);
+                Assert.NotEmpty(areas.Values);
+            }
+            finally
+            {
+                await _projectSettingsClient.DeleteTeamAsync(teamId);
+            }
         }
 
         [Fact]

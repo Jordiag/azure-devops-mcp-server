@@ -1,4 +1,5 @@
 using System.Threading;
+using System.Linq;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Core.ProjectSettings;
@@ -20,6 +21,8 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         private readonly WikiClient _wikiClient;
         private readonly List<Guid> _createdWikis = [];
         private readonly ProjectSettingsClient _projectSettingsClient;
+        private Guid? _createdTeamId;
+        private const string TestTeamName = "Dotnet.McpIntegrationTest Team";
 
         public DotnetAzureDevOpsOverviewIntegrationTests()
         {
@@ -159,9 +162,8 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             IReadOnlyList<Dashboard> dashboards = await dashboardClient.ListDashboardsAsync();
             Assert.NotEmpty(dashboards);
-            string teamName = "Dotnet.McpIntegrationTest Team";
             List<WebApiTeam> teams = await _projectSettingsClient.GetAllTeamsAsync();
-            WebApiTeam? team = teams.FirstOrDefault(t => t.Name == teamName);
+            WebApiTeam? team = teams.FirstOrDefault(t => t.Name == TestTeamName);
             Dashboard? dashboard = dashboards.FirstOrDefault(d => d.OwnerId == team?.Id) ?? dashboards[0];
             Guid dashboardId = dashboard?.Id ?? Guid.Empty;
             if (dashboardId == Guid.Empty)
@@ -169,7 +171,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 throw new InvalidOperationException("No dashboard found for the specified team or project.");
             }
 
-            dashboard = await dashboardClient.GetDashboardAsync(dashboardId, teamName);
+            dashboard = await dashboardClient.GetDashboardAsync(dashboardId, TestTeamName);
             Assert.NotNull(dashboard);
 
             var summaryClient = new SummaryClient(
@@ -256,13 +258,26 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Assert.True(wikiPageResponse != null, "Expected wiki page response to be non-null after deletion.");
         }
 
-        public Task InitializeAsync() => Task.CompletedTask;
+        public async Task InitializeAsync()
+        {
+            List<WebApiTeam> teams = await _projectSettingsClient.GetAllTeamsAsync();
+            if(teams.All(t => t.Name != TestTeamName))
+            {
+                await _projectSettingsClient.CreateTeamAsync(TestTeamName, "integration test team");
+                _createdTeamId = await _projectSettingsClient.GetTeamIdAsync(TestTeamName);
+            }
+        }
 
         public async Task DisposeAsync()
         {
             foreach(Guid id in _createdWikis.AsEnumerable().Reverse())
             {
                 await _wikiClient.DeleteWikiAsync(id);
+            }
+
+            if(_createdTeamId.HasValue)
+            {
+                await _projectSettingsClient.DeleteTeamAsync(_createdTeamId.Value);
             }
         }
 
