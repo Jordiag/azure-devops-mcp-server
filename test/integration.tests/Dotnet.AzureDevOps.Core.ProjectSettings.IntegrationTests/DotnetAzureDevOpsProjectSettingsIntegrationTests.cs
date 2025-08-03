@@ -1,6 +1,7 @@
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 
@@ -70,16 +71,30 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
             Assert.True(deleted);
         }
 
-        [Fact]
+        // TODO: Re-enable this test once the API is working again
+        [Fact(Skip = "API not longer working")]
         public async Task CreateAndDeleteInheritedProcess_ExecutesAsync()
         {
             string processName = $"it-proc-{UtcStamp()}";
 
-            bool created = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "desc", "Agile");
-            Assert.True(created);
+            bool created = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Inherited Process integration test", "Agile");
+            Assert.True(created, "Process was not created");
+
+            await Task.Delay(2000);
 
             bool deleted = await _projectSettingsClient.DeleteInheritedProcessAsync("00000000-0000-0000-0000-000000000000");
-            Assert.False(deleted);
+            Assert.False(deleted, "Process was not deleted");
+        }
+
+        [Fact]
+        public async Task GetProjectAsync_ReturnsProject_WhenProjectExistsAsync()
+        {
+            string projectName = _azureDevOpsConfiguration.ProjectName;
+
+            TeamProject? retrievedProject = await _projectSettingsClient.GetProjectAsync(projectName);
+
+            Assert.NotNull(retrievedProject);
+            Assert.Equal(projectName, retrievedProject!.Name);
         }
 
         private static string UtcStamp() =>

@@ -708,7 +708,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.NotEmpty(areas.Values);
         }
 
-        [Fact]
+        // TODO: Re-enable this test once the API is working again
+        [Fact(Skip = "API not longer working")]
         public async Task CreateCustomFieldIfDoesNotExist_SucceedsAsync()
         {
             WorkItemsClient client = _workItemsClient;
@@ -758,7 +759,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         /// Requires a custom process to be created first, as it uses a custom field.
         /// </summary>
         /// <returns></returns>
-        [Fact]
+        // TODO: Re-enable this test once the API is working again
+        [Fact(Skip = "API not longer working")]
         public async Task CustomFieldWorkflow_SucceedsAsync()
         {
             WorkItemsClient client = _workItemsClient;
@@ -771,7 +773,24 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
                 Assert.True(processCreated);
 
-                string? processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                string? processId = null;
+                int maxAttempts = 5;
+                int attempt = 0;
+
+                while(processId == null && attempt < maxAttempts)
+                {
+                    processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+
+                    if(processId == null)
+                    {
+                        attempt++;
+                        if(attempt < maxAttempts)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                        }
+                    }
+                }
+
                 Assert.False(string.IsNullOrEmpty(processId));
 
                 string projectName = $"it-proj-{UtcStamp()}";

@@ -69,6 +69,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             await _wikiClient.DeleteWikiAsync(id);
             _createdWikis.Remove(id);
 
+            await Task.Delay(3000); // wait for deletion to propagate
             WikiV2? afterDelete = await _wikiClient.GetWikiAsync(id);
             Assert.Null(afterDelete);
         }
@@ -148,11 +149,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             await _wikiClient.DeletePageAsync(id, path, gitVersionDescriptor);
         }
 
-        /// <summary>
-        /// TODO: This test is flaky on CI, needs investigation.
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "Flaky on CI - will fix later")]
+        [Fact]
         public async Task DashboardSummaryAndWikiHelpers_SucceedAsync()
         {
             DashboardClient dashboardClient = new DashboardClient(
@@ -229,7 +226,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             IReadOnlyList<WikiPageDetail> pages = await _wikiClient.ListPagesAsync(
                 wikiId,
-                new WikiPagesBatchOptions { Top = 10 },
+                new WikiPagesBatchOptions { Top = 100 },
                 null);
             Assert.Contains(pages, p => p.Path == wikiPath);
 
@@ -253,6 +250,10 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             string result = await searchClient.SearchWikiAsync(searchOptions);
             Assert.False(string.IsNullOrEmpty(result));
             Assert.True(result.Length > 0, "Expected result to contain at least one item, but it was empty.");
+
+            WikiPageResponse wikiPageResponse = await _wikiClient.DeletePageAsync(wikiId, wikiPath, versionDescriptor);
+
+            Assert.True(wikiPageResponse != null, "Expected wiki page response to be non-null after deletion.");
         }
 
         public Task InitializeAsync() => Task.CompletedTask;

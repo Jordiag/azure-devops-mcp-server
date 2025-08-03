@@ -122,10 +122,15 @@ public class ReposTools
     }
 
     [McpServerTool, Description("Enables auto-complete on a pull request.")]
-    public static Task EnableAutoCompleteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, GitPullRequestCompletionOptions options)
+    public static Task EnableAutoCompleteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string displayName, string localId, GitPullRequestCompletionOptions options)
     {
         ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.EnableAutoCompleteAsync(repositoryId, pullRequestId, options);
+        return client.EnableAutoCompleteAsync(
+            repositoryId,
+            pullRequestId,
+            displayName,
+            localId,
+            options);
     }
 
     [McpServerTool, Description("Lists pull request iterations.")]
@@ -212,13 +217,6 @@ public class ReposTools
         return client.DeleteTagAsync(repositoryId, tagName);
     }
 
-    [McpServerTool, Description("Gets the latest commits from a branch.")]
-    public static Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName, string branchName, int top = 1)
-    {
-        ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.GetLatestCommitsAsync(projectName, repositoryName, branchName, top);
-    }
-
     [McpServerTool, Description("Lists repositories in a project.")]
     public static Task<IReadOnlyList<GitRepository>> ListRepositoriesAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
@@ -289,10 +287,10 @@ public class ReposTools
         return client.SearchCommitsAsync(repositoryId, criteria, top);
     }
 
-    [McpServerTool, Description("Lists pull requests containing specific commits.")]
-    public static Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, IEnumerable<string> commitIds)
+    [McpServerTool, Description("Gets the latest commits from a branch.")]
+    public static Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName, string branchName, int top = 1)
     {
         ReposClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        return client.ListPullRequestsByCommitsAsync(repositoryId, commitIds);
+        return client.GetLatestCommitsAsync(projectName, repositoryName, branchName, top);
     }
 }
