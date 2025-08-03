@@ -96,6 +96,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             string repositoryId,
             int pullRequestId,
             bool squashMerge = false,
+            bool deleteSourceBranch = false,
             GitCommitRef? lastMergeSourceCommit = null,
             string? commitMessage = null)
         {
@@ -106,7 +107,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 CompletionOptions = new GitPullRequestCompletionOptions
                 {
                     SquashMerge = squashMerge,
-                    DeleteSourceBranch = true,
+                    DeleteSourceBranch = deleteSourceBranch,
                     MergeCommitMessage = commitMessage
                 }
             };
