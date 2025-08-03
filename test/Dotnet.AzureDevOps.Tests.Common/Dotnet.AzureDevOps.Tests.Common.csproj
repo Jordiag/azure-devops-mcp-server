@@ -15,4 +15,15 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
         <PackageReference Include="xunit" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Artifacts\Dotnet.AzureDevOps.Core.Artifacts.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Boards\Dotnet.AzureDevOps.Core.Boards.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.ProjectSettings\Dotnet.AzureDevOps.Core.ProjectSettings.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Repos\Dotnet.AzureDevOps.Core.Repos.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Pipelines\Dotnet.AzureDevOps.Core.Pipelines.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Overview\Dotnet.AzureDevOps.Core.Overview.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Search\Dotnet.AzureDevOps.Core.Search.csproj" />
+    <ProjectReference Include="..\..\src\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.TestPlans\Dotnet.AzureDevOps.Core.TestPlans.csproj" />
+  </ItemGroup>
 </Project>

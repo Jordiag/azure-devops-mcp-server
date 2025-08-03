@@ -10,7 +10,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
     [TestType(TestType.Integration)]
     [Component(Component.Pipelines)]
 
-    public class DotnetAzureDevOpsPipelineIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly PipelinesClient _pipelines;
         private readonly List<int> _queuedBuildIds = [];
@@ -22,18 +22,15 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests
         private readonly string _branch;
         private readonly string? _commitSha;
 
-        public DotnetAzureDevOpsPipelineIntegrationTests()
+        public DotnetAzureDevOpsPipelineIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
+            _azureDevOpsConfiguration = fixture.Configuration;
 
             _definitionId = _azureDevOpsConfiguration.PipelineDefinitionId;
             _branch = _azureDevOpsConfiguration.BuildBranch;
             _commitSha = _azureDevOpsConfiguration.CommitSha;
 
-            _pipelines = new PipelinesClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _pipelines = fixture.PipelinesClient;
         }
 
         [Fact]

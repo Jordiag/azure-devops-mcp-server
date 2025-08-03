@@ -17,7 +17,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
     [TestType(TestType.Integration)]
     [Component(Component.Boards)]
-    public class DotnetAzureDevOpsBoardsIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsBoardsIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly WorkItemsClient _workItemsClient;
@@ -30,24 +30,12 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         private readonly string _sourceBranch;
         private readonly string _targetBranch;
 
-        public DotnetAzureDevOpsBoardsIntegrationTests()
+        public DotnetAzureDevOpsBoardsIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
-
-            _workItemsClient = new WorkItemsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-
-            _reposClient = new ReposClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-
-            _projectSettingsClient = new ProjectSettingsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _azureDevOpsConfiguration = fixture.Configuration;
+            _workItemsClient = fixture.WorkItemsClient;
+            _reposClient = fixture.ReposClient;
+            _projectSettingsClient = fixture.ProjectSettingsClient;
 
             _repositoryName = _azureDevOpsConfiguration.RepoName;
             _sourceBranch = _azureDevOpsConfiguration.SrcBranch;

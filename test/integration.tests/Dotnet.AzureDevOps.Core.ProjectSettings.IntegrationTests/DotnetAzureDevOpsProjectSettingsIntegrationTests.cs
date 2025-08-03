@@ -9,23 +9,17 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
 {
     [TestType(TestType.Integration)]
     [Component(Component.ProjectSettings)]
-    public class DotnetAzureDevOpsProjectSettingsIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsProjectSettingsIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly ProjectSettingsClient _projectSettingsClient;
         private readonly WorkItemsClient _workItemsClient;
 
-        public DotnetAzureDevOpsProjectSettingsIntegrationTests()
+        public DotnetAzureDevOpsProjectSettingsIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
-            _projectSettingsClient = new ProjectSettingsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-            _workItemsClient = new WorkItemsClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _azureDevOpsConfiguration = fixture.Configuration;
+            _projectSettingsClient = fixture.ProjectSettingsClient;
+            _workItemsClient = fixture.WorkItemsClient;
         }
 
         [Fact]

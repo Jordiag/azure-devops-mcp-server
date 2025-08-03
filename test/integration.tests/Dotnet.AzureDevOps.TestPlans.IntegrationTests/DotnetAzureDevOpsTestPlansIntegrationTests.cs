@@ -12,7 +12,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {
     [TestType(TestType.Integration)]
     [Component(Component.TestPlans)]
-    public class DotnetAzureDevOpsTestPlansIntegrationTests : IAsyncLifetime
+    public class DotnetAzureDevOpsTestPlansIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly TestPlansClient _testPlansClient;
@@ -20,19 +20,12 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         private readonly List<int> _createdPlanIds = [];
         private readonly List<int> _queuedBuildIds = [];
 
-        public DotnetAzureDevOpsTestPlansIntegrationTests()
+        public DotnetAzureDevOpsTestPlansIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = AzureDevOpsConfiguration.FromEnvironment();
+            _azureDevOpsConfiguration = fixture.Configuration;
 
-            _testPlansClient = new TestPlansClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-
-            _pipelinesClient = new PipelinesClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            _testPlansClient = fixture.TestPlansClient;
+            _pipelinesClient = fixture.PipelinesClient;
         }
 
         [Fact]
