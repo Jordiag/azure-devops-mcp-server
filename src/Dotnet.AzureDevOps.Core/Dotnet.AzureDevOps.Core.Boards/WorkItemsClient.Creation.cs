@@ -1,16 +1,6 @@
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
-using Dotnet.AzureDevOps.Core.Common;
-using Microsoft.TeamFoundation.Core.WebApi.Types;
-using Microsoft.TeamFoundation.Work.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
@@ -267,7 +257,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 }
             };
 
-           return await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+            return await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
         }
 
         public async Task<WorkItemField2> CreateCustomFieldIfDoesntExistAsync(string fieldName, string referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type, string? description = null, CancellationToken cancellationToken = default)

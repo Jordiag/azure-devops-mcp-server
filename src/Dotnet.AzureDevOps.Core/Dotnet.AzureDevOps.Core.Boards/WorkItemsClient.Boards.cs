@@ -1,20 +1,7 @@
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
-using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.VisualStudio.Services.WebApi.Patch;
-using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
-using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
-using WorkItemFieldUpdate = Dotnet.AzureDevOps.Core.Boards.Options.WorkItemFieldUpdate;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
@@ -49,8 +36,8 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         public async Task<IReadOnlyList<WorkItemClassificationNode>> CreateIterationsAsync(string projectName, IEnumerable<IterationCreateOptions> iterations, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(projectName); // Fix for CA1510
-            ArgumentNullException.ThrowIfNull(iterations); // Fix for CA1510
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(projectName);
+            ArgumentNullException.ThrowIfNull(iterations);
 
             var created = new List<WorkItemClassificationNode>();
 
