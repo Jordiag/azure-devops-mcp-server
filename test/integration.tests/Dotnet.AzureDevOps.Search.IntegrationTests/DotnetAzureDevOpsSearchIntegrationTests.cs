@@ -163,6 +163,17 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         Assert.False(string.IsNullOrEmpty(result.Value));
     }
 
+    [Fact]
+    public async Task IsCodeSearchEnabledAsync_ReturnsBooleanAsync()
+    {
+        // Act
+        AzureDevOpsActionResult<bool> result = await _searchClient.IsCodeSearchEnabledAsync();
+
+        // Assert
+        Assert.True(result.IsSuccessful, $"Expected IsCodeSearchEnabledAsync to succeed, but got error: {result.ErrorMessage}");
+        Assert.True(result.Value == true || result.Value == false, "Result should be a boolean value.");
+    }
+
     public Task InitializeAsync() => Task.CompletedTask;
 
     public async Task DisposeAsync()

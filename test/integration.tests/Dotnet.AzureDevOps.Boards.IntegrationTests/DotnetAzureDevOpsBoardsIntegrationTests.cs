@@ -742,7 +742,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 string projectName = $"it-proj-{UtcStamp()}";
                 AzureDevOpsActionResult<Guid> projectIdResult = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
                 Assert.True(projectIdResult.IsSuccessful);
-                Guid projectId = projectIdResult.Value ?? Guid.Empty;
+                Guid projectId = projectIdResult.Value;
                 _createdProjectIds.Add(projectId);
 
                 client = new WorkItemsClient(
@@ -797,7 +797,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 string projectName = $"it-proj-{UtcStamp()}";
                 AzureDevOpsActionResult<Guid> projectIdResult = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
                 Assert.True(projectIdResult.IsSuccessful);
-                Guid projectId = projectIdResult.Value ?? Guid.Empty;
+                Guid projectId = projectIdResult.Value;
                 _createdProjectIds.Add(projectId);
 
                 client = new WorkItemsClient(

@@ -38,7 +38,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
 
             IReadOnlyList<BoardColumn> cols = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardReferenceList[0].Id, testTeamName);
             AzureDevOpsActionResult<Guid> teamIdResult = await _projectSettingsClient.GetTeamIdAsync(testTeamName);
-            Guid teamId = teamIdResult.Value ?? Guid.Empty;
+            Guid teamId = teamIdResult.Value;
             await _projectSettingsClient.DeleteTeamAsync(teamId);
 
             Assert.NotEmpty(cols);
@@ -59,7 +59,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
             Assert.True(createdResult.IsSuccessful && createdResult.Value);
 
             AzureDevOpsActionResult<Guid> idResult = await _projectSettingsClient.GetTeamIdAsync(teamName);
-            Guid id = idResult.Value ?? Guid.Empty;
+            Guid id = idResult.Value;
             Assert.True(idResult.IsSuccessful);
             Assert.NotEqual(Guid.Empty, id);
 
