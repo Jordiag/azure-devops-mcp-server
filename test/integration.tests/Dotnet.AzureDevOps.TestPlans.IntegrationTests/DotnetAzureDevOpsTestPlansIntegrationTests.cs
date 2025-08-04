@@ -1,3 +1,4 @@
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Dotnet.AzureDevOps.Core.Pipelines;
@@ -7,6 +8,9 @@ using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.TestResults.WebApi;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
+using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
+using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 
 namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {
@@ -17,8 +21,8 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
         private readonly TestPlansClient _testPlansClient;
         private readonly PipelinesClient _pipelinesClient;
-        private readonly List<int> _createdPlanIds = [];
-        private readonly List<int> _queuedBuildIds = [];
+        private readonly List<int> _createdPlanIds = new List<int>();
+        private readonly List<int> _queuedBuildIds = new List<int>();
 
         public DotnetAzureDevOpsTestPlansIntegrationTests(IntegrationTestFixture fixture)
         {
@@ -31,42 +35,53 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         [Fact]
         public async Task PlanCrud_SucceedsAsync()
         {
-            var create = new TestPlanCreateOptions
+            TestPlanCreateOptions create = new TestPlanCreateOptions
             {
                 Name = $"it-plan-{UtcStamp()}",
-                Description = "Created by integration test"
+                Description = "Created by integration test",
             };
 
-            int planId = await _testPlansClient.CreateTestPlanAsync(create);
+            AzureDevOpsActionResult<int> createResult = await _testPlansClient.CreateTestPlanAsync(create);
+            Assert.True(createResult.IsSuccessful);
+            int planId = createResult.Value;
             _createdPlanIds.Add(planId);
 
-            TestPlan? read = await _testPlansClient.GetTestPlanAsync(planId);
+            AzureDevOpsActionResult<TestPlan?> readResult = await _testPlansClient.GetTestPlanAsync(planId);
+            Assert.True(readResult.IsSuccessful);
+            TestPlan? read = readResult.Value;
             Assert.NotNull(read);
             Assert.Equal(create.Name, read!.Name);
 
-            IReadOnlyList<TestPlan> list = await _testPlansClient.ListTestPlansAsync();
+            AzureDevOpsActionResult<IReadOnlyList<TestPlan>> listResult = await _testPlansClient.ListTestPlansAsync();
+            Assert.True(listResult.IsSuccessful);
+            IReadOnlyList<TestPlan> list = listResult.Value!;
             Assert.Contains(list, p => p.Id == planId);
 
-            await _testPlansClient.DeleteTestPlanAsync(planId);
+            AzureDevOpsActionResult<bool> deleteResult = await _testPlansClient.DeleteTestPlanAsync(planId);
+            Assert.True(deleteResult.IsSuccessful);
             _createdPlanIds.Remove(planId);
 
-            TestPlan? afterDelete = await _testPlansClient.GetTestPlanAsync(planId);
-            Assert.Null(afterDelete);
+            AzureDevOpsActionResult<TestPlan?> afterDeleteResult = await _testPlansClient.GetTestPlanAsync(planId);
+            Assert.True(afterDeleteResult.IsSuccessful);
+            Assert.Null(afterDeleteResult.Value);
         }
 
         [Fact]
         public async Task SuiteCrud_SucceedsAsync()
         {
-            int planId = await _testPlansClient.CreateTestPlanAsync(new TestPlanCreateOptions
+            AzureDevOpsActionResult<int> planResult = await _testPlansClient.CreateTestPlanAsync(new TestPlanCreateOptions
             {
                 Name = $"it-plan-{UtcStamp()}"
             });
+            Assert.True(planResult.IsSuccessful);
+            int planId = planResult.Value;
             _createdPlanIds.Add(planId);
 
-            // Retrieve root suite of the test plan (usually ID = 1, but safer to fetch dynamically)
-            TestSuite rootSuite = await _testPlansClient.GetRootSuiteAsync(planId);
+            AzureDevOpsActionResult<TestSuite> rootSuiteResult = await _testPlansClient.GetRootSuiteAsync(planId);
+            Assert.True(rootSuiteResult.IsSuccessful);
+            TestSuite rootSuite = rootSuiteResult.Value!;
 
-            var suiteCreate = new TestSuiteCreateOptions
+            TestSuiteCreateOptions suiteCreate = new TestSuiteCreateOptions
             {
                 Name = $"it-suite-{UtcStamp()}",
                 ParentSuite = new TestSuiteReference
@@ -75,35 +90,50 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
                 }
             };
 
-            int suiteId = await _testPlansClient.CreateTestSuiteAsync(planId, suiteCreate);
+            AzureDevOpsActionResult<int> suiteResult = await _testPlansClient.CreateTestSuiteAsync(planId, suiteCreate);
+            Assert.True(suiteResult.IsSuccessful);
+            int suiteId = suiteResult.Value;
 
-            IReadOnlyList<TestSuite> suites = await _testPlansClient.ListTestSuitesAsync(planId);
+            AzureDevOpsActionResult<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> listSuitesResult = await _testPlansClient.ListTestSuitesAsync(planId);
+            Assert.True(listSuitesResult.IsSuccessful);
+            IReadOnlyList<TestSuite> suites = listSuitesResult.Value!;
             Assert.Contains(suites, s => s.Id == suiteId);
         }
 
         [Fact]
         public async Task TestCaseCreateAndAdd_SucceedsAsync()
         {
-            int planId = await _testPlansClient.CreateTestPlanAsync(new TestPlanCreateOptions
+            AzureDevOpsActionResult<int> planResult = await _testPlansClient.CreateTestPlanAsync(new TestPlanCreateOptions
             {
                 Name = $"it-plan-{UtcStamp()}"
             });
+            Assert.True(planResult.IsSuccessful);
+            int planId = planResult.Value;
             _createdPlanIds.Add(planId);
 
-            TestSuite rootSuite = await _testPlansClient.GetRootSuiteAsync(planId);
+            AzureDevOpsActionResult<TestSuite> rootResult = await _testPlansClient.GetRootSuiteAsync(planId);
+            Assert.True(rootResult.IsSuccessful);
+            TestSuite rootSuite = rootResult.Value!;
 
-            Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem? testCase = await _testPlansClient.CreateTestCaseAsync(
-                new TestCaseCreateOptions
-                {
-                    Title = "Integration Test Case",
-                    Project = _azureDevOpsConfiguration.ProjectName
-                });
+            AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?> testCaseResult =
+                await _testPlansClient.CreateTestCaseAsync(
+                    new TestCaseCreateOptions
+                    {
+                        Title = "Integration Test Case",
+                        Project = _azureDevOpsConfiguration.ProjectName
+                    });
+            Assert.True(testCaseResult.IsSuccessful);
+            Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem? testCase = testCaseResult.Value;
             Assert.NotNull(testCase);
 
-            await _testPlansClient.AddTestCasesAsync(planId, rootSuite.Id, [testCase!.Id!.Value]);
+            AzureDevOpsActionResult<bool> addResult =
+                await _testPlansClient.AddTestCasesAsync(planId, rootSuite.Id, new List<int> { testCase!.Id!.Value });
+            Assert.True(addResult.IsSuccessful);
 
-            Microsoft.VisualStudio.Services.WebApi.PagedList<TestCase> list = await _testPlansClient.ListTestCasesAsync(planId, rootSuite.Id);
-
+            AzureDevOpsActionResult<Microsoft.VisualStudio.Services.WebApi.PagedList<TestCase>> listResult =
+                await _testPlansClient.ListTestCasesAsync(planId, rootSuite.Id);
+            Assert.True(listResult.IsSuccessful);
+            Microsoft.VisualStudio.Services.WebApi.PagedList<TestCase> list = listResult.Value!;
             Assert.Contains(list, w => w.workItem.Id == testCase.Id);
         }
 
@@ -117,11 +147,12 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             });
             _queuedBuildIds.Add(buildId);
 
-            Microsoft.TeamFoundation.TestManagement.WebApi.TestResultsDetails? details = await _testPlansClient.GetTestResultsForBuildAsync(
+            AzureDevOpsActionResult<TestResultsDetails> detailsResult = await _testPlansClient.GetTestResultsForBuildAsync(
                 _azureDevOpsConfiguration.ProjectName,
                 buildId);
 
-            Assert.NotNull(details);
+            Assert.True(detailsResult.IsSuccessful);
+            Assert.NotNull(detailsResult.Value);
         }
 
         private static string UtcStamp() =>
@@ -134,7 +165,9 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             foreach(int id in _createdPlanIds.AsEnumerable().Reverse())
             {
                 try
-                { await _testPlansClient.DeleteTestPlanAsync(id); }
+                {
+                    _ = await _testPlansClient.DeleteTestPlanAsync(id);
+                }
                 catch
                 {
                     // Ignore errors during cleanup; the test plan may have already been deleted or not exist
@@ -157,3 +190,4 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         }
     }
 }
+
