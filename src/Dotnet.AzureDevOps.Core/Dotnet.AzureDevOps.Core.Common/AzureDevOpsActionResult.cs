@@ -22,6 +22,9 @@ public class AzureDevOpsActionResult<T>
     public static AzureDevOpsActionResult<T> Failure(HttpStatusCode statusCode, string? errorMessage = null)
         => new(false, default, statusCode, errorMessage);
 
+    public static AzureDevOpsActionResult<T> Failure(Exception exception)
+        => new(false, default, null, exception.DumpFullException());
+
     public static AzureDevOpsActionResult<T> Failure(string errorMessage)
         => new(false, default, null, errorMessage);
 }

@@ -10,10 +10,10 @@ public class SearchClient : ISearchClient
 {
     private readonly HttpClient _httpClient;
 
-    public SearchClient(string organisation, string personalAccessToken, HttpClient? httpClient = null)
+    public SearchClient(string organisation, string personalAccessToken)
     {
         string searchBaseAddress = $"https://almsearch.dev.azure.com/{organisation}/";
-        _httpClient = httpClient ?? new HttpClient { BaseAddress = new Uri(searchBaseAddress) };
+        _httpClient = new HttpClient { BaseAddress = new Uri(searchBaseAddress) };
         string token = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{personalAccessToken}"));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -33,6 +33,43 @@ public class SearchClient : ISearchClient
     public Task<AzureDevOpsActionResult<string>> SearchWorkItemsAsync(WorkItemSearchOptions options, CancellationToken cancellationToken = default)
         => SendSearchRequestAsync("_apis/search/workitemsearchresults", BuildWorkItemPayload(options), cancellationToken);
 
+    public async Task<AzureDevOpsActionResult<bool>> IsCodeSearchEnabledAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
+
+            using HttpResponseMessage response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if(response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return AzureDevOpsActionResult<bool>.Success(false);
+            }
+
+            if(!response.IsSuccessStatusCode)
+            {
+                string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+            }
+
+            string content = await response.Content.ReadAsStringAsync(cancellationToken);
+            JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
+
+            if(extension.TryGetProperty("installState", out JsonElement installState))
+            {
+                bool enabled = installState.TryGetProperty("flags", out JsonElement flags) &&
+                               flags.GetString()?.Contains("trusted") == true;
+                return AzureDevOpsActionResult<bool>.Success(enabled);
+            }
+
+            return AzureDevOpsActionResult<bool>.Success(true);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<bool>.Failure(ex);
+        }
+    }
+
     private async Task<AzureDevOpsActionResult<string>> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
     {
         string url = $"{resource}?api-version={GlobalConstants.ApiVersion}";
@@ -49,7 +86,7 @@ public class SearchClient : ISearchClient
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<string>.Failure(ex.Message);
+            return AzureDevOpsActionResult<string>.Failure(ex);
         }
     }
 
@@ -123,42 +160,5 @@ public class SearchClient : ISearchClient
         if(filters.Count > 0)
             payload["filters"] = filters;
         return payload;
-    }
-
-    public async Task<AzureDevOpsActionResult<bool>> IsCodeSearchEnabledAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
-
-            using HttpResponseMessage response = await _httpClient.GetAsync(url, cancellationToken);
-
-            if(response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return AzureDevOpsActionResult<bool>.Success(false);
-            }
-
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
-            }
-
-            string content = await response.Content.ReadAsStringAsync(cancellationToken);
-            JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
-
-            if(extension.TryGetProperty("installState", out JsonElement installState))
-            {
-                bool enabled = installState.TryGetProperty("flags", out JsonElement flags) &&
-                               flags.GetString()?.Contains("trusted") == true;
-                return AzureDevOpsActionResult<bool>.Success(enabled);
-            }
-
-            return AzureDevOpsActionResult<bool>.Success(true);
-        }
-        catch(Exception ex)
-        {
-            return AzureDevOpsActionResult<bool>.Failure(ex.Message);
-        }
     }
 }
