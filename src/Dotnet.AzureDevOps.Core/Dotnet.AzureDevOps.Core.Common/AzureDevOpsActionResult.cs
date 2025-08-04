@@ -4,27 +4,25 @@ namespace Dotnet.AzureDevOps.Core.Common;
 
 public class AzureDevOpsActionResult<T>
 {
-    public bool IsSuccess { get; }
+    public bool IsSuccessful { get; }
     public T? Value { get; }
-    public HttpStatusCode? StatusCode { get; }
     public string? ErrorMessage { get; }
 
-    private AzureDevOpsActionResult(bool isSuccess, T? value, HttpStatusCode? statusCode, string? errorMessage)
+    private AzureDevOpsActionResult(bool isSuccess, T? value, string? errorMessage)
     {
-        IsSuccess = isSuccess;
+        IsSuccessful = isSuccess;
         Value = value;
-        StatusCode = statusCode;
         ErrorMessage = errorMessage;
     }
 
-    public static AzureDevOpsActionResult<T> Success(T value) => new(true, value, null, null);
+    public static AzureDevOpsActionResult<T> Success(T value) => new(true, value, null);
 
     public static AzureDevOpsActionResult<T> Failure(HttpStatusCode statusCode, string? errorMessage = null)
-        => new(false, default, statusCode, errorMessage);
+        => new(false, default, $"http response status code: {(int)statusCode}, errorMessage: {errorMessage}");
 
     public static AzureDevOpsActionResult<T> Failure(Exception exception)
-        => new(false, default, null, exception.DumpFullException());
+        => new(false, default, $"the request ended raising an error exception: {exception.DumpFullException()}");
 
     public static AzureDevOpsActionResult<T> Failure(string errorMessage)
-        => new(false, default, null, errorMessage);
+        => new(false, default, errorMessage);
 }
