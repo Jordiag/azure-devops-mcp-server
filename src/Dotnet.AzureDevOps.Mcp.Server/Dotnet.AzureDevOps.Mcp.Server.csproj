@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Overview\Dotnet.AzureDevOps.Core.Overview.csproj" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Pipelines\Dotnet.AzureDevOps.Core.Pipelines.csproj" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Repos\Dotnet.AzureDevOps.Core.Repos.csproj" />
+    <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.Search\Dotnet.AzureDevOps.Core.Search.csproj" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.TestPlans\Dotnet.AzureDevOps.Core.TestPlans.csproj" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core\Dotnet.AzureDevOps.Core.ProjectSettings\Dotnet.AzureDevOps.Core.ProjectSettings.csproj" />
   </ItemGroup>

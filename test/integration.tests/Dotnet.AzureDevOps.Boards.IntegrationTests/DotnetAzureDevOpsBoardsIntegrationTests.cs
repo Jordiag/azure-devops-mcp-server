@@ -618,21 +618,21 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(workItemId.HasValue);
             _createdWorkItemIds.Add(workItemId!.Value);
             string sourceBranch = $"{_sourceBranch}2";
-            GitRef? gitRef = await _reposClient.GetBranchAsync(_repositoryName, sourceBranch);
+            AzureDevOpsActionResult<GitRef> gitRef = await _reposClient.GetBranchAsync(_repositoryName, sourceBranch);
 
-            if(string.IsNullOrEmpty(gitRef?.Name))
+            if(string.IsNullOrEmpty(gitRef?.Value?.Name))
             {
                 string targetBranchName = _targetBranch.Replace("refs/heads/", string.Empty);
-                IReadOnlyList<GitCommitRef> latestCommits = await _reposClient.GetLatestCommitsAsync(
+                AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> latestCommits = await _reposClient.GetLatestCommitsAsync(
                     _azureDevOpsConfiguration.ProjectName,
                     _repositoryName,
                     targetBranchName,
                     top: 1);
 
-                if(latestCommits.Count == 0)
+                if(latestCommits?.Value?.Count == 0)
                     return;
 
-                string commitSha = latestCommits[0].CommitId;
+                string commitSha = latestCommits.Value[0].CommitId;
                 await _reposClient.CreateBranchAsync(_repositoryName, sourceBranch, commitSha);
             }
 
@@ -646,8 +646,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 IsDraft = false
             };
 
-            int? pullRequestId = await _reposClient.CreatePullRequestAsync(prOptions);
-            Assert.True(pullRequestId.HasValue);
+            AzureDevOpsActionResult<int> pullRequestId = await _reposClient.CreatePullRequestAsync(prOptions);
+            Assert.True(pullRequestId.Value > 0);
             _createdPullRequestIds.Add(pullRequestId!.Value);
 
             await _workItemsClient.LinkWorkItemToPullRequestAsync(
