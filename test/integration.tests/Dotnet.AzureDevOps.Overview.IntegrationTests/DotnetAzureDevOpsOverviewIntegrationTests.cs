@@ -156,7 +156,8 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             IReadOnlyList<Dashboard> dashboards = await dashboardClient.ListDashboardsAsync();
             Assert.NotEmpty(dashboards);
             string teamName = "Dotnet.McpIntegrationTest Team";
-            List<WebApiTeam> teams = await _projectSettingsClient.GetAllTeamsAsync();
+            AzureDevOpsActionResult<List<WebApiTeam>> teamsResult = await _projectSettingsClient.GetAllTeamsAsync();
+            List<WebApiTeam> teams = teamsResult.Value ?? new List<WebApiTeam>();
             WebApiTeam? team = teams.FirstOrDefault(t => t.Name == teamName);
             Dashboard? dashboard = dashboards.FirstOrDefault(d => d.OwnerId == team?.Id) ?? dashboards[0];
             Guid dashboardId = dashboard?.Id ?? Guid.Empty;

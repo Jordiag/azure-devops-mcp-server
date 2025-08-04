@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Boards;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -26,7 +27,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         public async Task TeamAndBoardConfiguration_SucceedsAsync()
         {
             string testTeamName = "Dotnet.McpIntegrationTest Team";
-            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, testTeamName);
+            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, testTeamName);
             string boardName = $"{_azureDevOpsConfiguration.ProjectName} Team";
             await _projectSettingsClient.CreateTeamAsync(testTeamName, "description1");
             await _projectSettingsClient.UpdateTeamDescriptionAsync(testTeamName, "description2");
@@ -36,7 +37,9 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
             Assert.NotEmpty(iterations);
 
             IReadOnlyList<BoardColumn> cols = await _workItemsClient.ListBoardColumnsAsync(teamContext, boardReferenceList[0].Id, testTeamName);
-            await _projectSettingsClient.DeleteTeamAsync(await _projectSettingsClient.GetTeamIdAsync(testTeamName));
+            AzureDevOpsActionResult<Guid> teamIdResult = await _projectSettingsClient.GetTeamIdAsync(testTeamName);
+            Guid teamId = teamIdResult.Value ?? Guid.Empty;
+            await _projectSettingsClient.DeleteTeamAsync(teamId);
 
             Assert.NotEmpty(cols);
 
@@ -52,17 +55,19 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         {
             string teamName = $"it-team-{UtcStamp()}";
 
-            bool created = await _projectSettingsClient.CreateTeamAsync(teamName, "initial");
-            Assert.True(created);
+            AzureDevOpsActionResult<bool> createdResult = await _projectSettingsClient.CreateTeamAsync(teamName, "initial");
+            Assert.True(createdResult.IsSuccessful && createdResult.Value);
 
-            Guid id = await _projectSettingsClient.GetTeamIdAsync(teamName);
+            AzureDevOpsActionResult<Guid> idResult = await _projectSettingsClient.GetTeamIdAsync(teamName);
+            Guid id = idResult.Value ?? Guid.Empty;
+            Assert.True(idResult.IsSuccessful);
             Assert.NotEqual(Guid.Empty, id);
 
-            bool updated = await _projectSettingsClient.UpdateTeamDescriptionAsync(teamName, "updated");
-            Assert.True(updated);
+            AzureDevOpsActionResult<bool> updatedResult = await _projectSettingsClient.UpdateTeamDescriptionAsync(teamName, "updated");
+            Assert.True(updatedResult.IsSuccessful && updatedResult.Value);
 
-            bool deleted = await _projectSettingsClient.DeleteTeamAsync(id);
-            Assert.True(deleted);
+            AzureDevOpsActionResult<bool> deletedResult = await _projectSettingsClient.DeleteTeamAsync(id);
+            Assert.True(deletedResult.IsSuccessful && deletedResult.Value);
         }
 
         // TODO: Re-enable this test once the API is working again
@@ -71,14 +76,17 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         {
             string processName = $"it-proc-{UtcStamp()}";
 
-            bool created = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Inherited Process integration test", "Agile");
-            Assert.True(created, "Process was not created");
+            AzureDevOpsActionResult<bool> createdResult = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Inherited Process integration test", "Agile");
+            Assert.True(createdResult.IsSuccessful && createdResult.Value, "Process was not created");
             await WaitHelper.WaitUntilAsync(async () =>
-                await _projectSettingsClient.GetProcessIdAsync(processName) is not null,
+            {
+                AzureDevOpsActionResult<string> processIdResult = await _projectSettingsClient.GetProcessIdAsync(processName);
+                return processIdResult.Value is not null;
+            },
                 TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
-            bool deleted = await _projectSettingsClient.DeleteInheritedProcessAsync("00000000-0000-0000-0000-000000000000");
-            Assert.False(deleted, "Process was not deleted");
+            AzureDevOpsActionResult<bool> deletedResult = await _projectSettingsClient.DeleteInheritedProcessAsync("00000000-0000-0000-0000-000000000000");
+            Assert.False(deletedResult.IsSuccessful && deletedResult.Value, "Process was not deleted");
         }
 
         [Fact]
@@ -86,8 +94,10 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         {
             string projectName = _azureDevOpsConfiguration.ProjectName;
 
-            TeamProject? retrievedProject = await _projectSettingsClient.GetProjectAsync(projectName);
+            AzureDevOpsActionResult<TeamProject> projectResult = await _projectSettingsClient.GetProjectAsync(projectName);
+            TeamProject? retrievedProject = projectResult.Value;
 
+            Assert.True(projectResult.IsSuccessful);
             Assert.NotNull(retrievedProject);
             Assert.Equal(projectName, retrievedProject!.Name);
         }
