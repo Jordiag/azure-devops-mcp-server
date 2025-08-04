@@ -1,6 +1,7 @@
 using System.Net;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Core.Search;
@@ -88,8 +89,8 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
             Top = 1
         };
 
-        string result = await _searchClient.SearchWikiAsync(searchOptions);
-        Assert.False(string.IsNullOrEmpty(result));
+        AzureDevOpsActionResult<string> result = await _searchClient.SearchWikiAsync(searchOptions);
+        Assert.False(string.IsNullOrEmpty(result.Value));
     }
 
     /// <summary>
@@ -101,7 +102,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
     [Fact]
     public async Task CodeSearch_ReturnsResultsAsync()
     {
-        bool codeSearchEnabled = await _searchClient.IsCodeSearchEnabledAsync();
+        AzureDevOpsActionResult<bool> codeSearchEnabled = await _searchClient.IsCodeSearchEnabledAsync();
 
         var codeSearchOptions = new CodeSearchOptions
         {
@@ -115,12 +116,12 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         };
         try
         {
-            string result = await _searchClient.SearchCodeAsync(codeSearchOptions);
-            Assert.Contains("codesearch.cs", result);
+            Core.Common.AzureDevOpsActionResult<string> result = await _searchClient.SearchCodeAsync(codeSearchOptions);
+            Assert.Contains("codesearch.cs", result.Value);
         }
         catch(HttpRequestException ex) when(ex.StatusCode == HttpStatusCode.NotFound)
         {
-            if(codeSearchEnabled)
+            if(codeSearchEnabled.Value)
             {
                 throw new Exception("Code search is enabled but returned 404 Not Found.", ex);
             }
@@ -158,8 +159,8 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
             Top = 1
         };
 
-        string result = await _searchClient.SearchWorkItemsAsync(searchOptions);
-        Assert.False(string.IsNullOrEmpty(result));
+        AzureDevOpsActionResult<string> result = await _searchClient.SearchWorkItemsAsync(searchOptions);
+        Assert.False(string.IsNullOrEmpty(result.Value));
     }
 
     public Task InitializeAsync() => Task.CompletedTask;

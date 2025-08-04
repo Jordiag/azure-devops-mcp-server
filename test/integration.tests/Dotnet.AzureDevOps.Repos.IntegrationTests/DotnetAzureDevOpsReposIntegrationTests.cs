@@ -1,4 +1,5 @@
-﻿using Dotnet.AzureDevOps.Core.Repos;
+﻿using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
@@ -164,8 +165,8 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
                 (string localId, string displayName)[] reviewers = [(reviewer.localId, reviewer.displayName ?? string.Empty)];
 
-                bool success = await _reposClient.AddReviewersAsync(_repoName, pullRequestId, reviewers);
-                Assert.True(success, "Failed to add reviewers to the pull request.");
+                AzureDevOpsActionResult<bool> success = await _reposClient.AddReviewersAsync(_repoName, pullRequestId, reviewers);
+                Assert.True(success.Value, "Failed to add reviewers to the pull request.");
 
                 GitPullRequest? prAfterReviewer = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId);
                 Assert.Contains(prAfterReviewer!.Reviewers, r => r.Id == reviewer.localId);
