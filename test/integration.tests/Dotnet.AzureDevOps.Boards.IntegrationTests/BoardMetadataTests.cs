@@ -1,6 +1,7 @@
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -18,7 +19,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ListBoards_SucceedsAsync()
         {
-            IList<BoardReference> boards = await WorkItemsClient.ListBoardsAsync();
+            TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
+            IList<BoardReference> boards = await WorkItemsClient.ListBoardsAsync(teamContext);
             Assert.NotEmpty(boards);
         }
 
@@ -26,15 +28,18 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task GetTeamIteration_SucceedsAsync()
         {
             TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
-            TeamSettingsIteration iteration = await WorkItemsClient.GetTeamIterationAsync(teamContext);
-            Assert.NotNull(iteration);
+            IList<TeamSettingsIteration> iterations = await WorkItemsClient.ListIterationsAsync(teamContext);
+            Assert.NotEmpty(iterations);
+            TeamSettingsIteration iteration = iterations.First();
+            TeamSettingsIteration retrieved = await WorkItemsClient.GetTeamIterationAsync(teamContext, iteration.Id);
+            Assert.NotNull(retrieved);
         }
 
         [Fact]
         public async Task GetTeamIterations_SucceedsAsync()
         {
             TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
-            IList<TeamSettingsIteration> iterations = await WorkItemsClient.GetTeamIterationsAsync(teamContext);
+            IList<TeamSettingsIteration> iterations = await WorkItemsClient.GetTeamIterationsAsync(teamContext, "current");
             Assert.NotEmpty(iterations);
         }
 
@@ -42,28 +47,33 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task ListBoardColumns_SucceedsAsync()
         {
             TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
-            IList<BoardColumn> columns = await WorkItemsClient.ListBoardColumnsAsync(teamContext, "Stories");
+            IList<BoardReference> boards = await WorkItemsClient.ListBoardsAsync(teamContext);
+            Assert.NotEmpty(boards);
+            Guid boardId = boards.First().Id;
+            IList<BoardColumn> columns = await WorkItemsClient.ListBoardColumnsAsync(teamContext, boardId);
             Assert.NotEmpty(columns);
         }
 
         [Fact]
         public async Task ListBacklogs_SucceedsAsync()
         {
-            IList<BacklogLevel> backlogs = await WorkItemsClient.ListBacklogsAsync();
+            TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
+            IList<BacklogLevelConfiguration> backlogs = await WorkItemsClient.ListBacklogsAsync(teamContext);
             Assert.NotEmpty(backlogs);
         }
 
         [Fact]
         public async Task ListBacklogWorkItems_SucceedsAsync()
         {
-            IList<WorkItemLink> workItems = await WorkItemsClient.ListBacklogWorkItemsAsync("Stories");
+            TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
+            BacklogLevelWorkItems workItems = await WorkItemsClient.ListBacklogWorkItemsAsync(teamContext, "Stories");
             Assert.NotNull(workItems);
         }
 
         [Fact]
         public async Task ListMyWorkItems_SucceedsAsync()
         {
-            IList<WorkItem> workItems = await WorkItemsClient.ListMyWorkItemsAsync();
+            PredefinedQuery workItems = await WorkItemsClient.ListMyWorkItemsAsync();
             Assert.NotNull(workItems);
         }
 
@@ -188,8 +198,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ExportBoard_SucceedsAsync()
         {
-            byte[] content = await WorkItemsClient.ExportBoardAsync();
-            Assert.NotNull(content);
+            TeamContext teamContext = new TeamContext(AzureDevOpsConfiguration.ProjectName);
+            IList<BoardReference> boards = await WorkItemsClient.ListBoardsAsync(teamContext);
+            Assert.NotEmpty(boards);
+            Board? board = await WorkItemsClient.ExportBoardAsync(teamContext, boards.First().Id.ToString());
+            Assert.NotNull(board);
         }
     }
 }

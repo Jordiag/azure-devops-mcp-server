@@ -3,6 +3,7 @@ using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -51,17 +52,17 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task CreateWorkItem_SucceedsAsync()
         {
-            WorkItemCreateOptions options = new WorkItemCreateOptions
+            IList<WorkItemFieldValue> fields = new List<WorkItemFieldValue>
             {
-                Title = "Generic Work Item",
-                Description = "Created via generic API",
-                Tags = "IntegrationTest",
-                WorkItemType = "Task"
+                new WorkItemFieldValue { FieldReferenceName = "System.Title", Value = "Generic Work Item" },
+                new WorkItemFieldValue { FieldReferenceName = "System.Description", Value = "Created via generic API" },
+                new WorkItemFieldValue { FieldReferenceName = "System.Tags", Value = "IntegrationTest" }
             };
 
-            int? identifier = await WorkItemsClient.CreateWorkItemAsync(options);
-            Assert.True(identifier.HasValue);
-            CreatedWorkItemIds.Add(identifier!.Value);
+            WorkItem? workItem = await WorkItemsClient.CreateWorkItemAsync("Task", fields);
+            Assert.NotNull(workItem);
+            int workItemId = workItem!.Id!.Value;
+            CreatedWorkItemIds.Add(workItemId);
         }
 
         [Fact]

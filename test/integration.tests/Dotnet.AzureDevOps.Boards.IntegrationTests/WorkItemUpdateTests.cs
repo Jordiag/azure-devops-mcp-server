@@ -1,6 +1,7 @@
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -103,17 +104,16 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                     "Story for Generic Update"),
                 "Task for Generic Update");
 
-            WorkItemCreateOptions options = new WorkItemCreateOptions
+            IList<WorkItemFieldUpdate> updates = new List<WorkItemFieldUpdate>
             {
-                Title = "Generic Task Updated",
-                Description = "Updated via generic API",
-                State = "Active",
-                Tags = "IntegrationTest;Updated",
-                WorkItemType = "Task"
+                new WorkItemFieldUpdate { FieldReferenceName = "System.Title", Value = "Generic Task Updated" },
+                new WorkItemFieldUpdate { FieldReferenceName = "System.Description", Value = "Updated via generic API" },
+                new WorkItemFieldUpdate { FieldReferenceName = "System.State", Value = "Active" },
+                new WorkItemFieldUpdate { FieldReferenceName = "System.Tags", Value = "IntegrationTest;Updated" }
             };
 
-            int? updatedId = await WorkItemsClient.UpdateWorkItemAsync(taskId, options);
-            Assert.True(updatedId.HasValue);
+            WorkItem? updated = await WorkItemsClient.UpdateWorkItemAsync(taskId, updates);
+            Assert.NotNull(updated);
         }
     }
 }
