@@ -1,11 +1,14 @@
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.VisualStudio.Services.TestResults.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+using System.Linq;
 using WorkItem = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.WorkItem;
 
 namespace Dotnet.AzureDevOps.Core.TestPlans;
@@ -20,166 +23,269 @@ public class TestPlansClient : ITestPlansClient
     {
         _projectName = projectName;
 
-        var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+        VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
         _connection = new VssConnection(new Uri(organizationUrl), credentials);
         _testPlanClient = _connection.GetClient<TestPlanHttpClient>();
     }
 
-    public async Task<int> CreateTestPlanAsync(TestPlanCreateOptions testPlanCreateOptions, CancellationToken cancellationToken = default)
-    {
-        var createParameters = new TestPlanCreateParams
-        {
-            Name = testPlanCreateOptions.Name,
-            AreaPath = testPlanCreateOptions.AreaPath,
-            Iteration = testPlanCreateOptions.Iteration,
-            StartDate = testPlanCreateOptions.StartDate,
-            EndDate = testPlanCreateOptions.EndDate,
-            Description = testPlanCreateOptions.Description
-        };
-
-        Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan plan = await _testPlanClient.CreateTestPlanAsync(
-            testPlanCreateParams: createParameters,
-            project: _projectName,
-            cancellationToken: cancellationToken);
-        return plan.Id;
-    }
-
-    public async Task<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan?> GetTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<int>> CreateTestPlanAsync(TestPlanCreateOptions testPlanCreateOptions, CancellationToken cancellationToken = default)
     {
         try
         {
-            return await _testPlanClient.GetTestPlanByIdAsync(
+            TestPlanCreateParams createParameters = new TestPlanCreateParams
+            {
+                Name = testPlanCreateOptions.Name,
+                AreaPath = testPlanCreateOptions.AreaPath,
+                Iteration = testPlanCreateOptions.Iteration,
+                StartDate = testPlanCreateOptions.StartDate,
+                EndDate = testPlanCreateOptions.EndDate,
+                Description = testPlanCreateOptions.Description
+            };
+
+            TestPlan plan = await _testPlanClient.CreateTestPlanAsync(
+                testPlanCreateParams: createParameters,
+                project: _projectName,
+                cancellationToken: cancellationToken);
+
+            return AzureDevOpsActionResult<int>.Success(plan.Id);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<int>.Failure(ex);
+        }
+    }
+
+    public async Task<AzureDevOpsActionResult<TestPlan?>> GetTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            TestPlan plan = await _testPlanClient.GetTestPlanByIdAsync(
                 project: _projectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<TestPlan?>.Success(plan);
         }
         catch(VssServiceException)
         {
-            return null;
+            return AzureDevOpsActionResult<TestPlan?>.Success(null);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<TestPlan?>.Failure(ex);
         }
     }
 
-    public async Task<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan>> ListTestPlansAsync(CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<IReadOnlyList<TestPlan>>> ListTestPlansAsync(CancellationToken cancellationToken = default)
     {
-        PagedList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan> plans = await _testPlanClient.GetTestPlansAsync(
-            project: _projectName,
-            cancellationToken: cancellationToken);
-        return plans;
-    }
-
-    public Task DeleteTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default) =>
-        _testPlanClient.DeleteTestPlanAsync(
-            project: _projectName,
-            planId: testPlanId,
-            cancellationToken: cancellationToken);
-
-    public async Task<int> CreateTestSuiteAsync(int testPlanId, TestSuiteCreateOptions testSuiteCreateOptions, CancellationToken cancellationToken = default)
-    {
-        var createParameters = new TestSuiteCreateParams
+        try
         {
-            Name = testSuiteCreateOptions.Name,
-            SuiteType = TestSuiteType.StaticTestSuite,
-            ParentSuite = testSuiteCreateOptions.ParentSuite
-        };
-
-        Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite suite = await _testPlanClient.CreateTestSuiteAsync(
-            testSuiteCreateParams: createParameters,
-            project: _projectName,
-            planId: testPlanId,
-            cancellationToken: cancellationToken);
-        return suite.Id;
+            PagedList<TestPlan> plans = await _testPlanClient.GetTestPlansAsync(
+                project: _projectName,
+                cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Success(plans);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Failure(ex);
+        }
     }
 
-    public async Task<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> ListTestSuitesAsync(int testPlanId, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<bool>> DeleteTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default)
     {
-        PagedList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite> suites = await _testPlanClient.GetTestSuitesForPlanAsync(
-            project: _projectName,
-            planId: testPlanId,
-            asTreeView: false,
-            cancellationToken: cancellationToken);
-        return suites;
+        try
+        {
+            await _testPlanClient.DeleteTestPlanAsync(
+                project: _projectName,
+                planId: testPlanId,
+                cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<bool>.Success(true);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<bool>.Failure(ex);
+        }
     }
 
-    public async Task AddTestCasesAsync(int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<int>> CreateTestSuiteAsync(int testPlanId, TestSuiteCreateOptions testSuiteCreateOptions, CancellationToken cancellationToken = default)
     {
-        IEnumerable<WorkItem> references = [.. testCaseIds.Select(id => new WorkItem { Id = id })];
-        var existingTestCases = new List<SuiteTestCaseCreateUpdateParameters>();
-
-        foreach(WorkItem workItem in references)
-            existingTestCases.Add(new SuiteTestCaseCreateUpdateParameters
+        try
+        {
+            TestSuiteCreateParams createParameters = new TestSuiteCreateParams
             {
-                workItem = new WorkItem { Id = workItem.Id },
-                PointAssignments = [], // Assuming no point assignments for simplicity
-            });
+                Name = testSuiteCreateOptions.Name,
+                SuiteType = TestSuiteType.StaticTestSuite,
+                ParentSuite = testSuiteCreateOptions.ParentSuite
+            };
 
-        await _testPlanClient.AddTestCasesToSuiteAsync(
-            suiteTestCaseCreateUpdateParameters: existingTestCases,
-            project: _projectName,
-            planId: testPlanId,
-            suiteId: testSuiteId,
-            cancellationToken: cancellationToken);
+            TestSuite suite = await _testPlanClient.CreateTestSuiteAsync(
+                testSuiteCreateParams: createParameters,
+                project: _projectName,
+                planId: testPlanId,
+                cancellationToken: cancellationToken);
+
+            return AzureDevOpsActionResult<int>.Success(suite.Id);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<int>.Failure(ex);
+        }
     }
 
-    public async Task<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?> CreateTestCaseAsync(TestCaseCreateOptions options, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<IReadOnlyList<TestSuite>>> ListTestSuitesAsync(int testPlanId, CancellationToken cancellationToken = default)
     {
-        var workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
-
-        var patch = new JsonPatchDocument
+        try
         {
-            new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.Title", Value = options.Title }
-        };
-
-        if(!string.IsNullOrWhiteSpace(options.Steps))
-        {
-            patch.Add(new JsonPatchOperation
-            {
-                Operation = Operation.Add,
-                Path = "/fields/Microsoft.VSTS.TCM.Steps",
-                Value = options.Steps
-            });
+            PagedList<TestSuite> suites = await _testPlanClient.GetTestSuitesForPlanAsync(
+                project: _projectName,
+                planId: testPlanId,
+                asTreeView: false,
+                cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Success(suites);
         }
-
-        if(options.Priority.HasValue)
+        catch(Exception ex)
         {
-            patch.Add(new JsonPatchOperation
-            {
-                Operation = Operation.Add,
-                Path = "/fields/Microsoft.VSTS.Common.Priority",
-                Value = options.Priority.Value
-            });
+            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Failure(ex);
         }
-
-        if(!string.IsNullOrWhiteSpace(options.AreaPath))
-        {
-            patch.Add(new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.AreaPath", Value = options.AreaPath });
-        }
-
-        if(!string.IsNullOrWhiteSpace(options.IterationPath))
-        {
-            patch.Add(new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.IterationPath", Value = options.IterationPath });
-        }
-
-        Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem result = await workItemTracking.CreateWorkItemAsync(patch, options.Project, "Test Case", cancellationToken: cancellationToken);
-        return result;
     }
 
-    public Task<PagedList<TestCase>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default) =>
-        _testPlanClient.GetTestCaseListAsync(_projectName, testPlanId, testSuiteId, cancellationToken: cancellationToken)
-            .ContinueWith(t => t.Result);
-
-    public Task<TestResultsDetails?> GetTestResultsForBuildAsync(string projectName, int buildId, CancellationToken cancellationToken = default) =>
-        _connection.GetClient<Microsoft.VisualStudio.Services.TestResults.WebApi.TestResultsHttpClient>().GetTestResultDetailsForBuildAsync(projectName, buildId, cancellationToken: cancellationToken);
-
-    public async Task<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite> GetRootSuiteAsync(int planId)
+    public async Task<AzureDevOpsActionResult<bool>> AddTestCasesAsync(int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds, CancellationToken cancellationToken = default)
     {
-        // List all suites for the test plan
-        IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite> suites = await ListTestSuitesAsync(planId);
+        try
+        {
+            List<WorkItem> references = testCaseIds.Select(id => new WorkItem { Id = id }).ToList();
+            List<SuiteTestCaseCreateUpdateParameters> existingTestCases = new List<SuiteTestCaseCreateUpdateParameters>();
 
-        // Root suite is the one without a parent, or sometimes has parent ID == -1
-        Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite? root =
-            suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id != -1) ??
-                throw new InvalidOperationException($"No root suite found for test plan {planId}.");
+            foreach(WorkItem workItem in references)
+            {
+                SuiteTestCaseCreateUpdateParameters suiteTestCase = new SuiteTestCaseCreateUpdateParameters
+                {
+                    workItem = new WorkItem { Id = workItem.Id },
+                    PointAssignments = Array.Empty<PointAssignment>()
+                };
+                existingTestCases.Add(suiteTestCase);
+            }
 
-        return root;
+            await _testPlanClient.AddTestCasesToSuiteAsync(
+                suiteTestCaseCreateUpdateParameters: existingTestCases,
+                project: _projectName,
+                planId: testPlanId,
+                suiteId: testSuiteId,
+                cancellationToken: cancellationToken);
+
+            return AzureDevOpsActionResult<bool>.Success(true);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<bool>.Failure(ex);
+        }
+    }
+
+    public async Task<AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?>> CreateTestCaseAsync(TestCaseCreateOptions options, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            WorkItemTrackingHttpClient workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
+
+            JsonPatchDocument patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.Title", Value = options.Title }
+            };
+
+            if(!string.IsNullOrWhiteSpace(options.Steps))
+            {
+                patch.Add(new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = "/fields/Microsoft.VSTS.TCM.Steps",
+                    Value = options.Steps
+                });
+            }
+
+            if(options.Priority.HasValue)
+            {
+                patch.Add(new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = "/fields/Microsoft.VSTS.Common.Priority",
+                    Value = options.Priority.Value
+                });
+            }
+
+            if(!string.IsNullOrWhiteSpace(options.AreaPath))
+            {
+                patch.Add(new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.AreaPath", Value = options.AreaPath });
+            }
+
+            if(!string.IsNullOrWhiteSpace(options.IterationPath))
+            {
+                patch.Add(new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.IterationPath", Value = options.IterationPath });
+            }
+
+            Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem result = await workItemTracking.CreateWorkItemAsync(
+                patch,
+                options.Project,
+                "Test Case",
+                cancellationToken: cancellationToken);
+
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?>.Success(result);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?>.Failure(ex);
+        }
+    }
+
+    public async Task<AzureDevOpsActionResult<PagedList<TestCase>>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            PagedList<TestCase> testCases = await _testPlanClient.GetTestCaseListAsync(
+                _projectName,
+                testPlanId,
+                testSuiteId,
+                cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<PagedList<TestCase>>.Success(testCases);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<PagedList<TestCase>>.Failure(ex);
+        }
+    }
+
+    public async Task<AzureDevOpsActionResult<TestResultsDetails>> GetTestResultsForBuildAsync(string projectName, int buildId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            TestResultsHttpClient testResultsClient = _connection.GetClient<TestResultsHttpClient>();
+            TestResultsDetails details = await testResultsClient.GetTestResultDetailsForBuildAsync(
+                projectName,
+                buildId,
+                cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<TestResultsDetails>.Success(details);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<TestResultsDetails>.Failure(ex);
+        }
+    }
+
+    public async Task<AzureDevOpsActionResult<TestSuite>> GetRootSuiteAsync(int planId)
+    {
+        try
+        {
+            AzureDevOpsActionResult<IReadOnlyList<TestSuite>> suitesResult = await ListTestSuitesAsync(planId);
+            if(!suitesResult.IsSuccessful || suitesResult.Value == null)
+                return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.");
+
+            IReadOnlyList<TestSuite> suites = suitesResult.Value;
+            TestSuite? root = suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id != -1);
+            return root == null
+                ? AzureDevOpsActionResult<TestSuite>.Failure($"No root suite found for test plan {planId}.")
+                : AzureDevOpsActionResult<TestSuite>.Success(root);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<TestSuite>.Failure(ex);
+        }
     }
 }
