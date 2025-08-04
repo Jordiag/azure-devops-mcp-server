@@ -69,8 +69,8 @@ public class TestPlansTools
     public static async Task<IReadOnlyList<TestSuite>> ListTestSuitesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
     {
         TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<IReadOnlyList<TestSuite>> result = await client.ListTestSuitesAsync(testPlanId);
-        if(!result.IsSuccessful)
+        AzureDevOpsActionResult<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> result = await client.ListTestSuitesAsync(testPlanId);
+        if (!result.IsSuccessful)
             throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list test suites.");
         return result.Value ?? Array.Empty<TestSuite>();
     }

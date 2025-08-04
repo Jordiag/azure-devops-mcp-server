@@ -10,6 +10,9 @@ using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System.Linq;
 using WorkItem = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.WorkItem;
+using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
+using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
+using PointAssignment = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.PointAssignment;
 
 namespace Dotnet.AzureDevOps.Core.TestPlans;
 
@@ -152,15 +155,15 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            List<WorkItem> references = testCaseIds.Select(id => new WorkItem { Id = id }).ToList();
-            List<SuiteTestCaseCreateUpdateParameters> existingTestCases = new List<SuiteTestCaseCreateUpdateParameters>();
+            var references = testCaseIds.Select(id => new WorkItem { Id = id }).ToList();
+            var existingTestCases = new List<SuiteTestCaseCreateUpdateParameters>();
 
             foreach(WorkItem workItem in references)
             {
                 SuiteTestCaseCreateUpdateParameters suiteTestCase = new SuiteTestCaseCreateUpdateParameters
                 {
                     workItem = new WorkItem { Id = workItem.Id },
-                    PointAssignments = Array.Empty<PointAssignment>()
+                    PointAssignments = []
                 };
                 existingTestCases.Add(suiteTestCase);
             }
@@ -184,9 +187,9 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            WorkItemTrackingHttpClient workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
+            var workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
 
-            JsonPatchDocument patch = new JsonPatchDocument
+            var patch = new JsonPatchDocument
             {
                 new JsonPatchOperation { Operation = Operation.Add, Path = "/fields/System.Title", Value = options.Title }
             };
@@ -274,16 +277,16 @@ public class TestPlansClient : ITestPlansClient
         try
         {
             AzureDevOpsActionResult<IReadOnlyList<TestSuite>> suitesResult = await ListTestSuitesAsync(planId);
-            if(!suitesResult.IsSuccessful || suitesResult.Value == null)
+            if (!suitesResult.IsSuccessful || suitesResult.Value == null)
                 return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.");
 
             IReadOnlyList<TestSuite> suites = suitesResult.Value;
             TestSuite? root = suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id != -1);
-            return root == null
+            return root is null
                 ? AzureDevOpsActionResult<TestSuite>.Failure($"No root suite found for test plan {planId}.")
                 : AzureDevOpsActionResult<TestSuite>.Success(root);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             return AzureDevOpsActionResult<TestSuite>.Failure(ex);
         }

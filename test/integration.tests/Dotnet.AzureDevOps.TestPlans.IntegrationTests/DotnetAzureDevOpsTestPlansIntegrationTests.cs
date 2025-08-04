@@ -8,6 +8,9 @@ using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.TestResults.WebApi;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
+using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
+using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 
 namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {
@@ -91,7 +94,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             Assert.True(suiteResult.IsSuccessful);
             int suiteId = suiteResult.Value;
 
-            AzureDevOpsActionResult<IReadOnlyList<TestSuite>> listSuitesResult = await _testPlansClient.ListTestSuitesAsync(planId);
+            AzureDevOpsActionResult<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> listSuitesResult = await _testPlansClient.ListTestSuitesAsync(planId);
             Assert.True(listSuitesResult.IsSuccessful);
             IReadOnlyList<TestSuite> suites = listSuitesResult.Value!;
             Assert.Contains(suites, s => s.Id == suiteId);
