@@ -728,20 +728,22 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             if(await _workItemsClient.IsSystemProcessAsync())
             {
                 string processName = $"it-proc-{UtcStamp()}";
-                bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
-                Assert.True(processCreated);
+                AzureDevOpsActionResult<bool> processCreatedResult = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
+                Assert.True(processCreatedResult.IsSuccessful && processCreatedResult.Value);
                 string? processId = null;
                 await WaitHelper.WaitUntilAsync(async () =>
                 {
-                    processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                    AzureDevOpsActionResult<string> processIdResult = await _projectSettingsClient.GetProcessIdAsync(processName);
+                    processId = processIdResult.Value;
                     return !string.IsNullOrEmpty(processId);
                 }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
                 Assert.False(string.IsNullOrEmpty(processId));
 
                 string projectName = $"it-proj-{UtcStamp()}";
-                Guid? projectId = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
-                Assert.True(projectId.HasValue);
-                _createdProjectIds.Add(projectId!.Value);
+                AzureDevOpsActionResult<Guid> projectIdResult = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
+                Assert.True(projectIdResult.IsSuccessful);
+                Guid projectId = projectIdResult.Value;
+                _createdProjectIds.Add(projectId);
 
                 client = new WorkItemsClient(
                     _azureDevOpsConfiguration.OrganisationUrl,
@@ -779,22 +781,24 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             if(await _workItemsClient.IsSystemProcessAsync())
             {
                 string processName = $"it-proc-{UtcStamp()}";
-                bool processCreated = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
-                Assert.True(processCreated);
+                AzureDevOpsActionResult<bool> processCreatedResult = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
+                Assert.True(processCreatedResult.IsSuccessful && processCreatedResult.Value);
 
                 string? processId = null;
                 await WaitHelper.WaitUntilAsync(async () =>
                 {
-                    processId = await _projectSettingsClient.GetProcessIdAsync(processName);
+                    AzureDevOpsActionResult<string> processIdResult = await _projectSettingsClient.GetProcessIdAsync(processName);
+                    processId = processIdResult.Value;
                     return processId != null;
                 }, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2));
 
                 Assert.False(string.IsNullOrEmpty(processId));
 
                 string projectName = $"it-proj-{UtcStamp()}";
-                Guid? projectId = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
-                Assert.True(projectId.HasValue);
-                _createdProjectIds.Add(projectId!.Value);
+                AzureDevOpsActionResult<Guid> projectIdResult = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);
+                Assert.True(projectIdResult.IsSuccessful);
+                Guid projectId = projectIdResult.Value;
+                _createdProjectIds.Add(projectId);
 
                 client = new WorkItemsClient(
                     _azureDevOpsConfiguration.OrganisationUrl,

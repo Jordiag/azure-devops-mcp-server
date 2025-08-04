@@ -7,7 +7,6 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Operations;
 using Microsoft.VisualStudio.Services.WebApi;
-using static System.Net.WebRequestMethods;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
@@ -26,8 +25,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             _organizationUrl = organizationUrl;
             _projectName = projectName;
 
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(_organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _teamClient = connection.GetClient<TeamHttpClient>();
             _projectClient = connection.GetClient<ProjectHttpClient>();
             _operationsClient = connection.GetClient<OperationsHttpClient>();
@@ -38,9 +37,9 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             _httClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
         }
 
-        public async Task<bool> CreateTeamAsync(string teamName, string teamDescription)
+        public async Task<AzureDevOpsActionResult<bool>> CreateTeamAsync(string teamName, string teamDescription)
         {
-            var newTeam = new WebApiTeam()
+            WebApiTeam newTeam = new WebApiTeam
             {
                 Name = teamName,
                 Description = teamDescription
@@ -49,54 +48,68 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             try
             {
                 WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName);
-                return createdTeam.Description == teamDescription && createdTeam.Name == teamName;
+                bool success = createdTeam.Description == teamDescription && createdTeam.Name == teamName;
+                return success
+                    ? AzureDevOpsActionResult<bool>.Success(true)
+                    : AzureDevOpsActionResult<bool>.Failure("Created team does not match the expected values.");
             }
-            catch(Exception)
+            catch(Exception ex)
             {
-                return false;
+                return AzureDevOpsActionResult<bool>.Failure(ex);
             }
         }
 
-        public async Task<Guid> GetTeamIdAsync(string teamName)
+        public async Task<AzureDevOpsActionResult<Guid>> GetTeamIdAsync(string teamName)
         {
             try
             {
                 WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
-                return team.Id;
+                return AzureDevOpsActionResult<Guid>.Success(team.Id);
             }
-            catch(Exception)
+            catch(Exception ex)
             {
-                return Guid.Empty;
+                return AzureDevOpsActionResult<Guid>.Failure(ex);
             }
         }
 
-        public async Task<List<WebApiTeam>> GetAllTeamsAsync()
+        public async Task<AzureDevOpsActionResult<List<WebApiTeam>>> GetAllTeamsAsync()
         {
-            return await _teamClient.GetAllTeamsAsync();
+            try
+            {
+                List<WebApiTeam> teams = await _teamClient.GetAllTeamsAsync();
+                return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<List<WebApiTeam>>.Failure(ex);
+            }
         }
 
-        public async Task<bool> UpdateTeamDescriptionAsync(string teamName, string newDescription)
+        public async Task<AzureDevOpsActionResult<bool>> UpdateTeamDescriptionAsync(string teamName, string newDescription)
         {
             try
             {
                 WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
 
-                var updatedTeam = new WebApiTeam()
+                WebApiTeam updatedTeam = new WebApiTeam
                 {
                     Description = newDescription
                 };
 
                 WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, _projectName, team.Id.ToString());
 
-                return webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
+                bool success = webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
+                return success
+                    ? AzureDevOpsActionResult<bool>.Success(true)
+                    : AzureDevOpsActionResult<bool>.Failure("Updated team values do not match expected.");
             }
-            catch(Exception)
+            catch(Exception ex)
             {
-                return false;
+                return AzureDevOpsActionResult<bool>.Failure(ex);
             }
         }
 
-        public async Task<bool> DeleteTeamAsync(Guid teamGuid)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteTeamAsync(Guid teamGuid)
         {
             try
             {
@@ -104,15 +117,21 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 HttpResponseMessage response = await _httClient.DeleteAsync(url);
 
-                return response.IsSuccessStatusCode;
+                if(!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                }
+
+                return AzureDevOpsActionResult<bool>.Success(true);
             }
-            catch(Exception)
+            catch(Exception ex)
             {
-                return false;
+                return AzureDevOpsActionResult<bool>.Failure(ex);
             }
         }
 
-        public async Task<bool> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName)
+        public async Task<AzureDevOpsActionResult<bool>> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName)
         {
             string parentProcessId = baseProcessName.ToLower() switch
             {
@@ -124,50 +143,81 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             string url = $"{_organizationUrl}_apis/projects?api-version={GlobalConstants.ApiVersion}";
 
-            var payload = new
+            object payload = new
             {
                 name = newProcessName,
                 description = description,
                 parentProcessTypeId = parentProcessId
             };
 
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            StringContent content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await _httClient.PostAsync(url, content);
-
-            return response.IsSuccessStatusCode;
+            try
+            {
+                HttpResponseMessage response = await _httClient.PostAsync(url, content);
+                if(!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                }
+                return AzureDevOpsActionResult<bool>.Success(true);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<bool>.Failure(ex);
+            }
         }
 
-        public async Task<bool> DeleteInheritedProcessAsync(string processId)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteInheritedProcessAsync(string processId)
         {
             string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
 
-            HttpResponseMessage response = await _httClient.DeleteAsync(url);
+            try
+            {
+                HttpResponseMessage response = await _httClient.DeleteAsync(url);
+                if(!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                }
 
-            return response.IsSuccessStatusCode;
+                return AzureDevOpsActionResult<bool>.Success(true);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<bool>.Failure(ex);
+            }
         }
 
-        public async Task<string?> GetProcessIdAsync(string processName)
+        public async Task<AzureDevOpsActionResult<string>> GetProcessIdAsync(string processName)
         {
             string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
 
-            JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url);
-
-            foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
+            try
             {
-                string? name = element.GetProperty("name").GetString();
-                if(string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return element.GetProperty("typeId").GetString();
-                }
-            }
+                JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url);
 
-            return null;
+                foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
+                {
+                    string? name = element.GetProperty("name").GetString();
+                    if(string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string? typeId = element.GetProperty("typeId").GetString();
+                        return AzureDevOpsActionResult<string>.Success(typeId);
+                    }
+                }
+
+                return AzureDevOpsActionResult<string>.Success(null);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<string>.Failure(ex);
+            }
         }
 
-        public async Task<Guid?> CreateProjectAsync(string projectName, string description, string processId)
+        public async Task<AzureDevOpsActionResult<Guid>> CreateProjectAsync(string projectName, string description, string processId)
         {
-            var teamProject = new TeamProject
+            TeamProject teamProject = new TeamProject
             {
                 Name = projectName,
                 Description = description,
@@ -178,35 +228,60 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 }
             };
 
-            OperationReference operationReference = await _projectClient.QueueCreateProject(teamProject, userState: null);
-
-            Operation operation = await WaitForOperationAsync(operationReference.Id);
-            if(operation.Status != OperationStatus.Succeeded)
+            try
             {
-                return null;
-            }
+                OperationReference operationReference = await _projectClient.QueueCreateProject(teamProject, userState: null);
 
-            TeamProject? createdProject = await _projectClient.GetProject(projectName);
-            return createdProject?.Id;
+                Operation operation = await WaitForOperationAsync(operationReference.Id);
+                if(operation.Status != OperationStatus.Succeeded)
+                {
+                    return AzureDevOpsActionResult<Guid>.Failure($"Project creation did not succeed: {operation.Status}");
+                }
+
+                TeamProject? createdProject = await _projectClient.GetProject(projectName);
+                if(createdProject == null)
+                    return AzureDevOpsActionResult<Guid>.Failure("Project not found after creation.");
+
+                return AzureDevOpsActionResult<Guid>.Success(createdProject.Id);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<Guid>.Failure(ex);
+            }
         }
 
-        public async Task<TeamProject?> GetProjectAsync(string projectName)
+        public async Task<AzureDevOpsActionResult<TeamProject>> GetProjectAsync(string projectName)
         {
             try
             {
-                return await _projectClient.GetProject(projectName);
+                TeamProject project = await _projectClient.GetProject(projectName);
+                return AzureDevOpsActionResult<TeamProject>.Success(project);
             }
-            catch(ProjectDoesNotExistWithNameException)
+            catch(ProjectDoesNotExistWithNameException ex)
             {
-                return null;
+                return AzureDevOpsActionResult<TeamProject>.Failure(ex);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<TeamProject>.Failure(ex);
             }
         }
 
-        public async Task<bool> DeleteProjectAsync(Guid projectId)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteProjectAsync(Guid projectId)
         {
-            OperationReference operationReference = await _projectClient.QueueDeleteProject(projectId, userState: null);
-            Operation operation = await WaitForOperationAsync(operationReference.Id);
-            return operation.Status == OperationStatus.Succeeded;
+            try
+            {
+                OperationReference operationReference = await _projectClient.QueueDeleteProject(projectId, userState: null);
+                Operation operation = await WaitForOperationAsync(operationReference.Id);
+                bool success = operation.Status == OperationStatus.Succeeded;
+                return success
+                    ? AzureDevOpsActionResult<bool>.Success(true)
+                    : AzureDevOpsActionResult<bool>.Failure($"Project deletion did not succeed: {operation.Status}");
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<bool>.Failure(ex);
+            }
         }
 
         private async Task<Operation> WaitForOperationAsync(Guid operationId)
