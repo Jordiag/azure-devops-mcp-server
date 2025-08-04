@@ -1,4 +1,5 @@
-﻿using Dotnet.AzureDevOps.Core.Repos;
+﻿using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
@@ -84,7 +85,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.NotNull(gtPullRequest);
             Assert.Equal(PullRequestStatus.Active, gtPullRequest!.Status);
 
-            await _reposClient.CompletePullRequestAsync(
+            GitPullRequest result = await _reposClient.CompletePullRequestAsync(
                 _repoName,
                 pullRequestId.Value,
                 squashMerge: true,
@@ -150,27 +151,27 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             _createdPrIds.Add(pullRequestId);
 
             (string localId, string displayName) reviewer = default;
-            ;
+
             short voteValue = 10;
 
             if(!string.IsNullOrWhiteSpace(_userEmail))
             {
-                reviewer = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
+                AzureDevOpsActionResult<(string localId, string displayName)> reviewerResult = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
 
-                if(string.IsNullOrWhiteSpace(reviewer.localId) || string.IsNullOrWhiteSpace(reviewer.displayName))
+                if(string.IsNullOrWhiteSpace(reviewerResult.Value.localId) || string.IsNullOrWhiteSpace(reviewerResult.Value.displayName))
                 {
                     throw new InvalidOperationException($"Could not find user with email {_userEmail} in Azure DevOps.");
                 }
 
-                (string localId, string displayName)[] reviewers = [(reviewer.localId, reviewer.displayName ?? string.Empty)];
+                (string localId, string displayName)[] reviewers = [(reviewerResult.Value.localId, reviewerResult.Value.displayName ?? string.Empty)];
 
-                bool success = await _reposClient.AddReviewersAsync(_repoName, pullRequestId, reviewers);
-                Assert.True(success, "Failed to add reviewers to the pull request.");
+                AzureDevOpsActionResult<bool> success = await _reposClient.AddReviewersAsync(_repoName, pullRequestId, reviewers);
+                Assert.True(success.Value, "Failed to add reviewers to the pull request.");
 
                 GitPullRequest? prAfterReviewer = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId);
                 Assert.Contains(prAfterReviewer!.Reviewers, r => r.Id == reviewer.localId);
 
-                await _reposClient.SetReviewerVoteAsync(_repoName, pullRequestId, reviewer.localId, voteValue);
+                await _reposClient.SetReviewerVoteAsync(_repoName, pullRequestId, reviewerResult.Value.localId, voteValue);
             }
 
             IReadOnlyList<GitPullRequest> list = await _reposClient.ListPullRequestsAsync(
@@ -356,18 +357,18 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             int prId = (await _reposClient.CreatePullRequestAsync(createOptions)).Value;
             _createdPrIds.Add(prId);
 
-            (string localId, string displayName) reviewer = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
+            AzureDevOpsActionResult<(string localId, string displayName)> reviewerResult = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
 
-            await _reposClient.AddReviewersAsync(_repoName, prId, [reviewer]);
+            await _reposClient.AddReviewersAsync(_repoName, prId, [reviewerResult.Value]);
             GitPullRequest? withReviewer = await _reposClient.GetPullRequestAsync(_repoName, prId);
-            Assert.Contains(withReviewer!.Reviewers, r => r.Id == reviewer.localId);
+            Assert.Contains(withReviewer!.Reviewers, r => r.Id == reviewerResult.Value.localId);
 
-            await _reposClient.RemoveReviewersAsync(_repoName, prId, reviewer.localId);
+            await _reposClient.RemoveReviewersAsync(_repoName, prId, reviewerResult.Value.localId);
             GitPullRequest? afterRemove = await _reposClient.GetPullRequestAsync(_repoName, prId);
-            Assert.DoesNotContain(afterRemove!.Reviewers, r => r.Id == reviewer.localId);
-            await _reposClient.AddReviewersAsync(_repoName, prId, [reviewer]);
+            Assert.DoesNotContain(afterRemove!.Reviewers, r => r.Id == reviewerResult.Value.localId);
+            await _reposClient.AddReviewersAsync(_repoName, prId, [reviewerResult.Value]);
 
-            IdentityRefWithVote identityRefWithVote = await _reposClient.SetReviewerVoteAsync(_repoName, prId, reviewer.localId, 10);
+            IdentityRefWithVote identityRefWithVote = await _reposClient.SetReviewerVoteAsync(_repoName, prId, reviewerResult.Value.localId, 10);
             GitPullRequestStatus gitPullRequestStatus = await _reposClient.SetPullRequestStatusAsync(_repoName, prId, new PullRequestStatusOptions
             {
                 ContextName = "ci/test",
@@ -377,16 +378,16 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 TargetUrl = "https://example.com"
             });
 
-            (string localId, string displayName) user = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
+            AzureDevOpsActionResult<(string localId, string displayName)> userResult = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
 
             GitPullRequest gitPullRequest = await _reposClient.EnableAutoCompleteAsync(
                 _repoName,
                 prId,
-                user.displayName,
-                user.localId,
+                userResult.Value.displayName,
+                userResult.Value.localId,
                 new GitPullRequestCompletionOptions { MergeStrategy = GitPullRequestMergeStrategy.Squash });
             GitPullRequest? afterAuto = await _reposClient.GetPullRequestAsync(_repoName, prId);
-            Assert.Equal(afterAuto?.AutoCompleteSetBy.DisplayName, user.displayName);
+            Assert.Equal(afterAuto?.AutoCompleteSetBy.DisplayName, userResult.Value.displayName);
         }
 
         [Fact]
@@ -452,7 +453,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 throw new InvalidOperationException("Iteration ID is null, cannot proceed with changes retrieval.");
             }
 
-            GitPullRequestIterationChanges changes = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id.Value);
+            GitPullRequestIterationChanges changes = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id!.Value);
             Assert.NotNull(changes);
 
             int threadId = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions

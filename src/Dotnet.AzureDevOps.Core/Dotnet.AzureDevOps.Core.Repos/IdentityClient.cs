@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Identity;
 using Microsoft.VisualStudio.Services.Identity.Client;
@@ -6,7 +7,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos
 {
-    public class IdentityClient : IIdentitiyClient
+    public class IdentityClient : IIdentityClient
     {
         private readonly IdentityHttpClient _identityHttpClient;
 
@@ -17,10 +18,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
             _identityHttpClient = connection.GetClient<IdentityHttpClient>();
 
             _ = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
-
         }
 
-        public async Task<(string localId, string displayName)> GetUserLocalIdFromEmailAsync(
+        public async Task<AzureDevOpsActionResult<(string localId, string displayName)>> GetUserLocalIdFromEmailAsync(
             string email,
             CancellationToken cancellationToken = default)
         {
@@ -39,15 +39,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 if(identity == null)
                 {
-                    return (string.Empty, string.Empty);
+                    return AzureDevOpsActionResult<(string localId, string displayName)>.Failure($"I Couldn't find an identity from that email: {email}");
                 }
 
                 // This gives you the actual local ID
-                return (identity.Id.ToString(), identity.DisplayName ?? string.Empty);
+                return AzureDevOpsActionResult<(string localId, string displayName)>.Success((identity.Id.ToString(), identity.DisplayName ?? string.Empty));
             }
-            catch
+            catch(Exception ex)
             {
-                return (string.Empty, string.Empty);
+                return AzureDevOpsActionResult<(string localId, string displayName)>.Failure(ex);
             }
         }
     }

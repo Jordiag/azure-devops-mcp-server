@@ -15,14 +15,12 @@ namespace Dotnet.AzureDevOps.Core.Repos
         private readonly string _projectName;
         private readonly GitHttpClient _gitHttpClient;
         private readonly string _organizationUrl;
-        private readonly string _personalAccessToken;
         private readonly HttpClient _httpClient;
 
         public ReposClient(string organizationUrl, string projectName, string personalAccessToken)
         {
             _projectName = projectName;
             _organizationUrl = organizationUrl;
-            _personalAccessToken = personalAccessToken;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(organizationUrl), credentials);
@@ -165,10 +163,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
 
-        public async Task<bool> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer)
+        public async Task<AzureDevOpsActionResult<bool>> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer)
         {
             if(string.IsNullOrEmpty(reviewer.localId))
-                return false;
+                return AzureDevOpsActionResult<bool>.Failure("Reviewer localId must be provided");
 
             var reviewerPayload = new
             {
@@ -181,39 +179,38 @@ namespace Dotnet.AzureDevOps.Core.Repos
             string content = JsonSerializer.Serialize(reviewerPayload);
             var httpContent = new StringContent(content, Encoding.UTF8, "application/json");
 
-            using HttpResponseMessage response = await _httpClient.PutAsync(requestUrl, httpContent);
             try
             {
-                response.EnsureSuccessStatusCode();
-                return true;
+                using HttpResponseMessage response = await _httpClient.PutAsync(requestUrl, httpContent);
+                if(!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                }
+                return AzureDevOpsActionResult<bool>.Success(true);
             }
-            catch(HttpRequestException)
+            catch(Exception ex)
             {
-                return false;
+                return AzureDevOpsActionResult<bool>.Failure(ex.Message);
             }
         }
 
-        public async Task<bool> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers)
+        public async Task<AzureDevOpsActionResult<bool>> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers)
         {
-            bool allAdded = true;
-
             if(reviewers is null || reviewers.Length == 0)
-                return false;
+                return AzureDevOpsActionResult<bool>.Failure("No reviewers specified");
 
+            bool allAdded = true;
             foreach((string localId, string name) reviewer in reviewers)
             {
-                if(string.IsNullOrEmpty(reviewer.localId))
-                {
-                    allAdded = false;
-                    continue;
-                }
-
-                bool added = await AddReviewerAsync(repositoryId, pullRequestId, reviewer);
-                if(!added)
+                AzureDevOpsActionResult<bool> result = await AddReviewerAsync(repositoryId, pullRequestId, reviewer);
+                if(!result.IsSuccess || result.Value != true)
                     allAdded = false;
             }
 
-            return allAdded;
+            return allAdded
+                ? AzureDevOpsActionResult<bool>.Success(true)
+                : AzureDevOpsActionResult<bool>.Failure("One or more reviewers could not be added");
         }
 
         public async Task<IdentityRefWithVote> SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote)

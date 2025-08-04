@@ -19,26 +19,75 @@ public class SearchClient : ISearchClient
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
     }
 
-    public Task<string> SearchCodeAsync(CodeSearchOptions options, CancellationToken cancellationToken = default)
+    public Task<AzureDevOpsActionResult<string>> SearchCodeAsync(CodeSearchOptions options, CancellationToken cancellationToken = default)
     {
         string? projectName = options.Project?[0];
         return projectName == null
-            ? throw new ArgumentException("Project name must be specified in CodeSearchOptions.", nameof(options))
+            ? Task.FromResult(AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions."))
             : SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
     }
 
-    public Task<string> SearchWikiAsync(WikiSearchOptions options, CancellationToken cancellationToken = default)
+    public Task<AzureDevOpsActionResult<string>> SearchWikiAsync(WikiSearchOptions options, CancellationToken cancellationToken = default)
         => SendSearchRequestAsync("_apis/search/wikisearchresults", BuildWikiPayload(options), cancellationToken);
 
-    public Task<string> SearchWorkItemsAsync(WorkItemSearchOptions options, CancellationToken cancellationToken = default)
+    public Task<AzureDevOpsActionResult<string>> SearchWorkItemsAsync(WorkItemSearchOptions options, CancellationToken cancellationToken = default)
         => SendSearchRequestAsync("_apis/search/workitemsearchresults", BuildWorkItemPayload(options), cancellationToken);
 
-    private async Task<string> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
+    public async Task<AzureDevOpsActionResult<bool>> IsCodeSearchEnabledAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
+
+            using HttpResponseMessage response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if(response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return AzureDevOpsActionResult<bool>.Success(false);
+            }
+
+            if(!response.IsSuccessStatusCode)
+            {
+                string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+            }
+
+            string content = await response.Content.ReadAsStringAsync(cancellationToken);
+            JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
+
+            if(extension.TryGetProperty("installState", out JsonElement installState))
+            {
+                bool enabled = installState.TryGetProperty("flags", out JsonElement flags) &&
+                               flags.GetString()?.Contains("trusted") == true;
+                return AzureDevOpsActionResult<bool>.Success(enabled);
+            }
+
+            return AzureDevOpsActionResult<bool>.Success(true);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<bool>.Failure(ex);
+        }
+    }
+
+    private async Task<AzureDevOpsActionResult<string>> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
     {
         string url = $"{resource}?api-version={GlobalConstants.ApiVersion}";
-        using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
+            if(!response.IsSuccessStatusCode)
+            {
+                string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                return AzureDevOpsActionResult<string>.Failure(response.StatusCode, error);
+            }
+            string content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return AzureDevOpsActionResult<string>.Success(content);
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<string>.Failure(ex);
+        }
     }
 
     private static object BuildCodePayload(CodeSearchOptions options)
@@ -111,39 +160,5 @@ public class SearchClient : ISearchClient
         if(filters.Count > 0)
             payload["filters"] = filters;
         return payload;
-    }
-
-    public async Task<bool> IsCodeSearchEnabledAsync()
-    {
-        try
-        {
-            // Check for the Code Search extension specifically
-            string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
-
-            using HttpResponseMessage response = await _httpClient.GetAsync(url);
-
-            if(response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return false; // Extension not installed
-            }
-
-            response.EnsureSuccessStatusCode();
-
-            string content = await response.Content.ReadAsStringAsync();
-            JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
-
-            // Check if the extension is installed and enabled
-            if(extension.TryGetProperty("installState", out JsonElement installState))
-            {
-                return installState.TryGetProperty("flags", out JsonElement flags) &&
-                       flags.GetString()?.Contains("trusted") == true;
-            }
-
-            return true; // If we got here, it's likely installed
-        }
-        catch(HttpRequestException)
-        {
-            return false;
-        }
     }
 }

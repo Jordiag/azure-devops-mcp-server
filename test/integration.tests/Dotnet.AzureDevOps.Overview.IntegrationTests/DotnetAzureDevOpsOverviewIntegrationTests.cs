@@ -1,4 +1,5 @@
 using System.Threading;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Dotnet.AzureDevOps.Core.ProjectSettings;
@@ -242,9 +243,9 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 Top = 1
             };
 
-            string result = await searchClient.SearchWikiAsync(searchOptions);
-            Assert.False(string.IsNullOrEmpty(result));
-            Assert.True(result.Length > 0, "Expected result to contain at least one item, but it was empty.");
+            AzureDevOpsActionResult<string> result =  await searchClient.SearchWikiAsync(searchOptions);
+            Assert.False(string.IsNullOrEmpty(result.Value));
+            Assert.True(result.Value.Length > 0, "Expected result to contain at least one item, but it was empty.");
 
             WikiPageResponse wikiPageResponse = await _wikiClient.DeletePageAsync(wikiId, wikiPath, versionDescriptor);
 
