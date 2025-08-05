@@ -55,8 +55,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Tags = "IntegrationTest"
             };
 
-            int? epicId = await _workItemsClient.CreateEpicAsync(options);
-            Assert.True(epicId.HasValue, "Failed to create Epic. ID was null.");
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(options);
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
         }
 
@@ -67,25 +67,25 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task CreateFeature_SucceedsAsync()
         {
             // First, create an Epic so the Feature has a parent
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic for Feature Test",
                 Description = "Parent epic for feature creation",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic (for Feature). ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic (for Feature). ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // Now, create a Feature linked to that Epic
-            int? featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
             {
                 Title = "Integration Test Feature",
                 Description = "Feature referencing epic",
-                ParentId = epicId,
+                ParentId = epicId.Value,
                 Tags = "IntegrationTest"
             });
 
-            Assert.True(featureId.HasValue, "Failed to create Feature. ID was null.");
+            Assert.True(featureId.IsSuccessful, "Failed to create Feature. ID was null.");
             _createdWorkItemIds.Add(featureId.Value);
         }
 
@@ -96,36 +96,36 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task CreateUserStory_SucceedsAsync()
         {
             // Create an Epic
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic for Story Test",
                 Description = "Parent epic for story creation",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic (for Story). ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic (for Story). ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // Create a Feature (child of Epic)
-            int? featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
             {
                 Title = "Feature for Story Test",
                 Description = "Parent feature for story creation",
-                ParentId = epicId,
+                ParentId = epicId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(featureId.HasValue, "Failed to create Feature (for Story). ID was null.");
+            Assert.True(featureId.IsSuccessful, "Failed to create Feature (for Story). ID was null.");
             _createdWorkItemIds.Add(featureId.Value);
 
             // Create a User Story (child of Feature)
-            int? storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
             {
                 Title = "Integration Test Story",
                 Description = "Story referencing feature",
-                ParentId = featureId,
+                ParentId = featureId.Value,
                 Tags = "IntegrationTest"
             });
 
-            Assert.True(storyId.HasValue, "Failed to create User Story. ID was null.");
+            Assert.True(storyId.IsSuccessful, "Failed to create User Story. ID was null.");
             _createdWorkItemIds.Add(storyId.Value);
         }
 
@@ -136,47 +136,47 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task CreateTask_SucceedsAsync()
         {
             // Create an Epic
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic for Task Test",
                 Description = "Parent epic for task creation",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic (for Task). ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic (for Task). ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // Create a Feature
-            int? featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
             {
                 Title = "Feature for Task Test",
                 Description = "Parent feature for task creation",
-                ParentId = epicId,
+                ParentId = epicId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(featureId.HasValue, "Failed to create Feature (for Task). ID was null.");
+            Assert.True(featureId.IsSuccessful, "Failed to create Feature (for Task). ID was null.");
             _createdWorkItemIds.Add(featureId.Value);
 
             // Create a User Story
-            int? storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
             {
                 Title = "Story for Task Test",
                 Description = "Parent story for task creation",
-                ParentId = featureId,
+                ParentId = featureId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(storyId.HasValue, "Failed to create User Story (for Task). ID was null.");
+            Assert.True(storyId.IsSuccessful, "Failed to create User Story (for Task). ID was null.");
             _createdWorkItemIds.Add(storyId.Value);
 
             // Finally, create a Task (child of the Story)
-            int? taskId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> taskId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
             {
                 Title = "Integration Test Task",
                 Description = "Task referencing user story",
-                ParentId = storyId,
+                ParentId = storyId.Value,
                 Tags = "IntegrationTest"
             });
 
-            Assert.True(taskId.HasValue, "Failed to create Task. ID was null.");
+            Assert.True(taskId.IsSuccessful, "Failed to create Task. ID was null.");
             _createdWorkItemIds.Add(taskId.Value);
         }
 
@@ -187,17 +187,17 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task UpdateEpic_SucceedsAsync()
         {
             // 1. Create an Epic
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic to Update",
                 Description = "Original description",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic for update test. ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic for update test. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // 2. Update the Epic
-            int? updatedId = await _workItemsClient.UpdateEpicAsync(epicId.Value, new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> updatedId = await _workItemsClient.UpdateEpicAsync(epicId.Value, new WorkItemCreateOptions
             {
                 Title = "Epic Updated Title",
                 Description = "Updated description",
@@ -205,7 +205,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Tags = "IntegrationTest;Updated"
             });
 
-            Assert.True(updatedId.HasValue, "Failed to update Epic. ID was null.");
+            Assert.True(updatedId.IsSuccessful, "Failed to update Epic. ID was null.");
             // updatedId should be the same as epicId, but we only store epicId in the list once
         }
 
@@ -216,35 +216,35 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task UpdateFeature_SucceedsAsync()
         {
             // 1. Create an Epic
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic for Feature Update",
                 Description = "Parent epic",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic. ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // 2. Create the Feature referencing that Epic
-            int? featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
             {
                 Title = "Feature to Update",
                 Description = "Original feature",
-                ParentId = epicId,
+                ParentId = epicId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(featureId.HasValue, "Failed to create Feature (for update). ID was null.");
+            Assert.True(featureId.IsSuccessful, "Failed to create Feature (for update). ID was null.");
             _createdWorkItemIds.Add(featureId.Value);
 
             // 3. Update the Feature
-            int? updatedId = await _workItemsClient.UpdateFeatureAsync(featureId.Value, new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> updatedId = await _workItemsClient.UpdateFeatureAsync(featureId.Value, new WorkItemCreateOptions
             {
                 Title = "Feature Updated Title",
                 Description = "Feature now updated",
                 State = "Active",
                 Tags = "IntegrationTest;Updated"
             });
-            Assert.True(updatedId.HasValue, "Failed to update Feature. ID was null.");
+            Assert.True(updatedId.IsSuccessful, "Failed to update Feature. ID was null.");
         }
 
         /// <summary>
@@ -254,46 +254,46 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task UpdateUserStory_SucceedsAsync()
         {
             // 1. Create Epic
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic for Story Update",
                 Description = "Parent epic",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic. ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // 2. Create Feature
-            int? featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
             {
                 Title = "Feature for Story Update",
                 Description = "Parent feature",
-                ParentId = epicId,
+                ParentId = epicId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(featureId.HasValue, "Failed to create Feature. ID was null.");
+            Assert.True(featureId.IsSuccessful, "Failed to create Feature. ID was null.");
             _createdWorkItemIds.Add(featureId.Value);
 
             // 3. Create User Story
-            int? storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
             {
                 Title = "Story to Update",
                 Description = "Original story description",
-                ParentId = featureId,
+                ParentId = featureId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(storyId.HasValue, "Failed to create Story for update test. ID was null.");
+            Assert.True(storyId.IsSuccessful, "Failed to create Story for update test. ID was null.");
             _createdWorkItemIds.Add(storyId.Value);
 
             // 4. Update the Story
-            int? updatedId = await _workItemsClient.UpdateUserStoryAsync(storyId.Value, new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> updatedId = await _workItemsClient.UpdateUserStoryAsync(storyId.Value, new WorkItemCreateOptions
             {
                 Title = "Story Updated Title",
                 Description = "Story has been updated",
                 State = "Active",
                 Tags = "IntegrationTest;Updated"
             });
-            Assert.True(updatedId.HasValue, "Failed to update Story. ID was null.");
+            Assert.True(updatedId.IsSuccessful, "Failed to update Story. ID was null.");
         }
 
         /// <summary>
@@ -304,57 +304,57 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task UpdateTask_SucceedsAsync()
         {
             // 1. Create Epic
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Epic for Task Update",
                 Description = "Parent epic",
                 Tags = "IntegrationTest"
             });
-            Assert.True(epicId.HasValue, "Failed to create Epic. ID was null.");
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // 2. Create Feature
-            int? featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> featureId = await _workItemsClient.CreateFeatureAsync(new WorkItemCreateOptions
             {
                 Title = "Feature for Task Update",
                 Description = "Parent feature",
-                ParentId = epicId,
+                ParentId = epicId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(featureId.HasValue, "Failed to create Feature. ID was null.");
+            Assert.True(featureId.IsSuccessful, "Failed to create Feature. ID was null.");
             _createdWorkItemIds.Add(featureId.Value);
 
             // 3. Create User Story
-            int? storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> storyId = await _workItemsClient.CreateUserStoryAsync(new WorkItemCreateOptions
             {
                 Title = "Story for Task Update",
                 Description = "Parent story",
-                ParentId = featureId,
+                ParentId = featureId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(storyId.HasValue, "Failed to create Story. ID was null.");
+            Assert.True(storyId.IsSuccessful, "Failed to create Story. ID was null.");
             _createdWorkItemIds.Add(storyId.Value);
 
             // 4. Create Task
-            int? taskId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> taskId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
             {
                 Title = "Task to Update",
                 Description = "Original task description",
-                ParentId = storyId,
+                ParentId = storyId.Value,
                 Tags = "IntegrationTest"
             });
-            Assert.True(taskId.HasValue, "Failed to create Task (for update). ID was null.");
+            Assert.True(taskId.IsSuccessful, "Failed to create Task (for update). ID was null.");
             _createdWorkItemIds.Add(taskId.Value);
 
             // 5. Update the Task
-            int? updatedId = await _workItemsClient.UpdateTaskAsync(taskId.Value, new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> updatedId = await _workItemsClient.UpdateTaskAsync(taskId.Value, new WorkItemCreateOptions
             {
                 Title = "Task Updated Title",
                 Description = "Updated task description",
                 State = "Active",
                 Tags = "IntegrationTest;Updated"
             });
-            Assert.True(updatedId.HasValue, "Failed to update Task. ID was null.");
+            Assert.True(updatedId.IsSuccessful, "Failed to update Task. ID was null.");
         }
 
         /// <summary>
@@ -371,24 +371,24 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Tags = "IntegrationTest;Read"
             };
 
-            int? epicId = await _workItemsClient.CreateEpicAsync(createOptions);
-            Assert.True(epicId.HasValue, "Failed to create Epic for read test. ID was null.");
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(createOptions);
+            Assert.True(epicId.IsSuccessful, "Failed to create Epic for read test. ID was null.");
             _createdWorkItemIds.Add(epicId.Value);
 
             // 2. Read the newly created Epic
-            WorkItem? epicWorkItem = await _workItemsClient.GetWorkItemAsync(epicId.Value);
-            Assert.NotNull(epicWorkItem); // we expect it to exist
+            AzureDevOpsActionResult<WorkItem> epicWorkItem = await _workItemsClient.GetWorkItemAsync(epicId.Value);
+            Assert.NotNull(epicWorkItem.Value); // we expect it to exist
 
             // 3. Validate some fields
             // Because WorkItem.Fields is a dictionary keyed by "System.Title", "System.Description", etc.
-            Assert.True(epicWorkItem.Fields.ContainsKey("System.Title"), "Title field not found in the read epic.");
-            Assert.Equal("Read Epic Test", epicWorkItem.Fields["System.Title"]);
+            Assert.True(epicWorkItem.Value.Fields.ContainsKey("System.Title"), "Title field not found in the read epic.");
+            Assert.Equal("Read Epic Test", epicWorkItem.Value.Fields["System.Title"]);
 
-            Assert.True(epicWorkItem.Fields.ContainsKey("System.Description"), "Description field not found in the read epic.");
-            Assert.Equal("This epic is for read test", epicWorkItem.Fields["System.Description"]);
+            Assert.True(epicWorkItem.Value.Fields.ContainsKey("System.Description"), "Description field not found in the read epic.");
+            Assert.Equal("This epic is for read test", epicWorkItem.Value.Fields["System.Description"]);
 
-            Assert.True(epicWorkItem.Fields.ContainsKey("System.Tags"), "Tags field not found in the read epic.");
-            string? actualTags = epicWorkItem.Fields["System.Tags"].ToString();
+            Assert.True(epicWorkItem.Value.Fields.ContainsKey("System.Tags"), "Tags field not found in the read epic.");
+            string? actualTags = epicWorkItem.Value.Fields["System.Tags"].ToString();
             Assert.Contains("IntegrationTest", actualTags);
             Assert.Contains("Read", actualTags);
         }
@@ -399,18 +399,18 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task QueryWorkItems_SucceedsAsync()
         {
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Query Epic",
                 Tags = "IntegrationTest;Query"
             });
-            Assert.True(epicId.HasValue);
+            Assert.True(epicId.IsSuccessful);
             _createdWorkItemIds.Add(epicId.Value);
 
             string wiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'Query'";
-            IReadOnlyList<WorkItem> list = await _workItemsClient.QueryWorkItemsAsync(wiql);
+            AzureDevOpsActionResult<IReadOnlyList<WorkItem>> list = await _workItemsClient.QueryWorkItemsAsync(wiql);
 
-            Assert.Contains(list, w => w.Id == epicId.Value);
+            Assert.Contains(list.Value, w => w.Id == epicId.Value);
         }
 
         /// <summary>
@@ -419,12 +419,12 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task AddAndReadComments_SucceedsAsync()
         {
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Comment Epic",
                 Tags = "IntegrationTest;Comment"
             });
-            Assert.True(epicId.HasValue);
+            Assert.True(epicId.IsSuccessful);
             _createdWorkItemIds.Add(epicId.Value);
 
             const string commentText = "Integration comment";
@@ -443,12 +443,12 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task AttachAndDownload_SucceedsAsync()
         {
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "Attachment Epic",
                 Tags = "IntegrationTest;Attach"
             });
-            Assert.True(epicId.HasValue);
+            Assert.True(epicId.IsSuccessful);
             _createdWorkItemIds.Add(epicId.Value);
 
             string tempFile = Path.GetTempFileName();
@@ -460,7 +460,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(Guid.TryParse(attachmentId.ToString(), out _));
             
 
-                        AzureDevOpsActionResult <Stream> streamResult = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId);
+            AzureDevOpsActionResult <Stream> streamResult = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId);
             Assert.True(streamResult.IsSuccessful);
             using Stream stream = streamResult.Value;
             Assert.NotNull(stream);
@@ -482,13 +482,13 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task WorkItemHistory_SucceedsAsync()
         {
-            int? epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
+            AzureDevOpsActionResult<int> epicId = await _workItemsClient.CreateEpicAsync(new WorkItemCreateOptions
             {
                 Title = "History Epic",
                 Description = "Initial",
                 Tags = "IntegrationTest;History"
             });
-            Assert.True(epicId.HasValue);
+            Assert.True(epicId.IsSuccessful);
             _createdWorkItemIds.Add(epicId.Value);
 
             await _workItemsClient.UpdateEpicAsync(epicId.Value, new WorkItemCreateOptions { Description = "Updated" });
@@ -505,30 +505,30 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task LinkManagement_SucceedsAsync()
         {
-            int? first = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Link A", Tags = "IntegrationTest;Link" });
-            int? second = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Link B", Tags = "IntegrationTest;Link" });
-            Assert.True(first.HasValue && second.HasValue);
+            AzureDevOpsActionResult<int> first = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Link A", Tags = "IntegrationTest;Link" });
+            AzureDevOpsActionResult<int> second = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Link B", Tags = "IntegrationTest;Link" });
+            Assert.True(first.IsSuccessful && second.IsSuccessful);
             _createdWorkItemIds.Add(first!.Value);
             _createdWorkItemIds.Add(second!.Value);
 
             await _workItemsClient.AddLinkAsync(first.Value, second.Value, "System.LinkTypes.Related");
 
-            IReadOnlyList<WorkItemRelation> links = await _workItemsClient.GetLinksAsync(first.Value);
-            Assert.Contains(links, l => l.Url.Contains(second.Value.ToString()));
+            AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>> links = await _workItemsClient.GetLinksAsync(first.Value);
+            Assert.Contains(links.Value, l => l.Url.Contains(second.Value.ToString()));
 
-            string linkUrl = links.First(l => l.Url.Contains(second.Value.ToString())).Url!;
+            string linkUrl = links.Value.First(l => l.Url.Contains(second.Value.ToString())).Url!;
             await _workItemsClient.RemoveLinkAsync(first.Value, linkUrl);
 
-            IReadOnlyList<WorkItemRelation> after = await _workItemsClient.GetLinksAsync(first.Value);
-            Assert.DoesNotContain(after, l => l.Url == linkUrl);
+            AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>> after = await _workItemsClient.GetLinksAsync(first.Value);
+            Assert.DoesNotContain(after.Value, l => l.Url == linkUrl);
         }
 
         [Fact]
         public async Task BulkEdit_SucceedsAsync()
         {
-            int? a = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 1", Tags = "IntegrationTest;Bulk" });
-            int? b = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 2", Tags = "IntegrationTest;Bulk" });
-            Assert.True(a.HasValue && b.HasValue);
+            AzureDevOpsActionResult<int> a = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 1", Tags = "IntegrationTest;Bulk" });
+            AzureDevOpsActionResult<int> b = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Bulk 2", Tags = "IntegrationTest;Bulk" });
+            Assert.True(a.IsSuccessful && b.IsSuccessful);
             _createdWorkItemIds.Add(a!.Value);
             _createdWorkItemIds.Add(b!.Value);
 
@@ -540,10 +540,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             await _workItemsClient.BulkUpdateWorkItemsAsync(updates);
 
-            WorkItem? first = await _workItemsClient.GetWorkItemAsync(a.Value);
-            WorkItem? second = await _workItemsClient.GetWorkItemAsync(b.Value);
-            Assert.Equal("Closed", first?.Fields?["System.State"].ToString());
-            Assert.Equal("Closed", second?.Fields?["System.State"].ToString());
+            AzureDevOpsActionResult<WorkItem> first = await _workItemsClient.GetWorkItemAsync(a.Value);
+            AzureDevOpsActionResult<WorkItem> second = await _workItemsClient.GetWorkItemAsync(b.Value);
+            Assert.Equal("Closed", first?.Value.Fields?["System.State"].ToString());
+            Assert.Equal("Closed", second?.Value.Fields?["System.State"].ToString());
         }
 
         [Fact]
@@ -644,8 +644,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task LinkWorkItemToPullRequest_SucceedsAsync()
         {
-            int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "PR Link", Tags = "IntegrationTest;PR" });
-            Assert.True(workItemId.HasValue);
+            AzureDevOpsActionResult<int> workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "PR Link", Tags = "IntegrationTest;PR" });
+            Assert.True(workItemId.IsSuccessful);
             _createdWorkItemIds.Add(workItemId!.Value);
             string sourceBranch = $"{_sourceBranch}2";
             AzureDevOpsActionResult<GitRef> gitRef = await _reposClient.GetBranchAsync(_repositoryName, sourceBranch);
@@ -765,7 +765,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             string referenceName = $"Custom.Reference.{UtcStamp()}".Replace(".", "").Replace("-", "");
             ;
 
-            if(await _workItemsClient.IsSystemProcessAsync())
+            AzureDevOpsActionResult<bool> isSystemProcess = await _workItemsClient.IsSystemProcessAsync();
+            if(isSystemProcess.Value)
             {
                 string processName = $"it-proc-{UtcStamp()}";
                 AzureDevOpsActionResult<bool> processCreatedResult = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
@@ -791,19 +792,19 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                     _azureDevOpsConfiguration.PersonalAccessToken);
             }
 
-            WorkItemField2 first = await client.CreateCustomFieldIfDoesntExistAsync(
+            AzureDevOpsActionResult<WorkItemField2> first = await client.CreateCustomFieldIfDoesntExistAsync(
                 fieldName,
                 referenceName,
                 Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String,
                 "integration test field");
-            Assert.Equal(referenceName, first.ReferenceName);
+            Assert.Equal(referenceName, first.Value.ReferenceName);
 
-            WorkItemField2 second = await client.CreateCustomFieldIfDoesntExistAsync(
+            AzureDevOpsActionResult<WorkItemField2> second = await client.CreateCustomFieldIfDoesntExistAsync(
                 fieldName,
                 referenceName,
                 Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String,
                 "integration test field");
-            Assert.Equal(referenceName, second.ReferenceName);
+            Assert.Equal(referenceName, second.Value.ReferenceName);
         }
 
         /// <summary>
@@ -818,7 +819,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             string fieldName = "CustomIntegrationTestField";
             string referenceName = "TestField.ForIntegration";
 
-            if(await _workItemsClient.IsSystemProcessAsync())
+            AzureDevOpsActionResult<bool> isSystemProcess = await _workItemsClient.IsSystemProcessAsync();
+            if(isSystemProcess.Value)
             {
                 string processName = $"it-proc-{UtcStamp()}";
                 AzureDevOpsActionResult<bool> processCreatedResult = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
@@ -846,15 +848,15 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                     _azureDevOpsConfiguration.PersonalAccessToken);
             }
 
-            int? workItemId = await client.CreateTaskAsync(new WorkItemCreateOptions { Title = "Custom Field" });
-            Assert.True(workItemId.HasValue);
+            AzureDevOpsActionResult<int> workItemId = await client.CreateTaskAsync(new WorkItemCreateOptions { Title = "Custom Field" });
+            Assert.True(workItemId.IsSuccessful);
             _createdWorkItemIds.Add(workItemId!.Value);
 
             await client.CreateCustomFieldIfDoesntExistAsync(fieldName, referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType.String, "test field");
 
-            WorkItem workItem = await client.SetCustomFieldAsync(workItemId.Value, fieldName, "Value1");
-            object? fieldValue = await client.GetCustomFieldAsync(workItemId.Value, referenceName);
-            Assert.NotNull(fieldValue);
+            AzureDevOpsActionResult<WorkItem> workItem = await client.SetCustomFieldAsync(workItemId.Value, fieldName, "Value1");
+            AzureDevOpsActionResult<object> fieldValue = await client.GetCustomFieldAsync(workItemId.Value, referenceName);
+            Assert.NotNull(fieldValue.Value);
         }
 
         [Fact]
@@ -876,15 +878,15 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task GetWorkItemCount_SucceedsAsync()
         {
             string wiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project";
-            int count = await _workItemsClient.GetWorkItemCountAsync(wiql);
-            Assert.True(count >= 0);
+            AzureDevOpsActionResult<int> count = await _workItemsClient.GetWorkItemCountAsync(wiql);
+            Assert.True(count.Value >= 0);
         }
 
         [Fact]
         public async Task ExecuteBatch_SucceedsAsync()
         {
-            int? id = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Root" });
-            Assert.True(id.HasValue);
+            AzureDevOpsActionResult<int> id = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Root" });
+            Assert.True(id.IsSuccessful);
             _createdWorkItemIds.Add(id!.Value);
 
             var request = new WitBatchRequest
@@ -917,9 +919,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task UpdateWorkItemsBatch_SucceedsAsync()
         {
-            int? firstId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Update 1" });
-            int? secondId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Update 2" });
-            Assert.True(firstId.HasValue && secondId.HasValue);
+            AzureDevOpsActionResult<int> firstId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Update 1" });
+            AzureDevOpsActionResult<int> secondId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Update 2" });
+            Assert.True(firstId.IsSuccessful && secondId.IsSuccessful);
             _createdWorkItemIds.Add(firstId!.Value);
             _createdWorkItemIds.Add(secondId!.Value);
 
@@ -936,9 +938,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task LinkWorkItemsBatch_SucceedsAsync()
         {
-            int? parentId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Parent" });
-            int? childId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Child" });
-            Assert.True(parentId.HasValue && childId.HasValue);
+            AzureDevOpsActionResult<int> parentId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Parent" });
+            AzureDevOpsActionResult<int> childId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Batch Child" });
+            Assert.True(parentId.IsSuccessful && childId.IsSuccessful);
             _createdWorkItemIds.Add(parentId!.Value);
             _createdWorkItemIds.Add(childId!.Value);
 
@@ -954,9 +956,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task CloseWorkItemsBatch_SucceedsAsync()
         {
-            int? id1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Close 1" });
-            int? id2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Close 2" });
-            Assert.True(id1.HasValue && id2.HasValue);
+            AzureDevOpsActionResult<int> id1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Close 1" });
+            AzureDevOpsActionResult<int> id2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Close 2" });
+            Assert.True(id1.IsSuccessful && id2.IsSuccessful);
             _createdWorkItemIds.Add(id1!.Value);
             _createdWorkItemIds.Add(id2!.Value);
 
@@ -970,9 +972,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task CloseAndLinkDuplicatesBatch_SucceedsAsync()
         {
-            int? canonical = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Canonical" });
-            int? duplicate = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Duplicate" });
-            Assert.True(canonical.HasValue && duplicate.HasValue);
+            AzureDevOpsActionResult<int> canonical = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Canonical" });
+            AzureDevOpsActionResult<int> duplicate = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Duplicate" });
+            Assert.True(canonical.IsSuccessful && duplicate.IsSuccessful);
             _createdWorkItemIds.Add(canonical!.Value);
             _createdWorkItemIds.Add(duplicate!.Value);
 
@@ -987,9 +989,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task GetWorkItemsBatchByIds_SucceedsAsync()
         {
-            int? item1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "BatchGet 1" });
-            int? item2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "BatchGet 2" });
-            Assert.True(item1.HasValue && item2.HasValue);
+            AzureDevOpsActionResult<int> item1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "BatchGet 1" });
+            AzureDevOpsActionResult<int> item2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "BatchGet 2" });
+            Assert.True(item1.IsSuccessful && item2.IsSuccessful);
             _createdWorkItemIds.Add(item1!.Value);
             _createdWorkItemIds.Add(item2!.Value);
 
@@ -1004,22 +1006,22 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         {
             var fields = new List<WorkItemFieldValue>
             {
-                new WorkItemFieldValue { Name = "System.Title", Value = "Arbitrary" }
+                new() { Name = "System.Title", Value = "Arbitrary" }
             };
 
-            WorkItem? workItem = await _workItemsClient.CreateWorkItemAsync("Task", fields);
+            AzureDevOpsActionResult<WorkItem> workItem = await _workItemsClient.CreateWorkItemAsync("Task", fields);
             Assert.NotNull(workItem);
-            if(workItem.Id != null)
+            if(workItem.Value.Id != null)
             {
-                _createdWorkItemIds.Add(workItem.Id.Value);
+                _createdWorkItemIds.Add(workItem.Value.Id.Value);
             }
         }
 
         [Fact]
         public async Task UpdateWorkItem_SucceedsAsync()
         {
-            int? itemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Update Arbitrary" });
-            Assert.True(itemId.HasValue);
+            AzureDevOpsActionResult<int> itemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "Update Arbitrary" });
+            Assert.True(itemId.IsSuccessful);
             _createdWorkItemIds.Add(itemId!.Value);
 
             var updates = new List<Core.Boards.Options.WorkItemFieldUpdate>
@@ -1027,22 +1029,23 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 new() { Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Add, Path = "/fields/System.Title", Value = "Updated" }
             };
 
-            WorkItem? updated = await _workItemsClient.UpdateWorkItemAsync(itemId.Value, updates);
-            Assert.NotNull(updated);
+            AzureDevOpsActionResult<WorkItem> updated = await _workItemsClient.UpdateWorkItemAsync(itemId.Value, updates);
+            Assert.True(updated.IsSuccessful);
+            Assert.NotNull(updated.Value);
         }
 
         [Fact]
         public async Task GetWorkItemType_SucceedsAsync()
         {
-            WorkItemType type = await _workItemsClient.GetWorkItemTypeAsync(_azureDevOpsConfiguration.ProjectName, "Task");
-            Assert.NotNull(type);
+            AzureDevOpsActionResult<WorkItemType> type = await _workItemsClient.GetWorkItemTypeAsync(_azureDevOpsConfiguration.ProjectName, "Task");
+            Assert.NotNull(type.Value);
         }
 
         [Fact]
         public async Task GetQuery_SucceedsAsync()
         {
-            QueryHierarchyItem query = await _workItemsClient.GetQueryAsync(_azureDevOpsConfiguration.ProjectName, "Shared Queries");
-            Assert.NotNull(query);
+            AzureDevOpsActionResult<QueryHierarchyItem> query = await _workItemsClient.GetQueryAsync(_azureDevOpsConfiguration.ProjectName, "Shared Queries");
+            Assert.NotNull(query.Value);
         }
 
         [Fact]
@@ -1053,19 +1056,19 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             string wiql = "SELECT [System.Id], [System.Title] FROM WorkItems WHERE [System.WorkItemType] = 'Task'";
             await _workItemsClient.CreateSharedQueryAsync(_azureDevOpsConfiguration.ProjectName, queryName, wiql);
 
-            QueryHierarchyItem root = await _workItemsClient.GetQueryAsync(
+            AzureDevOpsActionResult<QueryHierarchyItem> root = await _workItemsClient.GetQueryAsync(
                 _azureDevOpsConfiguration.ProjectName,
                 "Shared Queries",
                 depth: 2); // Increase depth to capture nested items
 
-            QueryHierarchyItem? queryItem = FindFirstQuery(root);
+            QueryHierarchyItem? queryItem = FindFirstQuery(root.Value);
 
             Assert.NotNull(queryItem); // Fail fast if no valid query is found
 
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
-            WorkItemQueryResult result = await _workItemsClient.GetQueryResultsByIdAsync(queryItem!.Id, teamContext);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            AzureDevOpsActionResult<WorkItemQueryResult> result = await _workItemsClient.GetQueryResultsByIdAsync(queryItem!.Id, teamContext);
 
-            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
 
             await _workItemsClient.DeleteSharedQueryAsync(_azureDevOpsConfiguration.ProjectName, queryName);
         }
@@ -1099,9 +1102,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task LinkWorkItemsByNameBatch_SucceedsAsync()
         {
-            int? w1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "LinkName1" });
-            int? w2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "LinkName2" });
-            Assert.True(w1.HasValue && w2.HasValue);
+            AzureDevOpsActionResult<int> w1 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "LinkName1" });
+            AzureDevOpsActionResult<int> w2 = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions { Title = "LinkName2" });
+            Assert.True(w1.IsSuccessful && w2.IsSuccessful);
             _createdWorkItemIds.Add(w1!.Value);
             _createdWorkItemIds.Add(w2!.Value);
 
