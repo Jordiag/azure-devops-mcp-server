@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -19,106 +16,79 @@ public static class ProjectSettingsTools
         => new(organizationUrl, projectName, personalAccessToken);
 
     [McpServerTool, Description("Creates a new team in the project if it does not exist already.")]
-    public static async Task CreateTeamIfDoesNotExistAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string teamDescription)
+    public static async Task<bool> CreateTeamIfDoesNotExistAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string teamDescription)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.CreateTeamIfDoesNotExistAsync(teamName, teamDescription);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create team.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateTeamIfDoesNotExistAsync(teamName, teamDescription)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets a team's identifier by name.")]
-    public static async Task<Guid?> GetTeamIdAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName)
+    public static async Task<Guid> GetTeamIdAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<Guid> result = await client.GetTeamIdAsync(teamName);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetTeamIdAsync(teamName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Updates a team's description.")]
-    public static async Task UpdateTeamDescriptionAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string newDescription)
+    public static async Task<bool> UpdateTeamDescriptionAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string newDescription)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.UpdateTeamDescriptionAsync(teamName, newDescription);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to update team description.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .UpdateTeamDescriptionAsync(teamName, newDescription)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a team by identifier.")]
-    public static async Task DeleteTeamAsync(string organizationUrl, string projectName, string personalAccessToken, Guid teamGuid)
+    public static async Task<bool> DeleteTeamAsync(string organizationUrl, string projectName, string personalAccessToken, Guid teamGuid)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.DeleteTeamAsync(teamGuid);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete team.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteTeamAsync(teamGuid)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates an inherited process from a system process.")]
-    public static async Task CreateInheritedProcessAsync(string organizationUrl, string projectName, string personalAccessToken, string newProcessName, string description, string baseProcessName)
+    public static async Task<bool> CreateInheritedProcessAsync(string organizationUrl, string projectName, string personalAccessToken, string newProcessName, string description, string baseProcessName)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.CreateInheritedProcessAsync(newProcessName, description, baseProcessName);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create inherited process.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateInheritedProcessAsync(newProcessName, description, baseProcessName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes an inherited process by identifier.")]
-    public static async Task DeleteInheritedProcessAsync(string organizationUrl, string projectName, string personalAccessToken, string processId)
+    public static async Task<bool> DeleteInheritedProcessAsync(string organizationUrl, string projectName, string personalAccessToken, string processId)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.DeleteInheritedProcessAsync(processId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete inherited process.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteInheritedProcessAsync(processId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets a process identifier by name.")]
-    public static async Task<string?> GetProcessIdAsync(string organizationUrl, string projectName, string personalAccessToken, string processName)
+    public static async Task<string> GetProcessIdAsync(string organizationUrl, string projectName, string personalAccessToken, string processName)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<string> result = await client.GetProcessIdAsync(processName);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetProcessIdAsync(processName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates a new project using a specified process.")]
     public static async Task<Guid> CreateProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string newProjectName, string description, string processId)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<Guid> result = await client.CreateProjectAsync(newProjectName, description, processId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create project.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateProjectAsync(newProjectName, description, processId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a project by identifier.")]
-    public static async Task DeleteProjectAsync(string organizationUrl, string projectName, string personalAccessToken, Guid projectId)
+    public static async Task<bool> DeleteProjectAsync(string organizationUrl, string projectName, string personalAccessToken, Guid projectId)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.DeleteProjectAsync(projectId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete project.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteProjectAsync(projectId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists all teams in the organization.")]
     public static async Task<IReadOnlyList<WebApiTeam>> GetAllTeamsAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<List<WebApiTeam>> result = await client.GetAllTeamsAsync();
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list teams.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetAllTeamsAsync()).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves a project by name.")]
-    public static async Task<TeamProject?> GetProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string targetProjectName)
+    public static async Task<TeamProject> GetProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string targetProjectName)
     {
-        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<TeamProject> result = await client.GetProjectAsync(targetProjectName);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetProjectAsync(targetProjectName)).EnsureSuccess();
     }
 }
