@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Core.Common;
 
@@ -10,12 +11,12 @@ public class AzureDevOpsActionResult<T>
 
     private AzureDevOpsActionResult(bool isSuccess, T value, string? errorMessage)
     {
-        if(!isSuccess && value is not null)
+        if (!isSuccess && value is not null)
         {
             Value = default!;
         }
 
-        if(isSuccess && value is null)
+        if (isSuccess && value is null)
         {
             throw new ArgumentNullException(nameof(value), "Success result must contain a non-null value.");
         }
@@ -25,15 +26,27 @@ public class AzureDevOpsActionResult<T>
         ErrorMessage = errorMessage;
     }
 
-    public static AzureDevOpsActionResult<T> Success(T value)
-        => new(true, value, null);
+    public static AzureDevOpsActionResult<T> Success(T value, ILogger<AzureDevOpsActionResult<T>>? logger = null)
+    {
+        logger?.LogInformation("Azure DevOps action completed successfully.");
+        return new(true, value, null);
+    }
 
-    public static AzureDevOpsActionResult<T> Failure(HttpStatusCode statusCode, string? errorMessage = null)
-        => new(false, default!, $"http response status code: {(int)statusCode}, errorMessage: {errorMessage}");
+    public static AzureDevOpsActionResult<T> Failure(HttpStatusCode statusCode, string? errorMessage = null, ILogger<AzureDevOpsActionResult<T>>? logger = null)
+    {
+        logger?.LogError("Request failed with status code {StatusCode}. {ErrorMessage}", (int)statusCode, errorMessage);
+        return new(false, default!, $"http response status code: {(int)statusCode}, errorMessage: {errorMessage}");
+    }
 
-    public static AzureDevOpsActionResult<T> Failure(Exception exception)
-        => new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
+    public static AzureDevOpsActionResult<T> Failure(Exception exception, ILogger<AzureDevOpsActionResult<T>>? logger = null)
+    {
+        logger?.LogError(exception, "Request failed with an exception.");
+        return new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
+    }
 
-    public static AzureDevOpsActionResult<T> Failure(string errorMessage)
-        => new(false, default!, errorMessage);
+    public static AzureDevOpsActionResult<T> Failure(string errorMessage, ILogger<AzureDevOpsActionResult<T>>? logger = null)
+    {
+        logger?.LogError("Request failed with error: {ErrorMessage}", errorMessage);
+        return new(false, default!, errorMessage);
+    }
 }
