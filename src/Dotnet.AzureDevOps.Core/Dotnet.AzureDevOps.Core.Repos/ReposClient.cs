@@ -603,7 +603,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     baseVersionDescriptor: baseDesc,
                     targetVersionDescriptor: targetDesc);
 
-                return AzureDevOpsActionResult<GitCommitDiffs>.Success(result);
+                return result == null
+                    ? AzureDevOpsActionResult<GitCommitDiffs>.Failure("No differences found between the specified commits.")
+                    : AzureDevOpsActionResult<GitCommitDiffs>.Success(result);
             }
             catch(Exception ex)
             {
@@ -965,7 +967,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     filterContains: null
                 );
 
-                return AzureDevOpsActionResult<GitRef>.Success(refs.FirstOrDefault());
+                return refs == null || refs.Count == 0
+                    ? AzureDevOpsActionResult<GitRef>.Failure($"Branch '{branchName}' not found in repository '{repositoryId}'.")
+                    : AzureDevOpsActionResult<GitRef>.Success(refs[0]);
             }
             catch(Exception ex)
             {

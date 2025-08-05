@@ -37,8 +37,15 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             _httClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
         }
 
-        public async Task<AzureDevOpsActionResult<bool>> CreateTeamAsync(string teamName, string teamDescription)
+        public async Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription)
         {
+            AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName);
+
+            if (teamNameResult.IsSuccessful)
+            {
+                return AzureDevOpsActionResult<bool>.Success(true);
+            }
+
             WebApiTeam newTeam = new WebApiTeam
             {
                 Name = teamName,
@@ -203,11 +210,14 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     if(string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
                     {
                         string? typeId = element.GetProperty("typeId").GetString();
-                        return AzureDevOpsActionResult<string>.Success(typeId);
+                        if(!string.IsNullOrEmpty(typeId))
+                        {
+                            return AzureDevOpsActionResult<string>.Success(typeId);
+                        }
                     }
                 }
 
-                return AzureDevOpsActionResult<string>.Success(null);
+                return AzureDevOpsActionResult<string>.Failure("ProcessId couldn't be found listing and inspecting all processes");
             }
             catch(Exception ex)
             {

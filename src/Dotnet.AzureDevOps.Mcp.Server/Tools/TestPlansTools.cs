@@ -30,7 +30,7 @@ public class TestPlansTools
     public static async Task<TestPlan?> GetTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
     {
         TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<TestPlan?> result = await client.GetTestPlanAsync(testPlanId);
+        AzureDevOpsActionResult<TestPlan> result = await client.GetTestPlanAsync(testPlanId);
         if(!result.IsSuccessful)
             return null;
         return result.Value;

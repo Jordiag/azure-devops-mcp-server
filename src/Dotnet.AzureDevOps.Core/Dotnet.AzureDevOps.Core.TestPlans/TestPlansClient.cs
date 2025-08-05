@@ -58,7 +58,7 @@ public class TestPlansClient : ITestPlansClient
         }
     }
 
-    public async Task<AzureDevOpsActionResult<TestPlan?>> GetTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<TestPlan>> GetTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -66,15 +66,15 @@ public class TestPlansClient : ITestPlansClient
                 project: _projectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<TestPlan?>.Success(plan);
+            return AzureDevOpsActionResult<TestPlan>.Success(plan);
         }
         catch(VssServiceException)
         {
-            return AzureDevOpsActionResult<TestPlan?>.Success(null);
+            return AzureDevOpsActionResult<TestPlan>.Failure("Test plan is not found");
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestPlan?>.Failure(ex);
+            return AzureDevOpsActionResult<TestPlan>.Failure(ex);
         }
     }
 
@@ -183,7 +183,7 @@ public class TestPlansClient : ITestPlansClient
         }
     }
 
-    public async Task<AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?>> CreateTestCaseAsync(TestCaseCreateOptions options, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>> CreateTestCaseAsync(TestCaseCreateOptions options, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -230,11 +230,11 @@ public class TestPlansClient : ITestPlansClient
                 "Test Case",
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?>.Success(result);
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Success(result);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?>.Failure(ex);
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Failure(ex);
         }
     }
 
@@ -259,7 +259,7 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            TestResultsHttpClient testResultsClient = _connection.GetClient<TestResultsHttpClient>();
+            TestResultsHttpClient testResultsClient = await _connection.GetClientAsync<TestResultsHttpClient>(cancellationToken);
             TestResultsDetails details = await testResultsClient.GetTestResultDetailsForBuildAsync(
                 projectName,
                 buildId,

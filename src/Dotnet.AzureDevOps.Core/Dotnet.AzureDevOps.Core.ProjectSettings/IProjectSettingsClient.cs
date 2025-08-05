@@ -5,7 +5,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
     public interface IProjectSettingsClient
     {
-        Task<AzureDevOpsActionResult<bool>> CreateTeamAsync(string teamName, string teamDescription);
+        Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription);
         Task<AzureDevOpsActionResult<Guid>> GetTeamIdAsync(string teamName);
         Task<AzureDevOpsActionResult<List<WebApiTeam>>> GetAllTeamsAsync();
         Task<AzureDevOpsActionResult<bool>> UpdateTeamDescriptionAsync(string teamName, string newDescription);
