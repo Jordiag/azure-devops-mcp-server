@@ -1,12 +1,10 @@
-using System;
 using System.ComponentModel;
-using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
-using Microsoft.TeamFoundation.Dashboards.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
 using ModelContextProtocol.Server;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
@@ -29,100 +27,84 @@ public class OverviewTools
     [McpServerTool, Description("Creates a new wiki.")]
     public static async Task<Guid> CreateWikiAsync(string organizationUrl, string projectName, string personalAccessToken, WikiCreateOptions options)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<Guid> result = await client.CreateWikiAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage);
-        return result.Value;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .CreateWikiAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves a wiki by identifier.")]
-    public static async Task<WikiV2?> GetWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
+    public static async Task<WikiV2> GetWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<WikiV2> result = await client.GetWikiAsync(wikiId);
-        return result.Value;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .GetWikiAsync(wikiId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists wikis in the project.")]
     public static async Task<IReadOnlyList<WikiV2>> ListWikisAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<IReadOnlyList<WikiV2>> result = await client.ListWikisAsync();
-        return result.Value;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .ListWikisAsync()).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a wiki.")]
     public static async Task DeleteWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<WikiV2> result = await client.DeleteWikiAsync(wikiId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage);
+        (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteWikiAsync(wikiId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates or updates a wiki page.")]
-    public static async Task<int?> CreateOrUpdatePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPageUpdateOptions options, GitVersionDescriptor version)
+    public static async Task<int> CreateOrUpdatePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPageUpdateOptions options, GitVersionDescriptor version)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<int> result = await client.CreateOrUpdatePageAsync(wikiId, options, version);
-        return result.IsSuccessful ? result.Value : null;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .CreateOrUpdatePageAsync(wikiId, options, version)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves a wiki page.")]
-    public static async Task<WikiPageResponse?> GetPageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
+    public static async Task<WikiPageResponse> GetPageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<WikiPageResponse> result = await client.GetPageAsync(wikiId, path);
-        return result.Value;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .GetPageAsync(wikiId, path)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a wiki page.")]
     public static async Task DeletePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path, GitVersionDescriptor version)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<WikiPageResponse> result = await client.DeletePageAsync(wikiId, path, version);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage);
+        (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .DeletePageAsync(wikiId, path, version)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists pages in a wiki.")]
     public static async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPagesBatchOptions options)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>> result = await client.ListPagesAsync(wikiId, options);
-        return result.Value;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .ListPagesAsync(wikiId, options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets wiki page content.")]
-    public static async Task<string?> GetPageTextAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
+    public static async Task<string> GetPageTextAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path)
     {
-        WikiClient client = CreateWikiClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<string> result = await client.GetPageTextAsync(wikiId, path);
-        return result.Value;
+        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken)
+            .GetPageTextAsync(wikiId, path)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves project summary information.")]
-    public static async Task<TeamProject?> GetProjectSummaryAsync(string organizationUrl, string projectName, string personalAccessToken)
+    public static async Task<TeamProject> GetProjectSummaryAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
-        SummaryClient client = CreateSummaryClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<TeamProject> result = await client.GetProjectSummaryAsync();
-        return result.Value;
+        return (await CreateSummaryClient(organizationUrl, projectName, personalAccessToken)
+            .GetProjectSummaryAsync()).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists dashboards under the project.")]
     public static async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
-        DashboardClient client = CreateDashboardClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<IReadOnlyList<Dashboard>> result = await client.ListDashboardsAsync();
-        return result.Value;
+        return (await CreateDashboardClient(organizationUrl, projectName, personalAccessToken)
+            .ListDashboardsAsync()).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves a dashboard by identifier and team name.")]
-    public static async Task<Dashboard?> GetDashboardAsync(string organizationUrl, string projectName, string personalAccessToken, Guid dashboardId, string teamName)
+    public static async Task<Dashboard> GetDashboardAsync(string organizationUrl, string projectName, string personalAccessToken, Guid dashboardId, string teamName)
     {
-        DashboardClient client = CreateDashboardClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<Dashboard> result = await client.GetDashboardAsync(dashboardId, teamName);
-        return result.Value;
+        return (await CreateDashboardClient(organizationUrl, projectName, personalAccessToken)
+            .GetDashboardAsync(dashboardId, teamName)).EnsureSuccess();
     }
 }

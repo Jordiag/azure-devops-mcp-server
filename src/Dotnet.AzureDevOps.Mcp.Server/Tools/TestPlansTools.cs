@@ -1,8 +1,8 @@
 using System.ComponentModel;
-using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 using ModelContextProtocol.Server;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
@@ -19,78 +19,70 @@ public class TestPlansTools
     [McpServerTool, Description("Creates a test plan.")]
     public static async Task<int> CreateTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, TestPlanCreateOptions options)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<int> result = await client.CreateTestPlanAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create test plan.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateTestPlanAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves a test plan.")]
-    public static async Task<TestPlan?> GetTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
+    public static async Task<TestPlan> GetTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<TestPlan> result = await client.GetTestPlanAsync(testPlanId);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetTestPlanAsync(testPlanId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists test plans.")]
     public static async Task<IReadOnlyList<TestPlan>> ListTestPlansAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<IReadOnlyList<TestPlan>> result = await client.ListTestPlansAsync();
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list test plans.");
-        return result.Value ?? Array.Empty<TestPlan>();
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListTestPlansAsync()).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a test plan.")]
-    public static async Task DeleteTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
+    public static async Task<bool> DeleteTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.DeleteTestPlanAsync(testPlanId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete test plan.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteTestPlanAsync(testPlanId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates a test suite.")]
     public static async Task<int> CreateTestSuiteAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, TestSuiteCreateOptions options)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<int> result = await client.CreateTestSuiteAsync(testPlanId, options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create test suite.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateTestSuiteAsync(testPlanId, options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists test suites for a plan.")]
     public static async Task<IReadOnlyList<TestSuite>> ListTestSuitesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<IReadOnlyList<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> result = await client.ListTestSuitesAsync(testPlanId);
-        if (!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list test suites.");
-        return result.Value ?? Array.Empty<TestSuite>();
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListTestSuitesAsync(testPlanId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Adds test cases to a suite.")]
-    public static async Task AddTestCasesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds)
+    public static async Task<bool> AddTestCasesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.AddTestCasesAsync(testPlanId, testSuiteId, testCaseIds);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to add test cases.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .AddTestCasesAsync(testPlanId, testSuiteId, testCaseIds)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets the root suite of a test plan.")]
-    public static async Task<TestSuite?> GetRootSuiteAsync(string organizationUrl, string projectName, string personalAccessToken, int planId)
+    public static async Task<TestSuite> GetRootSuiteAsync(string organizationUrl, string projectName, string personalAccessToken, int planId)
     {
-        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<TestSuite> result = await client.GetRootSuiteAsync(planId);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetRootSuiteAsync(planId)).EnsureSuccess();
+    }
+
+    [McpServerTool, Description("Lists test cases in a suite.")]
+    public static async Task<PagedList<TestCase>> ListTestCasesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, int testSuiteId)
+    {
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListTestCasesAsync(testPlanId, testSuiteId)).EnsureSuccess();
+    }
+
+    [McpServerTool, Description("Gets test results for a build.")]
+    public static async Task<Microsoft.TeamFoundation.TestManagement.WebApi.TestResultsDetails> GetTestResultsForBuildAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId)
+    {
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetTestResultsForBuildAsync(projectName, buildId)).EnsureSuccess();
     }
 }

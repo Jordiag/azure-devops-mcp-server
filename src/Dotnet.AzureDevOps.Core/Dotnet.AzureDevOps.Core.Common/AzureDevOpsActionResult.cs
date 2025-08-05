@@ -50,4 +50,13 @@ public class AzureDevOpsActionResult<T>
         logger?.LogError("Request failed with error: {ErrorMessage}", errorMessage);
         return new(false, default!, errorMessage);
     }
+
+    public T EnsureSuccess()
+    {
+        if(IsSuccessful)
+            return Value;      // Value is guaranteed non-null on success.
+
+        throw new InvalidOperationException(
+            ErrorMessage ?? "Azure DevOps operation failed.");
+    }
 }

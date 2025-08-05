@@ -15,378 +15,296 @@ public class ReposTools
         => new(organizationUrl, projectName, personalAccessToken);
 
     [McpServerTool, Description("Creates a pull request.")]
-    public static async Task<int?> CreatePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, PullRequestCreateOptions options)
+    public static async Task<int> CreatePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, PullRequestCreateOptions options)
     {
-        AzureDevOpsActionResult<int> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .CreatePullRequestAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create pull request.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreatePullRequestAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves a pull request.")]
-    public static async Task<GitPullRequest?> GetPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    public static async Task<GitPullRequest> GetPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
     {
-        AzureDevOpsActionResult<GitPullRequest> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetPullRequestAsync(repositoryId, pullRequestId);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetPullRequestAsync(repositoryId, pullRequestId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Updates a pull request.")]
-    public static async Task UpdatePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, PullRequestUpdateOptions options)
+    public static async Task<GitPullRequest> UpdatePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, PullRequestUpdateOptions options)
     {
-        AzureDevOpsActionResult<GitPullRequest> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .UpdatePullRequestAsync(repositoryId, pullRequestId, options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to update pull request.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .UpdatePullRequestAsync(repositoryId, pullRequestId, options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Completes a pull request.")]
-    public static async Task CompletePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, bool squashMerge = false, bool deleteSourceBranch = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null)
+    public static async Task<GitPullRequest> CompletePullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, bool squashMerge = false, bool deleteSourceBranch = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null)
     {
-        AzureDevOpsActionResult<GitPullRequest> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .CompletePullRequestAsync(repositoryId, pullRequestId, squashMerge, deleteSourceBranch, lastMergeSourceCommit, commitMessage);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to complete pull request.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CompletePullRequestAsync(repositoryId, pullRequestId, squashMerge, deleteSourceBranch, lastMergeSourceCommit, commitMessage)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Abandons a pull request.")]
-    public static async Task AbandonPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
+    public static async Task<GitPullRequest> AbandonPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
     {
-        AzureDevOpsActionResult<GitPullRequest> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .AbandonPullRequestAsync(repositoryId, pullRequestId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to abandon pull request.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .AbandonPullRequestAsync(repositoryId, pullRequestId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists pull requests.")]
     public static async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, PullRequestSearchOptions options)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListPullRequestsAsync(repositoryId, options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list pull requests.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListPullRequestsAsync(repositoryId, options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Adds reviewers to a pull request.")]
-    public static async Task AddReviewersAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, (string guid, string name)[] reviewers)
+    public static async Task<bool> AddReviewersAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, (string guid, string name)[] reviewers)
     {
-        AzureDevOpsActionResult<bool> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .AddReviewersAsync(repositoryId, pullRequestId, reviewers);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to add reviewers.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .AddReviewersAsync(repositoryId, pullRequestId, reviewers)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Sets a reviewer vote.")]
-    public static async Task SetReviewerVoteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string reviewerId, short vote)
+    public static async Task<IdentityRefWithVote> SetReviewerVoteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string reviewerId, short vote)
     {
-        AzureDevOpsActionResult<IdentityRefWithVote> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .SetReviewerVoteAsync(repositoryId, pullRequestId, reviewerId, vote);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to set reviewer vote.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .SetReviewerVoteAsync(repositoryId, pullRequestId, reviewerId, vote)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates a comment thread on a pull request.")]
     public static async Task<int> CreateCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, CommentThreadOptions options)
     {
-        AzureDevOpsActionResult<int> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .CreateCommentThreadAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create comment thread.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateCommentThreadAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Replies to a pull request comment thread.")]
-    public static async Task<int?> ReplyToCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, CommentReplyOptions options)
+    public static async Task<int> ReplyToCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, CommentReplyOptions options)
     {
-        AzureDevOpsActionResult<int> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ReplyToCommentThreadAsync(options);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ReplyToCommentThreadAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Adds labels to a pull request.")]
     public static async Task<IList<WebApiTagDefinition>> AddLabelsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, params string[] labels)
     {
-        AzureDevOpsActionResult<IList<WebApiTagDefinition>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .AddLabelsAsync(repositoryId, pullRequestId, labels);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to add labels.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .AddLabelsAsync(repositoryId, pullRequestId, labels)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Removes a label from a pull request.")]
-    public static async Task RemoveLabelAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string label)
+    public static async Task<bool> RemoveLabelAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string label)
     {
-        AzureDevOpsActionResult<bool> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .RemoveLabelAsync(repositoryId, pullRequestId, label);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to remove label.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .RemoveLabelAsync(repositoryId, pullRequestId, label)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Retrieves labels for a pull request.")]
     public static async Task<IReadOnlyList<WebApiTagDefinition>> GetPullRequestLabelsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
     {
-        AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetPullRequestLabelsAsync(repositoryId, pullRequestId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to get pull request labels.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetPullRequestLabelsAsync(repositoryId, pullRequestId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Removes reviewers from a pull request.")]
-    public static async Task RemoveReviewersAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, params string[] reviewerIds)
+    public static async Task<bool> RemoveReviewersAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, params string[] reviewerIds)
     {
-        AzureDevOpsActionResult<bool> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .RemoveReviewersAsync(repositoryId, pullRequestId, reviewerIds);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to remove reviewers.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .RemoveReviewersAsync(repositoryId, pullRequestId, reviewerIds)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Sets pull request status.")]
-    public static async Task SetPullRequestStatusAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, PullRequestStatusOptions options)
+    public static async Task<GitPullRequestStatus> SetPullRequestStatusAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, PullRequestStatusOptions options)
     {
-        AzureDevOpsActionResult<GitPullRequestStatus> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .SetPullRequestStatusAsync(repositoryId, pullRequestId, options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to set pull request status.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .SetPullRequestStatusAsync(repositoryId, pullRequestId, options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Enables auto-complete on a pull request.")]
-    public static async Task EnableAutoCompleteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string displayName, string localId, GitPullRequestCompletionOptions options)
+    public static async Task<GitPullRequest> EnableAutoCompleteAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, string displayName, string localId, GitPullRequestCompletionOptions options)
     {
-        AzureDevOpsActionResult<GitPullRequest> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .EnableAutoCompleteAsync(repositoryId, pullRequestId, displayName, localId, options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to enable auto-complete.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .EnableAutoCompleteAsync(repositoryId, pullRequestId, displayName, localId, options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists pull request iterations.")]
     public static async Task<IReadOnlyList<GitPullRequestIteration>> ListIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListIterationsAsync(repositoryId, pullRequestId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list iterations.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListIterationsAsync(repositoryId, pullRequestId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets changes for a pull request iteration.")]
     public static async Task<GitPullRequestIterationChanges> GetIterationChangesAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int iteration)
     {
-        AzureDevOpsActionResult<GitPullRequestIterationChanges> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetIterationChangesAsync(repositoryId, pullRequestId, iteration);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to get iteration changes.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetIterationChangesAsync(repositoryId, pullRequestId, iteration)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists pull requests filtered by label.")]
     public static async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByLabelAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string labelName, PullRequestStatus status)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListPullRequestsByLabelAsync(repositoryId, labelName, status);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list pull requests by label.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListPullRequestsByLabelAsync(repositoryId, labelName, status)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates a branch in a repository.")]
-    public static async Task CreateBranchAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string newRefName, string baseCommitSha)
+    public static async Task<List<GitRefUpdateResult>> CreateBranchAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string newRefName, string baseCommitSha)
     {
-        AzureDevOpsActionResult<List<GitRefUpdateResult>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .CreateBranchAsync(repositoryId, newRefName, baseCommitSha);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create branch.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateBranchAsync(repositoryId, newRefName, baseCommitSha)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets the diff between two commits.")]
     public static async Task<GitCommitDiffs> GetCommitDiffAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string baseSha, string targetSha)
     {
-        AzureDevOpsActionResult<GitCommitDiffs> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetCommitDiffAsync(repositoryId, baseSha, targetSha);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to get commit diff.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetCommitDiffAsync(repositoryId, baseSha, targetSha)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates a new repository.")]
     public static async Task<Guid> CreateRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, string newRepositoryName)
     {
-        AzureDevOpsActionResult<Guid> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .CreateRepositoryAsync(newRepositoryName);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create repository.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateRepositoryAsync(newRepositoryName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a repository.")]
-    public static async Task DeleteRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, Guid repositoryId)
+    public static async Task<bool> DeleteRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, Guid repositoryId)
     {
-        AzureDevOpsActionResult<bool> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .DeleteRepositoryAsync(repositoryId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete repository.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteRepositoryAsync(repositoryId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Edits a pull request comment.")]
-    public static async Task EditCommentAsync(string organizationUrl, string projectName, string personalAccessToken, CommentEditOptions options)
+    public static async Task<Comment> EditCommentAsync(string organizationUrl, string projectName, string personalAccessToken, CommentEditOptions options)
     {
-        AzureDevOpsActionResult<Comment> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .EditCommentAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to edit comment.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .EditCommentAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a pull request comment.")]
-    public static async Task DeleteCommentAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId, int commentId)
+    public static async Task<bool> DeleteCommentAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId, int commentId)
     {
-        AzureDevOpsActionResult<bool> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .DeleteCommentAsync(repositoryId, pullRequestId, threadId, commentId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete comment.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteCommentAsync(repositoryId, pullRequestId, threadId, commentId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Creates an annotated tag in a repository.")]
     public static async Task<GitAnnotatedTag> CreateTagAsync(string organizationUrl, string projectName, string personalAccessToken, TagCreateOptions options)
     {
-        AzureDevOpsActionResult<GitAnnotatedTag> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .CreateTagAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create tag.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CreateTagAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets an annotated tag by object id.")]
     public static async Task<GitAnnotatedTag> GetTagAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string objectId)
     {
-        AzureDevOpsActionResult<GitAnnotatedTag> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetTagAsync(repositoryId, objectId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to get tag.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetTagAsync(repositoryId, objectId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Deletes a tag from a repository.")]
-    public static async Task<GitRefUpdateResult?> DeleteTagAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string tagName)
+    public static async Task<GitRefUpdateResult> DeleteTagAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string tagName)
     {
-        AzureDevOpsActionResult<GitRefUpdateResult> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .DeleteTagAsync(repositoryId, tagName);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete tag.");
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .DeleteTagAsync(repositoryId, tagName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists repositories in a project.")]
     public static async Task<IReadOnlyList<GitRepository>> ListRepositoriesAsync(string organizationUrl, string projectName, string personalAccessToken)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitRepository>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListRepositoriesAsync();
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list repositories.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListRepositoriesAsync()).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists pull requests across the project.")]
     public static async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByProjectAsync(string organizationUrl, string projectName, string personalAccessToken, PullRequestSearchOptions options)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListPullRequestsByProjectAsync(options);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list pull requests by project.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListPullRequestsByProjectAsync(options)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists branches in a repository.")]
     public static async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitRef>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListBranchesAsync(repositoryId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list branches.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListBranchesAsync(repositoryId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists my branches in a repository.")]
     public static async Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitRef>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListMyBranchesAsync(repositoryId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list my branches.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListMyBranchesAsync(repositoryId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists threads on a pull request.")]
     public static async Task<IReadOnlyList<GitPullRequestCommentThread>> ListPullRequestThreadsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListPullRequestThreadsAsync(repositoryId, pullRequestId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list pull request threads.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListPullRequestThreadsAsync(repositoryId, pullRequestId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Lists comments in a pull request thread.")]
     public static async Task<IReadOnlyList<Comment>> ListPullRequestThreadCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId)
     {
-        AzureDevOpsActionResult<IReadOnlyList<Comment>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ListPullRequestThreadCommentsAsync(repositoryId, pullRequestId, threadId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list pull request thread comments.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ListPullRequestThreadCommentsAsync(repositoryId, pullRequestId, threadId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets a repository by name.")]
-    public static async Task<GitRepository?> GetRepositoryByNameAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName)
+    public static async Task<GitRepository> GetRepositoryByNameAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName)
     {
-        AzureDevOpsActionResult<GitRepository> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetRepositoryByNameAsync(repositoryName);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetRepositoryByNameAsync(repositoryName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets a branch by name.")]
-    public static async Task<GitRef?> GetBranchAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string branchName)
+    public static async Task<GitRef> GetBranchAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, string branchName)
     {
-        AzureDevOpsActionResult<GitRef> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetBranchAsync(repositoryId, branchName);
-        if(!result.IsSuccessful)
-            return null;
-        return result.Value;
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetBranchAsync(repositoryId, branchName)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Resolves a comment thread.")]
-    public static async Task ResolveCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId)
+    public static async Task<GitPullRequestCommentThread> ResolveCommentThreadAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, int threadId)
     {
-        AzureDevOpsActionResult<GitPullRequestCommentThread> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .ResolveCommentThreadAsync(repositoryId, pullRequestId, threadId);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to resolve comment thread.");
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .ResolveCommentThreadAsync(repositoryId, pullRequestId, threadId)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Searches commits in a repository.")]
     public static async Task<IReadOnlyList<GitCommitRef>> SearchCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, GitQueryCommitsCriteria criteria, int top = 100)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .SearchCommitsAsync(repositoryId, criteria, top);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to search commits.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .SearchCommitsAsync(repositoryId, criteria, top)).EnsureSuccess();
     }
 
     [McpServerTool, Description("Gets the latest commits from a branch.")]
     public static async Task<IReadOnlyList<GitCommitRef>> GetLatestCommitsAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryName, string branchName, int top = 1)
     {
-        AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
-            .GetLatestCommitsAsync(projectName, repositoryName, branchName, top);
-        if(!result.IsSuccessful)
-            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to get latest commits.");
-        return result.Value ?? [];
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetLatestCommitsAsync(projectName, repositoryName, branchName, top)).EnsureSuccess();
+    }
+
+    [McpServerTool, Description("Adds a reviewer to a pull request.")]
+    public static async Task<bool> AddReviewerAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, (string localId, string name) reviewer)
+    {
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .AddReviewerAsync(repositoryId, pullRequestId, reviewer)).EnsureSuccess();
+    }
+
+    [McpServerTool, Description("Commits a new file to a repository.")]
+    public static async Task<string> CommitAddFileAsync(string organizationUrl, string projectName, string personalAccessToken, FileCommitOptions options)
+    {
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CommitAddFileAsync(options)).EnsureSuccess();
+    }
+
+    [McpServerTool, Description("Retrieves a repository by identifier.")]
+    public static async Task<GitRepository> GetRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, Guid repositoryId)
+    {
+        return (await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetRepositoryAsync(repositoryId)).EnsureSuccess();
     }
 }
