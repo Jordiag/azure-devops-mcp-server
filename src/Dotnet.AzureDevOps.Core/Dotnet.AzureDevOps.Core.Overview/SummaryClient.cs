@@ -1,3 +1,4 @@
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -17,15 +18,16 @@ namespace Dotnet.AzureDevOps.Core.Overview
             _projectHttpClient = connection.GetClient<ProjectHttpClient>();
         }
 
-        public async Task<TeamProject?> GetProjectSummaryAsync(CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<TeamProject>> GetProjectSummaryAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _projectHttpClient.GetProject(_projectName, includeCapabilities: true, includeHistory: false, userState: null);
+                TeamProject project = await _projectHttpClient.GetProject(_projectName, includeCapabilities: true, includeHistory: false, userState: null);
+                return AzureDevOpsActionResult<TeamProject>.Success(project);
             }
-            catch (VssServiceException)
+            catch(Exception ex)
             {
-                return null;
+                return AzureDevOpsActionResult<TeamProject>.Failure(ex);
             }
         }
     }
