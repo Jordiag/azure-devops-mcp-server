@@ -50,29 +50,18 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         };
         await WaitHelper.WaitUntilAsync(async () =>
         {
-            try
-            {
-                await _wikiClient.ListWikisAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> listResult = await _wikiClient.ListWikisAsync();
+            return listResult.IsSuccessful;
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
         Guid wikiId = Guid.Empty;
         await WaitHelper.WaitUntilAsync(async () =>
         {
-            try
-            {
-                wikiId = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
-                return true;
-            }
-            catch
-            {
+            AzureDevOpsActionResult<Guid> createResult = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
+            if(!createResult.IsSuccessful)
                 return false;
-            }
+            wikiId = createResult.Value;
+            return true;
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
         _createdWikis.Add(wikiId);
@@ -93,15 +82,8 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
 
         await WaitHelper.WaitUntilAsync(async () =>
         {
-            try
-            {
-                await _wikiClient.CreateOrUpdatePageAsync(wikiId, pageOptions, versionDescriptor);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            AzureDevOpsActionResult<int> createPageResult = await _wikiClient.CreateOrUpdatePageAsync(wikiId, pageOptions, versionDescriptor);
+            return createPageResult.IsSuccessful;
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
         var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
@@ -203,7 +185,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
     {
         foreach(Guid id in _createdWikis.AsEnumerable().Reverse())
         {
-            await _wikiClient.DeleteWikiAsync(id);
+            _ = await _wikiClient.DeleteWikiAsync(id);
         }
 
         foreach(int id in _createdWorkItemIds.AsEnumerable().Reverse())
