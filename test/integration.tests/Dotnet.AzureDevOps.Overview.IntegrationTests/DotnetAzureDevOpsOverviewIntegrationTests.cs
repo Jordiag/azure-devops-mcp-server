@@ -231,8 +231,12 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                             return false;
                         wikiId = createWikiResult.Value;
                         return true;
-                    }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
-
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
             }
             else
             {
