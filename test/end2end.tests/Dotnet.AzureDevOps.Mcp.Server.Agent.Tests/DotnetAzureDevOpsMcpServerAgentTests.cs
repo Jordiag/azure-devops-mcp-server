@@ -25,7 +25,7 @@ public class McpAgentIntegrationTests : IClassFixture<TestFixture>
 
     [Trait("TestType", "End2End")]
     [SkippableFact(DisplayName = "Server exposes at least one MCP tool")]
-    public async Task Server_ShouldExpose_Tools()
+    public async Task Server_ShouldExpose_ToolsAsync()
     {
         var settings = new OpenAIPromptExecutionSettings
         {
@@ -45,7 +45,7 @@ public class McpAgentIntegrationTests : IClassFixture<TestFixture>
     [Trait("TestType", "End2End")]
     [SkippableTheory(DisplayName = "LLM calls ‘echo’ tool via function‑calling")]
     [InlineData(EchoToolName, EchoMessage)]
-    public async Task Llm_ShouldInvoke_EchoTool(string toolName, string message)
+    public async Task Llm_ShouldInvoke_EchoToolAsync(string toolName, string message)
     {
         string prompt = $"Call the {toolName} tool with the text \"{message}\" and return the raw output.";
 

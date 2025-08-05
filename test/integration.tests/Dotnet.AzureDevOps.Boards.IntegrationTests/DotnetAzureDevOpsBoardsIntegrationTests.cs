@@ -431,9 +431,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             AzureDevOpsActionResult<bool> addCommentResult = await _workItemsClient.AddCommentAsync(epicId.Value, _azureDevOpsConfiguration.ProjectName, commentText);
             Assert.True(addCommentResult.IsSuccessful && addCommentResult.Value);
 
-            AzureDevOpsActionResult<IReadOnlyList<WorkItemComment>> commentsResult = await _workItemsClient.GetCommentsAsync(epicId.Value);
+            AzureDevOpsActionResult<IEnumerable<WorkItemComment>> commentsResult = await _workItemsClient.GetCommentsAsync(epicId.Value);
             Assert.True(commentsResult.IsSuccessful);
-            IReadOnlyList<WorkItemComment> comments = commentsResult.Value;
+            IEnumerable<WorkItemComment> comments = commentsResult.Value;
             Assert.Contains(comments, c => c.Text == commentText);
         }
 
@@ -457,9 +457,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             AzureDevOpsActionResult<Guid> attachmentResult = await _workItemsClient.AddAttachmentAsync(epicId.Value, tempFile);
             Assert.True(attachmentResult.IsSuccessful);
             Guid attachmentId = attachmentResult.Value;
-            Assert.NotNull(attachmentId);
+            Assert.True(Guid.TryParse(attachmentId.ToString(), out _));
+            
 
-            AzureDevOpsActionResult<Stream> streamResult = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId);
+                        AzureDevOpsActionResult <Stream> streamResult = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId);
             Assert.True(streamResult.IsSuccessful);
             using Stream stream = streamResult.Value;
             Assert.NotNull(stream);
@@ -705,7 +706,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ListIterations_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>> listIterationsResult2 = await _workItemsClient.ListIterationsAsync(teamContext);
             Assert.True(listIterationsResult2.IsSuccessful);
             IReadOnlyList<TeamSettingsIteration> iterations = listIterationsResult2.Value;
@@ -718,11 +719,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             string name = $"it-{DateTime.UtcNow:yyyyMMddHHmmss}";
             var iterations = new List<IterationCreateOptions>
             {
-                new IterationCreateOptions { IterationName = name }
+                new() { IterationName = name }
             };
 
-            IReadOnlyList<WorkItemClassificationNode> created = await _workItemsClient.CreateIterationsAsync(_azureDevOpsConfiguration.ProjectName, iterations);
-            Assert.NotEmpty(created);
+            AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>> created = await _workItemsClient.CreateIterationsAsync(_azureDevOpsConfiguration.ProjectName, iterations);
+            Assert.NotEmpty(created.Value);
         }
 
         [Fact]
@@ -737,11 +738,11 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             TeamSettingsIteration iteration = existing.First();
             var assignments = new List<IterationAssignmentOptions>
             {
-                new IterationAssignmentOptions { Identifier = iteration.Id, Path = iteration.Path! }
+                new() { Identifier = iteration.Id, Path = iteration.Path! }
             };
 
-            IReadOnlyList<TeamSettingsIteration> result = await _workItemsClient.AssignIterationsAsync(teamContext, assignments);
-            Assert.NotEmpty(result);
+            AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>> result = await _workItemsClient.AssignIterationsAsync(teamContext, assignments);
+            Assert.NotEmpty(result.Value);
         }
 
         [Fact]
@@ -892,8 +893,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Uri = $"/_apis/wit/workitems/{id.Value}?api-version={GlobalConstants.ApiVersion}"
             };
 
-            IReadOnlyList<WitBatchResponse> responses = await _workItemsClient.ExecuteBatchAsync(new[] { request });
-           Assert.NotEmpty(responses);
+            AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> responses = await _workItemsClient.ExecuteBatchAsync(new[] { request });
+           Assert.NotEmpty(responses.Value);
         }
 
         [Fact]
@@ -905,9 +906,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 new() { Title = "Batch Item 2" }
             };
 
-            IReadOnlyList<int> created = await _workItemsClient.CreateWorkItemsMultipleCallsAsync("Task", items, CancellationToken.None);
-            Assert.Equal(2, created.Count);
-            foreach(int workItem in created)
+            AzureDevOpsActionResult<IReadOnlyList<int>> created = await _workItemsClient.CreateWorkItemsMultipleCallsAsync("Task", items, CancellationToken.None);
+            Assert.Equal(2, created.Value.Count);
+            foreach(int workItem in created.Value)
             {
                 _createdWorkItemIds.Add(workItem);
             }
@@ -928,8 +929,8 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 (secondId.Value, new WorkItemCreateOptions { State = "Closed" })
             };
 
-            IReadOnlyList<WitBatchResponse> batch = await _workItemsClient.UpdateWorkItemsBatchAsync(updates);
-            Assert.Equal(2, batch.Count);
+            AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> batch = await _workItemsClient.UpdateWorkItemsBatchAsync(updates);
+            Assert.Equal(2, batch.Value.Count);
         }
 
         [Fact]

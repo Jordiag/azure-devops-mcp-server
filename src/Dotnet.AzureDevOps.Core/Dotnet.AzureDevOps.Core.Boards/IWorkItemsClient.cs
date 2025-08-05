@@ -21,7 +21,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         Task DeleteWorkItemAsync(int workItemId, CancellationToken cancellationToken = default);
         Task<AzureDevOpsActionResult<Board>> ExportBoardAsync(TeamContext teamContext, string boardId, CancellationToken cancellationToken = default);
         Task<AzureDevOpsActionResult<Stream>> GetAttachmentAsync(string projectName, Guid attachmentId, CancellationToken cancellationToken = default);
-        Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemComment>>> GetCommentsAsync(int workItemId, CancellationToken cancellationToken = default);
+        Task<AzureDevOpsActionResult<IEnumerable<WorkItemComment>>> GetCommentsAsync(int workItemId, CancellationToken cancellationToken = default);
         Task<object?> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default);
         Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>> GetHistoryAsync(int workItemId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<WorkItemRelation>> GetLinksAsync(int workItemId, CancellationToken cancellationToken = default);

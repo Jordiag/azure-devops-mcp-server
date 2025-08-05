@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
@@ -19,17 +20,17 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemComment>>> GetCommentsAsync(int workItemId, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<IEnumerable<WorkItemComment>>> GetCommentsAsync(int workItemId, CancellationToken cancellationToken = default)
         {
             try
             {
                 WorkItemComments commentsResult = await _workItemClient.GetCommentsAsync(workItemId, cancellationToken: cancellationToken);
-                IReadOnlyList<WorkItemComment> comments = commentsResult.Comments ?? Array.Empty<WorkItemComment>();
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemComment>>.Success(comments);
+                IEnumerable<WorkItemComment> comments = commentsResult.Comments ?? Array.Empty<WorkItemComment>();
+                return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Success(comments);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemComment>>.Failure(ex);
+                return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Failure(ex);
             }
         }
 

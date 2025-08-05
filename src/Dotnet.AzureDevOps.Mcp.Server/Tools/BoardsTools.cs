@@ -105,7 +105,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Retrieves comments for a work item.")]
-        public static Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemComment>>> GetCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        public static Task<AzureDevOpsActionResult<IEnumerable<WorkItemComment>>> GetCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetCommentsAsync(workItemId);
