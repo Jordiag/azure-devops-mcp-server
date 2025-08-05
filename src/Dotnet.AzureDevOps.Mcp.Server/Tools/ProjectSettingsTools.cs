@@ -17,11 +17,11 @@ public static class ProjectSettingsTools
     private static ProjectSettingsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken)
         => new(organizationUrl, projectName, personalAccessToken);
 
-    [McpServerTool, Description("Creates a new team in the project.")]
-    public static async Task CreateTeamAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string teamDescription)
+    [McpServerTool, Description("Creates a new team in the project if it does not exist already.")]
+    public static async Task CreateTeamIfDoesNotExistAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string teamDescription)
     {
         ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-        AzureDevOpsActionResult<bool> result = await client.CreateTeamAsync(teamName, teamDescription);
+        AzureDevOpsActionResult<bool> result = await client.CreateTeamIfDoesNotExistAsync(teamName, teamDescription);
         if(!result.IsSuccessful)
             throw new InvalidOperationException(result.ErrorMessage ?? "Failed to create team.");
     }

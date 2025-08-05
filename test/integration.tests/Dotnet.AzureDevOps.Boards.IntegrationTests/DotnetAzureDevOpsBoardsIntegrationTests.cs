@@ -632,7 +632,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 if(latestCommits?.Value?.Count == 0)
                     return;
 
-                string commitSha = latestCommits.Value[0].CommitId;
+                string? commitSha = latestCommits?.Value?[0].CommitId!;
                 await _reposClient.CreateBranchAsync(_repositoryName, sourceBranch, commitSha);
             }
 

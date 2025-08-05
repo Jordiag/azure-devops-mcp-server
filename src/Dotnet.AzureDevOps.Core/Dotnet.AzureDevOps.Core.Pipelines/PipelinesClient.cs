@@ -1,5 +1,6 @@
 using System.IO;
 using System.IO.Compression;
+using System.Text;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -18,7 +19,7 @@ public partial class PipelinesClient : IPipelinesClient
     {
         _projectName = projectName;
 
-        VssConnection connection = new VssConnection(new Uri(organizationUrl),
+        var connection = new VssConnection(new Uri(organizationUrl),
             new VssBasicCredential(string.Empty, personalAccessToken));
         _build = connection.GetClient<BuildHttpClient>();
     }
@@ -83,7 +84,9 @@ public partial class PipelinesClient : IPipelinesClient
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<Build>.Success(build);
+            return build == null
+                ? AzureDevOpsActionResult<Build>.Failure("Build could not be found.")
+                : AzureDevOpsActionResult<Build>.Success(build);
         }
         catch (Exception ex)
         {
@@ -165,25 +168,47 @@ public partial class PipelinesClient : IPipelinesClient
         }
     }
 
-    public async Task<AzureDevOpsActionResult<string?>> DownloadConsoleLogAsync(int buildId)
+    public async Task<AzureDevOpsActionResult<string>> DownloadConsoleLogAsync(int buildId)
     {
         try
         {
             using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
                 project: _projectName,
                 buildId: buildId);
-            using ZipArchive zipArchive = new ZipArchive(buildLogsStream);
-            ZipArchiveEntry? logEntry = zipArchive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".log"));
-            if (logEntry == null)
-                return AzureDevOpsActionResult<string?>.Success(null);
 
-            using StreamReader logReader = new StreamReader(logEntry.Open());
-            string logContent = await logReader.ReadToEndAsync();
-            return AzureDevOpsActionResult<string?>.Success(logContent);
+            using var zipArchive = new ZipArchive(buildLogsStream);
+
+            // Find all script-related log entries in the correct order
+            var logEntries = zipArchive.Entries
+                .Where(e =>
+                    e.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) &&
+                    (e.FullName.Contains("Run a one-line script", StringComparison.OrdinalIgnoreCase) ||
+                     e.FullName.Contains("Run a multi-line script", StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(e => e.FullName) // Ensure correct order
+                .ToList();
+
+            if(!logEntries.Any())
+                return AzureDevOpsActionResult<string>.Failure("No console logs were found in the build output.");
+
+            var fullLog = new StringBuilder();
+            foreach(ZipArchiveEntry? entry in logEntries)
+            {
+                fullLog.AppendLine($"--- {entry.FullName} ---");
+                using var reader = new StreamReader(entry.Open());
+                string content = await reader.ReadToEndAsync();
+                fullLog.AppendLine(content);
+                fullLog.AppendLine(); // Add spacing between logs
+            }
+
+            string result = fullLog.ToString().Trim();
+
+            return string.IsNullOrWhiteSpace(result)
+                ? AzureDevOpsActionResult<string>.Failure("Console logs were found but all are empty.")
+                : AzureDevOpsActionResult<string>.Success(result);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            return AzureDevOpsActionResult<string?>.Failure(ex);
+            return AzureDevOpsActionResult<string>.Failure(ex);
         }
     }
 
@@ -232,7 +257,9 @@ public partial class PipelinesClient : IPipelinesClient
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<BuildDefinition>.Success(definition);
+            return definition == null
+                ? AzureDevOpsActionResult<BuildDefinition>.Failure("Pipeline definition not found.")
+                : AzureDevOpsActionResult<BuildDefinition>.Success(definition);
         }
         catch (Exception ex)
         {
@@ -339,16 +366,18 @@ public partial class PipelinesClient : IPipelinesClient
         }
     }
 
-    public async Task<AzureDevOpsActionResult<BuildReportMetadata?>> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<BuildReportMetadata>> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default)
     {
         try
         {
-            BuildReportMetadata? report = await _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<BuildReportMetadata?>.Success(report);
+            BuildReportMetadata report = await _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);
+            return report == null
+                ? AzureDevOpsActionResult<BuildReportMetadata>.Failure("Build report not found.")
+                : AzureDevOpsActionResult<BuildReportMetadata>.Success(report);
         }
         catch (Exception ex)
         {
-            return AzureDevOpsActionResult<BuildReportMetadata?>.Failure(ex);
+            return AzureDevOpsActionResult<BuildReportMetadata>.Failure(ex);
         }
     }
 

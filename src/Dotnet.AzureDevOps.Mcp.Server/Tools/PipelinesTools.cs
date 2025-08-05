@@ -53,7 +53,7 @@ public class PipelinesTools
     }
 
     [McpServerTool, Description("Downloads the console log for a build.")]
-    public static Task<AzureDevOpsActionResult<string?>> DownloadConsoleLogAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId)
+    public static Task<AzureDevOpsActionResult<string>> DownloadConsoleLogAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId)
     {
         PipelinesClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
         return client.DownloadConsoleLogAsync(buildId);

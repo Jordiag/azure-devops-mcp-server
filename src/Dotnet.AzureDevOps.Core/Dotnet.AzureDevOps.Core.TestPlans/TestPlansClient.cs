@@ -70,7 +70,7 @@ public class TestPlansClient : ITestPlansClient
         }
         catch(VssServiceException)
         {
-            return AzureDevOpsActionResult<TestPlan?>.Success(null);
+            return AzureDevOpsActionResult<TestPlan?>.Failure("Test plan is not found");
         }
         catch(Exception ex)
         {
@@ -259,7 +259,7 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            TestResultsHttpClient testResultsClient = _connection.GetClient<TestResultsHttpClient>();
+            TestResultsHttpClient testResultsClient = await _connection.GetClientAsync<TestResultsHttpClient>(cancellationToken);
             TestResultsDetails details = await testResultsClient.GetTestResultDetailsForBuildAsync(
                 projectName,
                 buildId,

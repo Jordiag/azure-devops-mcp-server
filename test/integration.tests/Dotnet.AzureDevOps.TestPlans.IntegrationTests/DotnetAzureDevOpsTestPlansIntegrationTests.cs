@@ -35,7 +35,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         [Fact]
         public async Task PlanCrud_SucceedsAsync()
         {
-            TestPlanCreateOptions create = new TestPlanCreateOptions
+            var create = new TestPlanCreateOptions
             {
                 Name = $"it-plan-{UtcStamp()}",
                 Description = "Created by integration test",
@@ -62,7 +62,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             _createdPlanIds.Remove(planId);
 
             AzureDevOpsActionResult<TestPlan?> afterDeleteResult = await _testPlansClient.GetTestPlanAsync(planId);
-            Assert.True(afterDeleteResult.IsSuccessful);
+            Assert.False(afterDeleteResult.IsSuccessful);
             Assert.Null(afterDeleteResult.Value);
         }
 

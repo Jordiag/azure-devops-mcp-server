@@ -27,9 +27,9 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         public async Task TeamAndBoardConfiguration_SucceedsAsync()
         {
             string testTeamName = "Dotnet.McpIntegrationTest Team";
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, testTeamName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, testTeamName);
             string boardName = $"{_azureDevOpsConfiguration.ProjectName} Team";
-            await _projectSettingsClient.CreateTeamAsync(testTeamName, "description1");
+            await _projectSettingsClient.CreateTeamIfDoesNotExistAsync(testTeamName, "description1");
             await _projectSettingsClient.UpdateTeamDescriptionAsync(testTeamName, "description2");
             List<BoardReference> boardReferenceList = await _workItemsClient.ListBoardsAsync(teamContext, boardName);
             Assert.NotEmpty(boardReferenceList);
@@ -55,7 +55,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         {
             string teamName = $"it-team-{UtcStamp()}";
 
-            AzureDevOpsActionResult<bool> createdResult = await _projectSettingsClient.CreateTeamAsync(teamName, "initial");
+            AzureDevOpsActionResult<bool> createdResult = await _projectSettingsClient.CreateTeamIfDoesNotExistAsync(teamName, "initial");
             Assert.True(createdResult.IsSuccessful && createdResult.Value);
 
             AzureDevOpsActionResult<Guid> idResult = await _projectSettingsClient.GetTeamIdAsync(teamName);

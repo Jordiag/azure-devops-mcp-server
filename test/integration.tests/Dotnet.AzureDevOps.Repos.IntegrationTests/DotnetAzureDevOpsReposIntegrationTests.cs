@@ -3,7 +3,6 @@ using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
-using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
@@ -119,11 +118,13 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                     gtPullRequest = prResult.Value;
                     return gtPullRequest?.Status == PullRequestStatus.Completed;
                 }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
+
+                return gtPullRequest;
             }
             catch(TimeoutException)
             {
+                return gtPullRequest;
             }
-            return gtPullRequest;
         }
 
         // TODO: Re-enable this test once the API is working again
@@ -308,12 +309,12 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 TaggerName = "integration-bot",
                 TaggerEmail = "bot@example.com"
             });
-            GitAnnotatedTag gitAnnotatedTag = gitAnnotatedTagResult.Value;
+            GitAnnotatedTag gitAnnotatedTag = gitAnnotatedTagResult.Value!;
 
             AzureDevOpsActionResult<GitAnnotatedTag> tagResult = await _reposClient.GetTagAsync(_repoName, gitAnnotatedTag.ObjectId);
-            GitAnnotatedTag tag = tagResult.Value;
+            GitAnnotatedTag tag = tagResult.Value!;
 
-            Assert.True(tag.Name == annTag);
+            Assert.True(tag!.Name == annTag);
 
             AzureDevOpsActionResult<GitRefUpdateResult> deleteTagResult = await _reposClient.DeleteTagAsync(_repoName, annTag);
 
@@ -343,7 +344,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             string targetCommit = commits[0].CommitId;
 
             AzureDevOpsActionResult<GitCommitDiffs> diffsResult = await _reposClient.GetCommitDiffAsync(_repoName, baseCommit, targetCommit);
-            GitCommitDiffs diffs = diffsResult.Value;
+            GitCommitDiffs diffs = diffsResult.Value!;
             Assert.NotNull(diffs);
         }
 
@@ -390,7 +391,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             };
 
             AzureDevOpsActionResult<string> commitIdResult = await _reposClient.CommitAddFileAsync(fileCommitOptions);
-            string commitId = commitIdResult.Value;
+            string commitId = commitIdResult.Value!;
 
             AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(createOptions);
             int prId = prIdResult.Value;
@@ -416,7 +417,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.True(addReviewersAgainResult.IsSuccessful);
 
             AzureDevOpsActionResult<IdentityRefWithVote> identityRefWithVoteResult = await _reposClient.SetReviewerVoteAsync(_repoName, prId, reviewerResult.Value.localId, 10);
-            IdentityRefWithVote identityRefWithVote = identityRefWithVoteResult.Value;
+            IdentityRefWithVote identityRefWithVote = identityRefWithVoteResult.Value!;
 
             AzureDevOpsActionResult<GitPullRequestStatus> gitPullRequestStatusResult = await _reposClient.SetPullRequestStatusAsync(_repoName, prId, new PullRequestStatusOptions
             {
@@ -426,7 +427,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 State = GitStatusState.Succeeded,
                 TargetUrl = "https://example.com"
             });
-            GitPullRequestStatus gitPullRequestStatus = gitPullRequestStatusResult.Value;
+            GitPullRequestStatus gitPullRequestStatus = gitPullRequestStatusResult.Value!;
 
             AzureDevOpsActionResult<(string localId, string displayName)> userResult = await _identityClient.GetUserLocalIdFromEmailAsync(_userEmail);
 
@@ -436,7 +437,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 userResult.Value.displayName,
                 userResult.Value.localId,
                 new GitPullRequestCompletionOptions { MergeStrategy = GitPullRequestMergeStrategy.Squash });
-            GitPullRequest gitPullRequest = gitPullRequestResult.Value;
+            GitPullRequest gitPullRequest = gitPullRequestResult.Value!;
 
             AzureDevOpsActionResult<GitPullRequest> afterAutoResult = await _reposClient.GetPullRequestAsync(_repoName, prId);
             GitPullRequest? afterAuto = afterAutoResult.Value;
@@ -517,7 +518,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             }
 
             AzureDevOpsActionResult<GitPullRequestIterationChanges> changesResult = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id!.Value);
-            GitPullRequestIterationChanges changes = changesResult.Value;
+            GitPullRequestIterationChanges changes = changesResult.Value!;
             Assert.NotNull(changes);
 
             AzureDevOpsActionResult<int> threadIdResult = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions

@@ -77,7 +77,18 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
             Version = _azureDevOpsConfiguration.MainBranchName
         };
 
-        await _wikiClient.CreateOrUpdatePageAsync(wikiId, pageOptions, versionDescriptor);
+        await WaitHelper.WaitUntilAsync(async () =>
+        {
+            try
+            {
+                await _wikiClient.CreateOrUpdatePageAsync(wikiId, pageOptions, versionDescriptor);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
         var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
         {
@@ -166,10 +177,8 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
     [Fact]
     public async Task IsCodeSearchEnabledAsync_ReturnsBooleanAsync()
     {
-        // Act
         AzureDevOpsActionResult<bool> result = await _searchClient.IsCodeSearchEnabledAsync();
 
-        // Assert
         Assert.True(result.IsSuccessful, $"Expected IsCodeSearchEnabledAsync to succeed, but got error: {result.ErrorMessage}");
         Assert.True(result.Value == true || result.Value == false, "Result should be a boolean value.");
     }

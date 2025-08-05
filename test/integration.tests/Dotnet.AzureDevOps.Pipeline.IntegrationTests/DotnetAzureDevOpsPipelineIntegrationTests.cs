@@ -79,6 +79,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         Assert.Equal(_branch, retried.SourceBranch);
     }
 
+    [Fact]
     public async Task ListBuilds_Filter_WorksAsync()
     {
         AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
@@ -101,13 +102,26 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
     [Fact]
     public async Task DownloadConsoleLog_SucceedsAsync()
     {
-        AzureDevOpsActionResult<int> queuedBuildResult = await _pipelines.QueueRunAsync(new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
+        // Start the build
+        AzureDevOpsActionResult<int> queuedBuildResult = await _pipelines.QueueRunAsync(new BuildQueueOptions
+        {
+            DefinitionId = _definitionId,
+            Branch = _branch
+        });
+
         Assert.True(queuedBuildResult.IsSuccessful);
         int queuedBuildId = queuedBuildResult.Value;
         _queuedBuildIds.Add(queuedBuildId);
 
-        AzureDevOpsActionResult<string?> consoleLogResult = await _pipelines.DownloadConsoleLogAsync(queuedBuildId);
+        // Wait for the build to complete
+        Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 120, 500);
+        Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded , "Build did not complete in time.");
+
+        // Download and validate the console log
+        AzureDevOpsActionResult<string> consoleLogResult = await _pipelines.DownloadConsoleLogAsync(queuedBuildId);
+        Assert.NotNull(consoleLogResult);
         Assert.True(consoleLogResult.IsSuccessful);
+
         string? consoleLog = consoleLogResult.Value;
         Assert.True(string.IsNullOrEmpty(consoleLog) || consoleLog.Length > 0);
     }
@@ -144,7 +158,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
             Assert.NotNull(lines);
         }
 
-        AzureDevOpsActionResult<BuildReportMetadata?> reportResult = await _pipelines.GetBuildReportAsync(buildId);
+        AzureDevOpsActionResult<BuildReportMetadata> reportResult = await _pipelines.GetBuildReportAsync(buildId);
         Assert.True(reportResult.IsSuccessful);
         BuildReportMetadata? report = reportResult.Value;
         Assert.True(report == null || report.BuildId == buildId);
@@ -205,6 +219,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         }
         catch(TimeoutException)
         {
+            return null;
         }
         return build;
     }
@@ -220,7 +235,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
                 if (!runResult.IsSuccessful)
                     return false;
                 build = runResult.Value;
-                return build?.Result is BuildResult.Canceled;
+                return build?.Result is BuildResult.Succeeded;
             }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
         }
         catch(TimeoutException)
@@ -322,7 +337,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
                 if(build != null && build.Status == BuildStatus.InProgress)
                     _ = await _pipelines.CancelRunAsync(id, build.Project);
             }
-            catch { }
+            catch {}
         }
     }
 }

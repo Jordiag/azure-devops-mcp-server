@@ -39,8 +39,17 @@ namespace Dotnet.AzureDevOps.Core.Boards
             if(result.WorkItems?.Any() == true)
             {
                 int[] ids = [.. result.WorkItems.Select(w => w.Id)];
-                List<WorkItem> items = await _workItemClient.GetWorkItemsAsync(ids, cancellationToken: cancellationToken);
-                return items;
+                const int batchSize = 200;
+
+                var allItems = new List<WorkItem>();
+
+                foreach(int[] batch in ids.Chunk(batchSize))
+                {
+                    List<WorkItem> batchItems = await _workItemClient.GetWorkItemsAsync(batch, cancellationToken: cancellationToken);
+                    allItems.AddRange(batchItems);
+                }
+
+                return allItems;
             }
 
             return [];

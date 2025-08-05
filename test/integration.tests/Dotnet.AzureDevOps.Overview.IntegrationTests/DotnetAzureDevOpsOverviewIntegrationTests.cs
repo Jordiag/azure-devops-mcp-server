@@ -6,6 +6,7 @@ using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Core.Search;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
+using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
@@ -47,7 +48,24 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             };
 
-            Guid id = await _wikiClient.CreateWikiAsync(create);
+            Guid id = Guid.Empty;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                try
+                {
+                    id = await _wikiClient.CreateWikiAsync(create);
+                    return id != Guid.Empty;
+                }
+                catch
+                {
+                    return false;
+                }
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
+            if (id == Guid.Empty)
+            {
+                throw new InvalidOperationException("Wiki creation failed, returned ID is empty.");
+            }
             _createdWikis.Add(id);
 
             WikiV2? wiki = null;
