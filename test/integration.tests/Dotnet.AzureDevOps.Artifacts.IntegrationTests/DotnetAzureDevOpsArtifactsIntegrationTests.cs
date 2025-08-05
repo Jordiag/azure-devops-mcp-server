@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Dotnet.AzureDevOps.Core.Artifacts;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
-using Xunit;
 
 namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 {
@@ -153,7 +147,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
 
             FeedRetentionPolicy create = new FeedRetentionPolicy
             {
-                AgeLimitInDays =  days - 1,
+                AgeLimitInDays = days - 1,
                 CountLimit = days - 1,
                 DaysToKeepRecentlyDownloadedPackages = days - 1
             };
@@ -227,6 +221,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
                 }
                 catch
                 {
+                    // Ignore errors during cleanup
                 }
             }
         }

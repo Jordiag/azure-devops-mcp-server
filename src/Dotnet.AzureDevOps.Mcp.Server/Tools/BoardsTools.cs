@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -97,47 +98,45 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Adds a comment to a work item.")]
-        public static Task AddCommentAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string comment)
+        public static Task<AzureDevOpsActionResult<bool>> AddCommentAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string comment)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.AddCommentAsync(workItemId, projectName, comment);
         }
 
         [McpServerTool, Description("Retrieves comments for a work item.")]
-        public static Task<IReadOnlyList<WorkItemComment>> GetCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        public static Task<AzureDevOpsActionResult<IEnumerable<WorkItemComment>>> GetCommentsAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetCommentsAsync(workItemId);
         }
 
         [McpServerTool, Description("Adds an attachment to a work item.")]
-        public static Task<Guid?> AddAttachmentAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string filePath)
+        public static Task<AzureDevOpsActionResult<Guid>> AddAttachmentAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string filePath)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.AddAttachmentAsync(workItemId, filePath);
         }
 
         [McpServerTool, Description("Downloads a work item attachment.")]
-        public static Task<Stream?> GetAttachmentAsync(string organizationUrl, string projectName, string personalAccessToken, Guid attachmentId)
+        public static Task<AzureDevOpsActionResult<Stream>> GetAttachmentAsync(string organizationUrl, string projectName, string personalAccessToken, Guid attachmentId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetAttachmentAsync(projectName, attachmentId);
         }
 
         [McpServerTool, Description("Gets work item history updates.")]
-        public static Task<IReadOnlyList<WorkItemUpdate>> GetHistoryAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>> GetHistoryAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetHistoryAsync(workItemId);
         }
 
         [McpServerTool, Description("Creates multiple work items in a batch.")]
-        public static Task<IReadOnlyList<int>> CreateWorkItemsBatchAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType, IEnumerable<WorkItemCreateOptions> items)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<int>>> CreateWorkItemsBatchAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType, IEnumerable<WorkItemCreateOptions> items)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
-            Task<IReadOnlyList<int>> result = client.CreateWorkItemsMultipleCallsAsync(workItemType: workItemType, items: items, default);
-
-            return result;
+            return client.CreateWorkItemsMultipleCallsAsync(workItemType, items);
         }
 
         [McpServerTool, Description("Adds a relation link between two work items.")]
@@ -162,28 +161,28 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Lists boardId columns for a team boardId.")]
-        public static Task<List<BoardColumn>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid boardId, TeamContext teamContext)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>> ListBoardColumnsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid boardId, TeamContext teamContext)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListBoardColumnsAsync(teamContext, boardId);
         }
 
         [McpServerTool, Description("Lists backlog configurations for a team.")]
-        public static Task<List<BacklogLevelConfiguration>> ListBacklogsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>> ListBacklogsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListBacklogsAsync(teamContext, userState);
         }
 
         [McpServerTool, Description("Lists work items for a backlog category.")]
-        public static Task<BacklogLevelWorkItems> ListBacklogWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string backlogId, object? userState = null)
+        public static Task<AzureDevOpsActionResult<BacklogLevelWorkItems>> ListBacklogWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string backlogId, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListBacklogWorkItemsAsync(teamContext, backlogId, userState);
         }
 
         [McpServerTool, Description("Lists work items relevant to the authenticated user.")]
-        public static Task<PredefinedQuery> ListMyWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string queryType = "assignedtome", int? top = null, bool? includeCompleted = null, object? userState = null)
+        public static Task<AzureDevOpsActionResult<PredefinedQuery>> ListMyWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string queryType = "assignedtome", int? top = null, bool? includeCompleted = null, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListMyWorkItemsAsync(queryType, top, includeCompleted, userState);
@@ -197,42 +196,42 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Lists work items for a specific iteration.")]
-        public static Task<IterationWorkItems> GetWorkItemsForIterationAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, Guid iterationId, object? userState = null)
+        public static Task<AzureDevOpsActionResult<IterationWorkItems>> GetWorkItemsForIterationAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, Guid iterationId, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetWorkItemsForIterationAsync(teamContext, iterationId, userState);
         }
 
         [McpServerTool, Description("Lists boards for a team.")]
-        public static Task<List<BoardReference>> ListBoardsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<BoardReference>>> ListBoardsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListBoardsAsync(teamContext, userState);
         }
 
         [McpServerTool, Description("Gets a specific team iteration.")]
-        public static Task<TeamSettingsIteration> GetTeamIterationAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, Guid iterationId, object? userState = null)
+        public static Task<AzureDevOpsActionResult<TeamSettingsIteration>> GetTeamIterationAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, Guid iterationId, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetTeamIterationAsync(teamContext, iterationId, userState);
         }
 
         [McpServerTool, Description("Lists iterations for a team with a timeframe filter.")]
-        public static Task<List<TeamSettingsIteration>> GetTeamIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string timeframe, object? userState = null)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>> GetTeamIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string timeframe, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetTeamIterationsAsync(teamContext, timeframe, userState);
         }
 
         [McpServerTool, Description("Lists iterations for a team.")]
-        public static Task<List<TeamSettingsIteration>> ListIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string? timeFrame = null, object? userState = null)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>> ListIterationsAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string? timeFrame = null, object? userState = null)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListIterationsAsync(teamContext, timeFrame, userState);
         }
 
         [McpServerTool, Description("Lists area paths for a team.")]
-        public static Task<TeamFieldValues> ListAreasAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext)
+        public static Task<AzureDevOpsActionResult<TeamFieldValues>> ListAreasAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ListAreasAsync(teamContext);
@@ -268,7 +267,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Exports a team boardId configuration.")]
-        public static Task<Board?> ExportBoardAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string board)
+        public static Task<AzureDevOpsActionResult<Board>> ExportBoardAsync(string organizationUrl, string projectName, string personalAccessToken, TeamContext teamContext, string board)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.ExportBoardAsync(teamContext, board);
@@ -282,7 +281,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Updates multiple work items in bulk.")]
-        public static Task BulkUpdateWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, IEnumerable<(int id, WorkItemCreateOptions options)> updates)
+        public static Task<AzureDevOpsActionResult<bool>> BulkUpdateWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, IEnumerable<(int id, WorkItemCreateOptions options)> updates)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.BulkUpdateWorkItemsAsync(updates);
@@ -349,7 +348,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Link work items together in batch using friendly relation names.")]
-        public static Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsByNameBatchAsync(
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> LinkWorkItemsByNameBatchAsync(
             string organizationUrl,
             string projectName,
             string personalAccessToken,
@@ -362,7 +361,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Links many work-item pairs in a single $batch call.")]
-        public static Task<IReadOnlyList<WitBatchResponse>> LinkWorkItemsBatchAsync(
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> LinkWorkItemsBatchAsync(
             string organizationUrl, string projectName, string personalAccessToken,
             IEnumerable<(int sourceId, int targetId, string relation)> links,
             bool suppressNotifications = true,
@@ -373,7 +372,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Closes multiple work items (optionally setting a reason) in one batch.")]
-        public static Task<IReadOnlyList<WitBatchResponse>> CloseWorkItemsBatchAsync(
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> CloseWorkItemsBatchAsync(
             string organizationUrl, string projectName, string personalAccessToken,
             IEnumerable<int> workItemIds,
             string closedState = "Closed",
@@ -387,7 +386,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Closes duplicates and links them to their canonical items in one batch.")]
-        public static Task<IReadOnlyList<WitBatchResponse>> CloseAndLinkDuplicatesBatchAsync(
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> CloseAndLinkDuplicatesBatchAsync(
             string organizationUrl, string projectName, string personalAccessToken,
             IEnumerable<(int duplicateId, int canonicalId)> pairs,
             bool suppressNotifications = true,
@@ -398,7 +397,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Retrieves up to 200 work items in one /workitemsbatch POST.")]
-        public static Task<IReadOnlyList<WorkItem>> GetWorkItemsBatchByIdsAsync(
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WorkItem>>> GetWorkItemsBatchByIdsAsync(
             string organizationUrl, string projectName, string personalAccessToken,
             IEnumerable<int> ids,
             WorkItemExpand expand = WorkItemExpand.All,
