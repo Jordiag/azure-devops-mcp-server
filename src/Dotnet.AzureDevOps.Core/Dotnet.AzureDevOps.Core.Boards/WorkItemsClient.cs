@@ -37,30 +37,40 @@ namespace Dotnet.AzureDevOps.Core.Boards
             _workClient = connection.GetClient<WorkHttpClient>();
         }
 
-        public async Task<bool> IsSystemProcessAsync(CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<bool>> IsSystemProcessAsync(CancellationToken cancellationToken = default)
         {
-            // Include process template details
-            string projectUrl = $"{_organizationUrl}/_apis/projects/{_projectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
-            JsonElement projectResponse = await _httpClient.GetFromJsonAsync<JsonElement>(projectUrl, cancellationToken);
-
-            string? processId = projectResponse
-                .GetProperty("capabilities")
-                .GetProperty("processTemplate")
-                .GetProperty("templateTypeId")
-                .GetString();
-
-            if(string.IsNullOrEmpty(processId))
+            try
             {
-                throw new InvalidOperationException("Unable to determine the process ID for the project.");
+                string projectUrl = $"{_organizationUrl}/_apis/projects/{_projectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
+                JsonElement projectResponse = await _httpClient.GetFromJsonAsync<JsonElement>(projectUrl, cancellationToken);
+
+                string? processId = projectResponse
+                    .GetProperty("capabilities")
+                    .GetProperty("processTemplate")
+                    .GetProperty("templateTypeId")
+                    .GetString();
+
+                if(string.IsNullOrEmpty(processId))
+                {
+                    return AzureDevOpsActionResult<bool>.Failure("Unable to determine the process ID for the project.");
+                }
+
+                string processUrl = $"{_organizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
+                JsonElement processResponse = await _httpClient.GetFromJsonAsync<JsonElement>(processUrl, cancellationToken);
+                string? processType = processResponse.GetProperty("type").GetString();
+
+                if(string.IsNullOrEmpty(processType))
+                {
+                    return AzureDevOpsActionResult<bool>.Failure("Unable to determine process type for the project.");
+                }
+
+                bool isSystem = processType.Equals("system", StringComparison.OrdinalIgnoreCase);
+                return AzureDevOpsActionResult<bool>.Success(isSystem);
             }
-
-            string processUrl = $"{_organizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
-            JsonElement processResponse = await _httpClient.GetFromJsonAsync<JsonElement>(processUrl, cancellationToken);
-            string? processType = processResponse.GetProperty("type").GetString();
-
-            return string.IsNullOrEmpty(processType)
-                ? throw new InvalidOperationException("Unable to determine process type for the project.")
-                : processType.Equals("system", StringComparison.OrdinalIgnoreCase);
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<bool>.Failure(ex);
+            }
         }
     }
 }

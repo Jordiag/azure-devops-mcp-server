@@ -147,13 +147,13 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
     public async Task WorkItemSearch_ReturnsResultsAsync()
     {
         string title = $"search-workitem-{UtcStamp()}";
-        int? workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
+        AzureDevOpsActionResult<int> workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
         {
             Title = title,
             Description = "search work item",
             Tags = "IntegrationTest"
         });
-        Assert.True(workItemId.HasValue);
+        Assert.True(workItemId.IsSuccessful);
         _createdWorkItemIds.Add(workItemId!.Value);
 
         var searchOptions = new WorkItemSearchOptions

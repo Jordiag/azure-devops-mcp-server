@@ -21,77 +21,77 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             => new(organizationUrl, projectName, personalAccessToken);
 
         [McpServerTool, Description("Creates a new Epic work item.")]
-        public static Task<int?> CreateEpicAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> CreateEpicAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.CreateEpicAsync(options);
         }
 
         [McpServerTool, Description("Creates a new Feature work item.")]
-        public static Task<int?> CreateFeatureAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> CreateFeatureAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.CreateFeatureAsync(options);
         }
 
         [McpServerTool, Description("Creates a new User Story work item.")]
-        public static Task<int?> CreateUserStoryAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> CreateUserStoryAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.CreateUserStoryAsync(options);
         }
 
         [McpServerTool, Description("Creates a new Task work item.")]
-        public static Task<int?> CreateTaskAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> CreateTaskAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.CreateTaskAsync(options);
         }
 
         [McpServerTool, Description("Updates an Epic work item.")]
-        public static Task<int?> UpdateEpicAsync(string organizationUrl, string projectName, string personalAccessToken, int epicId, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> UpdateEpicAsync(string organizationUrl, string projectName, string personalAccessToken, int epicId, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.UpdateEpicAsync(epicId, options);
         }
 
         [McpServerTool, Description("Updates a Feature work item.")]
-        public static Task<int?> UpdateFeatureAsync(string organizationUrl, string projectName, string personalAccessToken, int featureId, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> UpdateFeatureAsync(string organizationUrl, string projectName, string personalAccessToken, int featureId, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.UpdateFeatureAsync(featureId, options);
         }
 
         [McpServerTool, Description("Updates a User Story work item.")]
-        public static Task<int?> UpdateUserStoryAsync(string organizationUrl, string projectName, string personalAccessToken, int userStoryId, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> UpdateUserStoryAsync(string organizationUrl, string projectName, string personalAccessToken, int userStoryId, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.UpdateUserStoryAsync(userStoryId, options);
         }
 
         [McpServerTool, Description("Updates a Task work item.")]
-        public static Task<int?> UpdateTaskAsync(string organizationUrl, string projectName, string personalAccessToken, int taskId, WorkItemCreateOptions options)
+        public static Task<AzureDevOpsActionResult<int>> UpdateTaskAsync(string organizationUrl, string projectName, string personalAccessToken, int taskId, WorkItemCreateOptions options)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.UpdateTaskAsync(taskId, options);
         }
 
         [McpServerTool, Description("Deletes a work item by its identifier.")]
-        public static Task DeleteWorkItemAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        public static Task<AzureDevOpsActionResult<bool>> DeleteWorkItemAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.DeleteWorkItemAsync(workItemId);
         }
 
         [McpServerTool, Description("Retrieves a work item by its identifier.")]
-        public static Task<WorkItem?> GetWorkItemAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        public static Task<AzureDevOpsActionResult<WorkItem>> GetWorkItemAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetWorkItemAsync(workItemId);
         }
 
         [McpServerTool, Description("Runs a WIQL query and returns matching work items.")]
-        public static Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WorkItem>>> QueryWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.QueryWorkItemsAsync(wiql);
@@ -140,21 +140,21 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Adds a relation link between two work items.")]
-        public static Task AddLinkAsync(string organizationUrl, string projectName, string personalAccessToken, int fromId, int toId, string linkType)
+        public static Task<AzureDevOpsActionResult<bool>> AddLinkAsync(string organizationUrl, string projectName, string personalAccessToken, int fromId, int toId, string linkType)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.AddLinkAsync(fromId, toId, linkType);
         }
 
         [McpServerTool, Description("Removes a relation link from a work item.")]
-        public static Task RemoveLinkAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string linkUrl)
+        public static Task<AzureDevOpsActionResult<bool>> RemoveLinkAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string linkUrl)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.RemoveLinkAsync(workItemId, linkUrl);
         }
 
         [McpServerTool, Description("Lists links associated with a work item.")]
-        public static Task<IReadOnlyList<WorkItemRelation>> GetLinksAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>> GetLinksAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetLinksAsync(workItemId);
@@ -189,7 +189,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Links a work item to a pull request.")]
-        public static Task LinkWorkItemToPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string projectId, string repositoryId, int pullRequestId, int workItemId)
+        public static Task<AzureDevOpsActionResult<bool>> LinkWorkItemToPullRequestAsync(string organizationUrl, string projectName, string personalAccessToken, string projectId, string repositoryId, int pullRequestId, int workItemId)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.LinkWorkItemToPullRequestAsync(projectId, repositoryId, pullRequestId, workItemId);
@@ -237,22 +237,23 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             return client.ListAreasAsync(teamContext);
         }
 
+
         [McpServerTool, Description("Reads a custom field value from a work item.")]
-        public static Task<object?> GetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName)
+        public static Task<AzureDevOpsActionResult<object>> GetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetCustomFieldAsync(workItemId, fieldName);
         }
 
         [McpServerTool, Description("Sets a custom field on a work item.")]
-        public static Task SetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName, string value)
+        public static Task<AzureDevOpsActionResult<WorkItem>> SetCustomFieldAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, string fieldName, string value)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.SetCustomFieldAsync(workItemId, fieldName, value);
         }
 
         [McpServerTool, Description("Creates a custom field if it doesn't already exist.")]
-        public static Task<WorkItemField2> CreateCustomFieldIfDoesntExistAsync(
+        public static Task<AzureDevOpsActionResult<WorkItemField2>> CreateCustomFieldIfDoesntExistAsync(
             string organizationUrl,
             string projectName,
             string personalAccessToken,
@@ -274,7 +275,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Gets a count of work items matching a WIQL query.")]
-        public static Task<int> GetWorkItemCountAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql)
+        public static Task<AzureDevOpsActionResult<int>> GetWorkItemCountAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetWorkItemCountAsync(wiql);
@@ -288,7 +289,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Create a new work item with arbitrary fields.")]
-        public static Task<WorkItem?> CreateWorkItemAsync(
+        public static Task<AzureDevOpsActionResult<WorkItem>> CreateWorkItemAsync(
             string organizationUrl,
             string projectName,
             string personalAccessToken,
@@ -300,7 +301,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Update a work item with arbitrary field operations.")]
-        public static Task<WorkItem?> UpdateWorkItemAsync(
+        public static Task<AzureDevOpsActionResult<WorkItem>> UpdateWorkItemAsync(
             string organizationUrl,
             string projectName,
             string personalAccessToken,
@@ -312,14 +313,14 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Get a work item type definition.")]
-        public static Task<WorkItemType> GetWorkItemTypeAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType)
+        public static Task<AzureDevOpsActionResult<WorkItemType>> GetWorkItemTypeAsync(string organizationUrl, string projectName, string personalAccessToken, string workItemType)
         {
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetWorkItemTypeAsync(projectName, workItemType);
         }
 
         [McpServerTool, Description("Retrieve a query by ID or path.")]
-        public static Task<QueryHierarchyItem> GetQueryAsync(
+        public static Task<AzureDevOpsActionResult<QueryHierarchyItem>> GetQueryAsync(
             string organizationUrl,
             string projectName,
             string personalAccessToken,
@@ -334,7 +335,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
         }
 
         [McpServerTool, Description("Retrieve query results by ID.")]
-        public static Task<WorkItemQueryResult> GetQueryResultsByIdAsync(
+        public static Task<AzureDevOpsActionResult<WorkItemQueryResult>> GetQueryResultsByIdAsync(
             string organizationUrl,
             string projectName,
             string personalAccessToken,

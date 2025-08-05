@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Boards.Options;
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
@@ -10,87 +11,121 @@ namespace Dotnet.AzureDevOps.Core.Boards
 {
     public partial class WorkItemsClient
     {
-        public Task<int?> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
             CreateWorkItemAsync(
                 workItemType: "Epic",
                 options: workItemCreateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> CreateFeatureAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> CreateFeatureAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
             CreateWorkItemAsync(
                 workItemType: "Feature",
                 options: workItemCreateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> CreateUserStoryAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> CreateUserStoryAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
             CreateWorkItemAsync(
                 workItemType: "User Story",
                 options: workItemCreateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> CreateTaskAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> CreateTaskAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
             CreateWorkItemAsync(
                 workItemType: "Task",
                 options: workItemCreateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
             UpdateWorkItemAsync(
                 workItemId: epicId,
                 options: updateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
             UpdateWorkItemAsync(
                 workItemId: featureId,
                 options: updateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
             UpdateWorkItemAsync(
                 workItemId: userStoryId,
                 options: updateOptions,
                 cancellationToken: cancellationToken);
 
-        public Task<int?> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
+        public Task<AzureDevOpsActionResult<int>> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
             UpdateWorkItemAsync(
                 workItemId: taskId,
                 options: updateOptions,
                 cancellationToken: cancellationToken);
 
-        public async Task DeleteWorkItemAsync(int workItemId, CancellationToken cancellationToken = default) =>
-            await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
-
-        private async Task<int?> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options, bool validateOnly = false, bool bypassRules = false,
-            bool suppressNotifications = false, WorkItemExpand? expand = null, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteWorkItemAsync(int workItemId, CancellationToken cancellationToken = default)
         {
-            JsonPatchDocument patchDocument = BuildPatchDocument(options);
-
-            WorkItem newWorkItem = await _workItemClient.CreateWorkItemAsync(
-                document: patchDocument,
-                project: _projectName,
-                type: workItemType,
-                validateOnly: validateOnly,
-                bypassRules: bypassRules,
-                suppressNotifications: suppressNotifications,
-                expand: expand,
-                cancellationToken: cancellationToken
-            );
-
-            return newWorkItem.Id;
+            try
+            {
+                await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<bool>.Success(true);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<bool>.Failure(ex);
+            }
         }
 
-        private async Task<int?> UpdateWorkItemAsync(int workItemId, WorkItemCreateOptions options, CancellationToken cancellationToken = default)
+        private async Task<AzureDevOpsActionResult<int>> CreateWorkItemAsync(string workItemType, WorkItemCreateOptions options, bool validateOnly = false, bool bypassRules = false,
+            bool suppressNotifications = false, WorkItemExpand? expand = null, CancellationToken cancellationToken = default)
         {
-            JsonPatchDocument patchDocument = BuildPatchDocument(options);
+            try
+            {
+                JsonPatchDocument patchDocument = BuildPatchDocument(options);
 
-            WorkItem updatedWorkItem = await _workItemClient.UpdateWorkItemAsync(
-                document: patchDocument,
-                id: workItemId,
-                cancellationToken: cancellationToken
-            );
+                WorkItem newWorkItem = await _workItemClient.CreateWorkItemAsync(
+                    document: patchDocument,
+                    project: _projectName,
+                    type: workItemType,
+                    validateOnly: validateOnly,
+                    bypassRules: bypassRules,
+                    suppressNotifications: suppressNotifications,
+                    expand: expand,
+                    cancellationToken: cancellationToken
+                );
 
-            return updatedWorkItem.Id;
+                if(newWorkItem.Id.HasValue)
+                {
+                    return AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value);
+                }
+
+                return AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.");
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex);
+            }
+        }
+
+        private async Task<AzureDevOpsActionResult<int>> UpdateWorkItemAsync(int workItemId, WorkItemCreateOptions options, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                JsonPatchDocument patchDocument = BuildPatchDocument(options);
+
+                WorkItem updatedWorkItem = await _workItemClient.UpdateWorkItemAsync(
+                    document: patchDocument,
+                    id: workItemId,
+                    cancellationToken: cancellationToken
+                );
+
+                if(updatedWorkItem.Id.HasValue)
+                {
+                    return AzureDevOpsActionResult<int>.Success(updatedWorkItem.Id.Value);
+                }
+
+                return AzureDevOpsActionResult<int>.Failure("Work item update returned null identifier.");
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex);
+            }
         }
 
         /// <summary>
@@ -124,7 +159,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         private JsonPatchDocument BuildPatchDocument(WorkItemCreateOptions workItemCreateOptions)
         {
-            var patchDocument = new JsonPatchDocument();
+            JsonPatchDocument patchDocument = new JsonPatchDocument();
 
             // Strings
             AddStringField(patchDocument, workItemCreateOptions.Title, "/fields/System.Title");
@@ -160,81 +195,103 @@ namespace Dotnet.AzureDevOps.Core.Boards
             return patchDocument;
         }
 
-        public async Task<WorkItem?> CreateWorkItemAsync(string workItemType, IEnumerable<WorkItemFieldValue> fields, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<WorkItem>> CreateWorkItemAsync(string workItemType, IEnumerable<WorkItemFieldValue> fields, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(workItemType);
-            ArgumentNullException.ThrowIfNull(fields);
-
-            JsonPatchDocument patchDocument = new JsonPatchDocument();
-
-            foreach(WorkItemFieldValue field in fields)
+            try
             {
-                patchDocument.Add(new JsonPatchOperation
-                {
-                    Operation = Operation.Add,
-                    Path = $"/fields/{field.Name}",
-                    Value = field.Value
-                });
+                ArgumentException.ThrowIfNullOrWhiteSpace(workItemType);
+                ArgumentNullException.ThrowIfNull(fields);
 
-                if(!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
+                JsonPatchDocument patchDocument = new JsonPatchDocument();
+
+                foreach(WorkItemFieldValue field in fields)
                 {
                     patchDocument.Add(new JsonPatchOperation
                     {
                         Operation = Operation.Add,
-                        Path = $"/multilineFieldsFormat/{field.Name}",
-                        Value = field.Format
+                        Path = $"/fields/{field.Name}",
+                        Value = field.Value
                     });
+
+                    if(!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
+                    {
+                        patchDocument.Add(new JsonPatchOperation
+                        {
+                            Operation = Operation.Add,
+                            Path = $"/multilineFieldsFormat/{field.Name}",
+                            Value = field.Format
+                        });
+                    }
                 }
+
+                WorkItem workItem = await _workItemClient.CreateWorkItemAsync(
+                    document: patchDocument,
+                    project: _projectName,
+                    type: workItemType,
+                    cancellationToken: cancellationToken);
+
+                return AzureDevOpsActionResult<WorkItem>.Success(workItem);
             }
-
-            WorkItem workItem = await _workItemClient.CreateWorkItemAsync(
-                document: patchDocument,
-                project: _projectName,
-                type: workItemType,
-                cancellationToken: cancellationToken);
-
-            return workItem;
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex);
+            }
         }
 
-        public async Task<WorkItem?> UpdateWorkItemAsync(int workItemId, IEnumerable<WorkItemFieldUpdate> updates, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<WorkItem>> UpdateWorkItemAsync(int workItemId, IEnumerable<WorkItemFieldUpdate> updates, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(updates);
-
-            JsonPatchDocument patchDocument = new JsonPatchDocument();
-
-            foreach(WorkItemFieldUpdate update in updates)
+            try
             {
-                patchDocument.Add(new JsonPatchOperation
-                {
-                    Operation = update.Operation,
-                    Path = update.Path,
-                    Value = update.Value
-                });
+                ArgumentNullException.ThrowIfNull(updates);
 
-                if(!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
+                JsonPatchDocument patchDocument = new JsonPatchDocument();
+
+                foreach(WorkItemFieldUpdate update in updates)
                 {
-                    string formatPath = $"/multilineFieldsFormat{update.Path.Replace("/fields", string.Empty, StringComparison.OrdinalIgnoreCase)}";
                     patchDocument.Add(new JsonPatchOperation
                     {
-                        Operation = Operation.Add,
-                        Path = formatPath,
-                        Value = update.Format
+                        Operation = update.Operation,
+                        Path = update.Path,
+                        Value = update.Value
                     });
+
+                    if(!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
+                    {
+                        string formatPath = $"/multilineFieldsFormat{update.Path.Replace("/fields", string.Empty, StringComparison.OrdinalIgnoreCase)}";
+                        patchDocument.Add(new JsonPatchOperation
+                        {
+                            Operation = Operation.Add,
+                            Path = formatPath,
+                            Value = update.Format
+                        });
+                    }
                 }
+
+                WorkItem result = await _workItemClient.UpdateWorkItemAsync(
+                    document: patchDocument,
+                    id: workItemId,
+                    cancellationToken: cancellationToken);
+
+                return AzureDevOpsActionResult<WorkItem>.Success(result);
             }
-
-            WorkItem result = await _workItemClient.UpdateWorkItemAsync(
-                document: patchDocument,
-                id: workItemId,
-                cancellationToken: cancellationToken);
-
-            return result;
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex);
+            }
         }
 
-        public async Task<object?> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<object>> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default)
         {
-            WorkItem? item = await GetWorkItemAsync(workItemId, cancellationToken);
-            return item == null || !item.Fields.TryGetValue(fieldName, out object? value) ? null : value;
+            AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
+            if(!itemResult.IsSuccessful)
+            {
+                return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!);
+            }
+
+            WorkItem item = itemResult.Value;
+            return item.Fields.TryGetValue(fieldName, out object? value)
+                ? AzureDevOpsActionResult<object>.Success(value)
+                : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.");
         }
 
         /// <summary>
@@ -245,42 +302,57 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <param name="value"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<WorkItem> SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<WorkItem>> SetCustomFieldAsync(int workItemId, string fieldName, string value, CancellationToken cancellationToken = default)
         {
-            var patch = new JsonPatchDocument
+            try
             {
-                new JsonPatchOperation
+                JsonPatchDocument patch = new JsonPatchDocument
                 {
-                    Operation = Operation.Replace,
-                    Path = $"/fields/{fieldName}",
-                    Value = value
-                }
-            };
+                    new JsonPatchOperation
+                    {
+                        Operation = Operation.Replace,
+                        Path = $"/fields/{fieldName}",
+                        Value = value
+                    }
+                };
 
-            return await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                WorkItem result = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<WorkItem>.Success(result);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex);
+            }
         }
 
-        public async Task<WorkItemField2> CreateCustomFieldIfDoesntExistAsync(string fieldName, string referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type, string? description = null, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<WorkItemField2>> CreateCustomFieldIfDoesntExistAsync(string fieldName, string referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type, string? description = null, CancellationToken cancellationToken = default)
         {
-            var field = new WorkItemField2
+            WorkItemField2 field = new WorkItemField2
             {
                 Name = fieldName,
                 ReferenceName = referenceName,
-                Type = type,                   // "string", "integer", "boolean", "dateTime", etc.
+                Type = type,
                 Description = description,
                 Usage = FieldUsage.WorkItem
             };
+
             try
             {
-                return await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
+                WorkItemField2 created = await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<WorkItemField2>.Success(created);
             }
             catch(VssServiceException ex)
             {
                 if(ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
                 {
-                    return field;
+                    return AzureDevOpsActionResult<WorkItemField2>.Success(field);
                 }
-                throw;
+
+                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex);
             }
         }
     }

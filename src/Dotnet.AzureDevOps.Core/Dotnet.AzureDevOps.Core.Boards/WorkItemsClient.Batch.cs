@@ -14,11 +14,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<int> createdIds = new List<int>();
+                var createdIds = new List<int>();
                 foreach(WorkItemCreateOptions itemOptions in items)
                 {
-                    int? id = await CreateWorkItemAsync(workItemType, itemOptions, cancellationToken: cancellationToken);
-                    if(id.HasValue)
+                    AzureDevOpsActionResult<int> id = await CreateWorkItemAsync(workItemType, itemOptions, cancellationToken: cancellationToken);
+                    if(id.IsSuccessful)
                     {
                         createdIds.Add(id.Value);
                     }
