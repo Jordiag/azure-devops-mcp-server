@@ -46,7 +46,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             int planId = createResult.Value;
             _createdPlanIds.Add(planId);
 
-            AzureDevOpsActionResult<TestPlan?> readResult = await _testPlansClient.GetTestPlanAsync(planId);
+            AzureDevOpsActionResult<TestPlan> readResult = await _testPlansClient.GetTestPlanAsync(planId);
             Assert.True(readResult.IsSuccessful);
             TestPlan? read = readResult.Value;
             Assert.NotNull(read);
@@ -61,7 +61,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             Assert.True(deleteResult.IsSuccessful);
             _createdPlanIds.Remove(planId);
 
-            AzureDevOpsActionResult<TestPlan?> afterDeleteResult = await _testPlansClient.GetTestPlanAsync(planId);
+            AzureDevOpsActionResult<TestPlan> afterDeleteResult = await _testPlansClient.GetTestPlanAsync(planId);
             Assert.False(afterDeleteResult.IsSuccessful);
             Assert.Null(afterDeleteResult.Value);
         }
@@ -115,7 +115,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             Assert.True(rootResult.IsSuccessful);
             TestSuite rootSuite = rootResult.Value!;
 
-            AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem?> testCaseResult =
+            AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem> testCaseResult =
                 await _testPlansClient.CreateTestCaseAsync(
                     new TestCaseCreateOptions
                     {

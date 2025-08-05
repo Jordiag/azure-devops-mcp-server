@@ -115,6 +115,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
 
         // Wait for the build to complete
         Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 120, 500);
+        Assert.NotNull(queuedBuildIdCompleted);
         Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded , "Build did not complete in time.");
 
         // Download and validate the console log
@@ -240,8 +241,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         }
         catch(TimeoutException)
         {
-            AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
-            build = runResult.IsSuccessful ? runResult.Value : null;
+            return null;
         }
         return build;
     }

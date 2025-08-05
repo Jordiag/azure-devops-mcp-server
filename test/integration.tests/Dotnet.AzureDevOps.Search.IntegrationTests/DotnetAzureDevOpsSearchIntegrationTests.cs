@@ -60,7 +60,21 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
                 return false;
             }
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
-        Guid wikiId = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
+
+        Guid wikiId = Guid.Empty;
+        await WaitHelper.WaitUntilAsync(async () =>
+        {
+            try
+            {
+                wikiId = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
         _createdWikis.Add(wikiId);
 
         string wikiPath = $"/Home-{UtcStamp()}.md";
