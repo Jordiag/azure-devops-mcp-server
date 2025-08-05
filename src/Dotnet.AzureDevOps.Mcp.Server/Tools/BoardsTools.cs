@@ -407,5 +407,70 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
             WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
             return client.GetWorkItemsBatchByIdsAsync(ids, expand, fields);
         }
+
+        [McpServerTool, Description("Assigns iterations to a team.")]
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>> AssignIterationsAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            TeamContext teamContext,
+            IEnumerable<IterationAssignmentOptions> iterations)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.AssignIterationsAsync(teamContext, iterations);
+        }
+
+        [McpServerTool, Description("Creates iterations under the project.")]
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>> CreateIterationsAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<IterationCreateOptions> iterations)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CreateIterationsAsync(projectName, iterations);
+        }
+
+        [McpServerTool, Description("Creates a shared WIQL query.")]
+        public static Task<AzureDevOpsActionResult<bool>> CreateSharedQueryAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            string queryName, string wiql)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.CreateSharedQueryAsync(projectName, queryName, wiql);
+        }
+
+        [McpServerTool, Description("Deletes a shared WIQL query.")]
+        public static Task<AzureDevOpsActionResult<bool>> DeleteSharedQueryAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            string queryName)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.DeleteSharedQueryAsync(projectName, queryName);
+        }
+
+        [McpServerTool, Description("Executes a batch of work item requests.")]
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> ExecuteBatchAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<WitBatchRequest> requests)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.ExecuteBatchAsync(requests);
+        }
+
+        [McpServerTool, Description("Updates multiple work items in a batch.")]
+        public static Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> UpdateWorkItemsBatchAsync(
+            string organizationUrl, string projectName, string personalAccessToken,
+            IEnumerable<(int id, WorkItemCreateOptions options)> updates,
+            bool suppressNotifications = true,
+            bool bypassRules = false)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.UpdateWorkItemsBatchAsync(updates, suppressNotifications, bypassRules);
+        }
+
+        [McpServerTool, Description("Checks whether the current process is system-defined.")]
+        public static Task<AzureDevOpsActionResult<bool>> IsSystemProcessAsync(
+            string organizationUrl, string projectName, string personalAccessToken)
+        {
+            WorkItemsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+            return client.IsSystemProcessAsync();
+        }
     }
 }

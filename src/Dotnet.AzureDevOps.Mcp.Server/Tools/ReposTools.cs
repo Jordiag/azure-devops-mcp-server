@@ -389,4 +389,33 @@ public class ReposTools
             throw new InvalidOperationException(result.ErrorMessage ?? "Failed to get latest commits.");
         return result.Value ?? [];
     }
+
+    [McpServerTool, Description("Adds a reviewer to a pull request.")]
+    public static async Task AddReviewerAsync(string organizationUrl, string projectName, string personalAccessToken, string repositoryId, int pullRequestId, (string localId, string name) reviewer)
+    {
+        AzureDevOpsActionResult<bool> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .AddReviewerAsync(repositoryId, pullRequestId, reviewer);
+        if(!result.IsSuccessful)
+            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to add reviewer.");
+    }
+
+    [McpServerTool, Description("Commits a new file to a repository.")]
+    public static async Task<string> CommitAddFileAsync(string organizationUrl, string projectName, string personalAccessToken, FileCommitOptions options)
+    {
+        AzureDevOpsActionResult<string> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .CommitAddFileAsync(options);
+        if(!result.IsSuccessful)
+            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to commit file.");
+        return result.Value;
+    }
+
+    [McpServerTool, Description("Retrieves a repository by identifier.")]
+    public static async Task<GitRepository?> GetRepositoryAsync(string organizationUrl, string projectName, string personalAccessToken, Guid repositoryId)
+    {
+        AzureDevOpsActionResult<GitRepository> result = await CreateClient(organizationUrl, projectName, personalAccessToken)
+            .GetRepositoryAsync(repositoryId);
+        if(!result.IsSuccessful)
+            return null;
+        return result.Value;
+    }
 }

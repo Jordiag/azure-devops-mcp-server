@@ -3,6 +3,8 @@ using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.VisualStudio.Services.TestResults.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 using ModelContextProtocol.Server;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
@@ -92,5 +94,19 @@ public class TestPlansTools
         if(!result.IsSuccessful)
             return null;
         return result.Value;
+    }
+
+    [McpServerTool, Description("Lists test cases in a suite.")]
+    public static Task<AzureDevOpsActionResult<PagedList<TestCase>>> ListTestCasesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, int testSuiteId)
+    {
+        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.ListTestCasesAsync(testPlanId, testSuiteId);
+    }
+
+    [McpServerTool, Description("Gets test results for a build.")]
+    public static Task<AzureDevOpsActionResult<TestResultsDetails>> GetTestResultsForBuildAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId)
+    {
+        TestPlansClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        return client.GetTestResultsForBuildAsync(projectName, buildId);
     }
 }

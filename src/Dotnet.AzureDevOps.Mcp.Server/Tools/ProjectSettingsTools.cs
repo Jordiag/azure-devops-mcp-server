@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Dotnet.AzureDevOps.Core.Common;
@@ -99,5 +100,25 @@ public static class ProjectSettingsTools
         AzureDevOpsActionResult<bool> result = await client.DeleteProjectAsync(projectId);
         if(!result.IsSuccessful)
             throw new InvalidOperationException(result.ErrorMessage ?? "Failed to delete project.");
+    }
+
+    [McpServerTool, Description("Lists all teams in the organization.")]
+    public static async Task<IReadOnlyList<WebApiTeam>> GetAllTeamsAsync(string organizationUrl, string projectName, string personalAccessToken)
+    {
+        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        AzureDevOpsActionResult<List<WebApiTeam>> result = await client.GetAllTeamsAsync();
+        if(!result.IsSuccessful)
+            throw new InvalidOperationException(result.ErrorMessage ?? "Failed to list teams.");
+        return result.Value ?? [];
+    }
+
+    [McpServerTool, Description("Retrieves a project by name.")]
+    public static async Task<TeamProject?> GetProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string targetProjectName)
+    {
+        ProjectSettingsClient client = CreateClient(organizationUrl, projectName, personalAccessToken);
+        AzureDevOpsActionResult<TeamProject> result = await client.GetProjectAsync(targetProjectName);
+        if(!result.IsSuccessful)
+            return null;
+        return result.Value;
     }
 }
