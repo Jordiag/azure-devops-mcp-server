@@ -140,11 +140,13 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         [Fact]
         public async Task TestResultsForQueuedBuild_ReturnsDetailsAsync()
         {
-            int buildId = await _pipelinesClient.QueueRunAsync(new BuildQueueOptions
+            AzureDevOpsActionResult<int> queueResult = await _pipelinesClient.QueueRunAsync(new BuildQueueOptions
             {
                 DefinitionId = _azureDevOpsConfiguration.PipelineDefinitionId,
                 Branch = _azureDevOpsConfiguration.BuildBranch
             });
+            Assert.True(queueResult.IsSuccessful);
+            int buildId = queueResult.Value;
             _queuedBuildIds.Add(buildId);
 
             AzureDevOpsActionResult<TestResultsDetails> detailsResult = await _testPlansClient.GetTestResultsForBuildAsync(
@@ -178,9 +180,10 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             {
                 try
                 {
-                    Build? build = await _pipelinesClient.GetRunAsync(buildId);
+                    AzureDevOpsActionResult<Build> runResult = await _pipelinesClient.GetRunAsync(buildId);
+                    Build? build = runResult.IsSuccessful ? runResult.Value : null;
                     if(build != null && build.Status == BuildStatus.InProgress)
-                        await _pipelinesClient.CancelRunAsync(buildId, build.Project);
+                        _ = await _pipelinesClient.CancelRunAsync(buildId, build.Project);
                 }
                 catch
                 {
