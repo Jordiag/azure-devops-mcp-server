@@ -232,15 +232,37 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         {
             await WaitHelper.WaitUntilAsync(async () =>
             {
+                Console.WriteLine($"buildId: {buildId}");
                 AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
                 if (!runResult.IsSuccessful)
                     return false;
                 build = runResult.Value;
-                return build?.Result is BuildResult.Succeeded;
+                if (build?.Result is BuildResult.Succeeded)
+                {
+                    Console.WriteLine($"Build {buildId} completed successfully.");
+                    return true;
+                }
+                else if (build?.Result is BuildResult.Failed)
+                {
+                    Console.WriteLine($"Build {buildId} failed.");
+                    return true;
+                }
+                else if (build?.Status is BuildStatus.InProgress or BuildStatus.NotStarted)
+                {
+                    Console.WriteLine($"Build {buildId} is still in progress or not started yet.");
+                    return false;
+                }
+                else
+                {
+                     Console.WriteLine($"Build {buildId} completed with unexpected status: {build?.Status} and result: {build?.Result}.");
+                    return true; // Treat other statuses as completion
+                }
+
             }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
         }
         catch(TimeoutException)
         {
+            Console.WriteLine($"Build timeout.");
             return null;
         }
         return build;
