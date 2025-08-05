@@ -114,7 +114,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         _queuedBuildIds.Add(queuedBuildId);
 
         // Wait for the build to complete
-        Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 120, 500);
+        Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 600, 1000);
         Assert.NotNull(queuedBuildIdCompleted);
         Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded , "Build did not complete in time.");
 
@@ -232,37 +232,15 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         {
             await WaitHelper.WaitUntilAsync(async () =>
             {
-                Console.WriteLine($"buildId: {buildId}");
                 AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
                 if (!runResult.IsSuccessful)
                     return false;
                 build = runResult.Value;
-                if (build?.Result is BuildResult.Succeeded)
-                {
-                    Console.WriteLine($"Build {buildId} completed successfully.");
-                    return true;
-                }
-                else if (build?.Result is BuildResult.Failed)
-                {
-                    Console.WriteLine($"Build {buildId} failed.");
-                    return true;
-                }
-                else if (build?.Status is BuildStatus.InProgress or BuildStatus.NotStarted)
-                {
-                    Console.WriteLine($"Build {buildId} is still in progress or not started yet.");
-                    return false;
-                }
-                else
-                {
-                     Console.WriteLine($"Build {buildId} completed with unexpected status: {build?.Status} and result: {build?.Result}.");
-                    return true; // Treat other statuses as completion
-                }
-
+                return build?.Result is BuildResult.Succeeded;
             }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
         }
         catch(TimeoutException)
         {
-            Console.WriteLine($"Build timeout.");
             return null;
         }
         return build;
