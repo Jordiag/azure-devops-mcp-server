@@ -107,7 +107,20 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             };
 
-            Guid id = await _wikiClient.CreateWikiAsync(create);
+            Guid id = Guid.Empty;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                try
+                {
+                    id = await _wikiClient.CreateWikiAsync(create);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
             _createdWikis.Add(id);
 
             const string path = "/Home.md";
@@ -196,8 +209,8 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Assert.NotNull(projectSummary);
 
             IReadOnlyList<WikiV2> wikis = await _wikiClient.ListWikisAsync();
-            Guid wikiId;
-            string wikiname;
+            Guid wikiId = Guid.Empty;
+            string wikiName;
             if(wikis.Count == 0)
             {
                 var wikiOptions = new WikiCreateOptions
@@ -213,12 +226,25 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                     },
                     MappedPath = $"/",
                 };
-                wikiname = wikiOptions.Name;
-                wikiId = await _wikiClient.CreateWikiAsync(wikiOptions);
+                wikiName = wikiOptions.Name;
+
+                await WaitHelper.WaitUntilAsync(async () =>
+                {
+                    try
+                    {
+                        wikiId = await _wikiClient.CreateWikiAsync(wikiOptions);
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
             }
             else
             {
-                wikiname = wikis[0].Name;
+                wikiName = wikis[0].Name;
                 wikiId = wikis[0].Id;
             }
             _createdWikis.Add(wikiId);
@@ -256,7 +282,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             {
                 SearchText = "Searchable",
                 Project = [_azureDevOpsConfiguration.ProjectName],
-                Wiki = [wikiname],
+                Wiki = [wikiName],
                 IncludeFacets = false,
                 Skip = 0,
                 Top = 1

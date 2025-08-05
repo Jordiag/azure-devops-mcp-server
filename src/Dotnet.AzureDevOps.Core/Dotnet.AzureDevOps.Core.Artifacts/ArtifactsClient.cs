@@ -51,6 +51,51 @@ public class ArtifactsClient : IArtifactsClient
         }
     }
 
+    public async Task<AzureDevOpsActionResult<RetentionPolicyResult>> SetRetentionPolicyAsync(
+        Guid feedId,
+        int daysToKeep,
+        string[] packageTypes,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            RetentionPolicyResult? retentionPolicyResult = null;
+            string retentionUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/retentionpolicies?api-version=7.1-preview.1";
+
+            var payload = new
+            {
+                retentionPolicy = new
+                {
+                    daysToKeep = daysToKeep,
+                    deleteUnreferenced = true,
+                    applyToAllVersions = true,
+                    packageTypes = packageTypes,
+                    filters = Array.Empty<object>()
+                }
+            };
+
+            HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(
+                _httpClient, retentionUrl, payload, cancellationToken);
+
+            if(response.IsSuccessStatusCode)
+            {
+                retentionPolicyResult = await response.Content.ReadFromJsonAsync<RetentionPolicyResult>(cancellationToken);
+                return retentionPolicyResult == null
+                    ? AzureDevOpsActionResult<RetentionPolicyResult>.Failure("Retention policy deserialization gave a null value on SetRetentionPolicy.")
+                    : AzureDevOpsActionResult<RetentionPolicyResult>.Success(retentionPolicyResult);
+            }
+            else
+            {
+                return AzureDevOpsActionResult<RetentionPolicyResult>.Failure(response.StatusCode, "Retention policy query failed on SetRetentionPolicy.");
+            }
+        }
+        catch(Exception ex)
+        {
+            return AzureDevOpsActionResult<RetentionPolicyResult>.Failure(ex);
+        }
+    }
+
+
     public async Task<AzureDevOpsActionResult<bool>> UpdateFeedAsync(Guid feedId, FeedUpdateOptions feedUpdateOptions, CancellationToken cancellationToken = default)
     {
         try
@@ -298,8 +343,9 @@ public class ArtifactsClient : IArtifactsClient
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
                 return AzureDevOpsActionResult<UpstreamingBehavior>.Failure(response.StatusCode, error);
             }
-            UpstreamingBehavior? behavior = await response.Content.ReadFromJsonAsync<UpstreamingBehavior>(cancellationToken);
-            return AzureDevOpsActionResult<UpstreamingBehavior>.Success(behavior!);
+            UpstreamingBehavior behavior = await response.Content.ReadFromJsonAsync<UpstreamingBehavior>(cancellationToken);
+
+            return AzureDevOpsActionResult<UpstreamingBehavior>.Success(behavior);
         }
         catch(Exception ex)
         {
@@ -378,7 +424,9 @@ public class ArtifactsClient : IArtifactsClient
                 return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(response.StatusCode, error);
             }
             FeedRetentionPolicy? policy = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken);
-            return AzureDevOpsActionResult<FeedRetentionPolicy>.Success(policy!);
+            return policy == null
+                ? AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(HttpStatusCode.NotFound, "No retention policy found for the specified feed.")
+                : AzureDevOpsActionResult<FeedRetentionPolicy>.Success(policy);
         }
         catch(Exception ex)
         {

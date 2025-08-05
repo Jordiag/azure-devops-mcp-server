@@ -151,25 +151,33 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Guid feedId = createResult.Value;
             _createdFeedIds.Add(feedId);
 
-            AzureDevOpsActionResult<FeedRetentionPolicy> policyResult = await _artifactsClient.GetRetentionPolicyAsync(feedId);
-            Assert.True(policyResult.IsSuccessful);
-            FeedRetentionPolicy policy = policyResult.Value;
+            FeedRetentionPolicy create = new FeedRetentionPolicy
+            {
+                AgeLimitInDays =  days - 1,
+                CountLimit = days - 1,
+                DaysToKeepRecentlyDownloadedPackages = days - 1
+            };
+
+            AzureDevOpsActionResult<FeedRetentionPolicy> feedRetentionPolicyResult = await _artifactsClient.SetRetentionPolicyAsync(feedId, create);
+            Assert.True(feedRetentionPolicyResult.IsSuccessful);
+
             FeedRetentionPolicy update = new FeedRetentionPolicy
             {
-                AgeLimitInDays = policy.AgeLimitInDays ?? days,
-                CountLimit = policy.CountLimit ?? days,
-                DaysToKeepRecentlyDownloadedPackages = policy.DaysToKeepRecentlyDownloadedPackages ?? days
+                AgeLimitInDays = 3000,
+                CountLimit = create.CountLimit,
+                DaysToKeepRecentlyDownloadedPackages = days
             };
 
             AzureDevOpsActionResult<FeedRetentionPolicy> updateResult = await _artifactsClient.SetRetentionPolicyAsync(feedId, update);
             Assert.True(updateResult.IsSuccessful);
 
-            policyResult = await _artifactsClient.GetRetentionPolicyAsync(feedId);
+            AzureDevOpsActionResult<FeedRetentionPolicy> policyResult = await _artifactsClient.GetRetentionPolicyAsync(feedId);
+
             Assert.True(policyResult.IsSuccessful);
             FeedRetentionPolicy updatedPolicy = policyResult.Value;
             Assert.Null(updatedPolicy.AgeLimitInDays);
-            Assert.Equal(days, updatedPolicy.CountLimit);
-            Assert.Equal(days, updatedPolicy.DaysToKeepRecentlyDownloadedPackages);
+            Assert.Equal(updatedPolicy.CountLimit, create.CountLimit);
+            Assert.Equal(updatedPolicy.DaysToKeepRecentlyDownloadedPackages, days);
         }
 
         [Fact]
