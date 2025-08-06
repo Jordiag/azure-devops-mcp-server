@@ -159,7 +159,7 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            var references = testCaseIds.Select(id => new WorkItem { Id = id }).ToList();
+            List<WorkItem> references = testCaseIds.Select(id => new WorkItem { Id = id }).ToList();
             var existingTestCases = new List<SuiteTestCaseCreateUpdateParameters>();
 
             foreach(WorkItem workItem in references)

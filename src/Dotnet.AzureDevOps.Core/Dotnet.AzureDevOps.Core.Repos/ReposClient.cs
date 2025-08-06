@@ -25,8 +25,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             _projectName = projectName;
             _organizationUrl = organizationUrl;
 
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
             _gitHttpClient = connection.GetClient<GitHttpClient>();
             _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
             string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));

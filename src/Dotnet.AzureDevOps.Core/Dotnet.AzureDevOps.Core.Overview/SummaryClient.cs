@@ -16,8 +16,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
         public SummaryClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
         {
             _projectName = projectName;
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
             _projectHttpClient = connection.GetClient<ProjectHttpClient>();
             _logger = logger ?? NullLogger.Instance;
         }

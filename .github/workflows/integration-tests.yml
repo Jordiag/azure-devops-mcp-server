@@ -118,7 +118,7 @@ jobs:
 
       - name: Run Tests with Coverage
         run: |
-          dotnet test "${{ env.solution }}" `
+          dotnet test "${{ env.solution }}" --logger:"console;verbosity=detailed"`
             -c "${{ env.buildConfiguration }}" `
             --filter "TestType!=End2End" `
             --no-restore --no-build `

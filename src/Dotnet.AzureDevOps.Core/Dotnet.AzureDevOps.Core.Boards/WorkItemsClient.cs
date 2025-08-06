@@ -35,8 +35,8 @@ namespace Dotnet.AzureDevOps.Core.Boards
             string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
 
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(_organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _workItemClient = connection.GetClient<WorkItemTrackingHttpClient>();
             _workClient = connection.GetClient<WorkHttpClient>();
         }

@@ -11,101 +11,93 @@ using Microsoft.Extensions.Logging;
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 
 /// <summary>
-/// Exposes Wiki operations through Model Context Protocol.
+/// Exposes Wiki and Overview operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
 public class OverviewTools
 {
-    private static WikiClient CreateWikiClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new(organizationUrl, projectName, personalAccessToken, logger);
+    private readonly IWikiClient _wikiClient;
+    private readonly ISummaryClient _summaryClient;
+    private readonly IDashboardClient _dashboardClient;
+    private readonly ILogger<OverviewTools> _logger;
 
-    private static SummaryClient CreateSummaryClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new(organizationUrl, projectName, personalAccessToken, logger);
-
-    private static DashboardClient CreateDashboardClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new(organizationUrl, projectName, personalAccessToken, logger);
+    public OverviewTools(IWikiClient wikiClient, ISummaryClient summaryClient, IDashboardClient dashboardClient, ILogger<OverviewTools> logger)
+    {
+        _wikiClient = wikiClient;
+        _summaryClient = summaryClient;
+        _dashboardClient = dashboardClient;
+        _logger = logger;
+    }
 
     [McpServerTool, Description("Creates a new wiki.")]
-    public static async Task<Guid> CreateWikiAsync(string organizationUrl, string projectName, string personalAccessToken, WikiCreateOptions options, ILogger? logger = null)
+    public async Task<Guid> CreateWikiAsync(WikiCreateOptions options)
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateWikiAsync(options)).EnsureSuccess();
+        return (await _wikiClient.CreateWikiAsync(options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Retrieves a wiki by identifier.")]
-    public static async Task<WikiV2> GetWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, ILogger? logger = null)
+    public async Task<WikiV2> GetWikiAsync(Guid wikiId)
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetWikiAsync(wikiId)).EnsureSuccess();
+        return (await _wikiClient.GetWikiAsync(wikiId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Lists wikis in the project.")]
-    public static async Task<IReadOnlyList<WikiV2>> ListWikisAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    public async Task<IReadOnlyList<WikiV2>> ListWikisAsync()
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListWikisAsync()).EnsureSuccess();
+        return (await _wikiClient.ListWikisAsync()).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Deletes a wiki.")]
-    public static async Task DeleteWikiAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, ILogger? logger = null)
+    public async Task<WikiV2> DeleteWikiAsync(Guid wikiId)
     {
-        (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteWikiAsync(wikiId)).EnsureSuccess();
+        return (await _wikiClient.DeleteWikiAsync(wikiId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Creates or updates a wiki page.")]
-    public static async Task<int> CreateOrUpdatePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPageUpdateOptions options, GitVersionDescriptor version, ILogger? logger = null)
+    public async Task<int> CreateOrUpdatePageAsync(Guid wikiId, WikiPageUpdateOptions options, GitVersionDescriptor gitVersionDescriptor)
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateOrUpdatePageAsync(wikiId, options, version)).EnsureSuccess();
+        return (await _wikiClient.CreateOrUpdatePageAsync(wikiId, options, gitVersionDescriptor)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Retrieves a wiki page.")]
-    public static async Task<WikiPageResponse> GetPageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path, ILogger? logger = null)
+    public async Task<WikiPageResponse> GetPageAsync(Guid wikiId, string path)
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetPageAsync(wikiId, path)).EnsureSuccess();
+        return (await _wikiClient.GetPageAsync(wikiId, path)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Deletes a wiki page.")]
-    public static async Task DeletePageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path, GitVersionDescriptor version, ILogger? logger = null)
+    public async Task<WikiPageResponse> DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor)
     {
-        (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeletePageAsync(wikiId, path, version)).EnsureSuccess();
+        return (await _wikiClient.DeletePageAsync(wikiId, path, gitVersionDescriptor)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists pages in a wiki.")]
-    public static async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, WikiPagesBatchOptions options, ILogger? logger = null)
+    [McpServerTool, Description("Lists wiki pages.")]
+    public async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(Guid wikiId, WikiPagesBatchOptions options, GitVersionDescriptor? versionDescriptor = null)
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListPagesAsync(wikiId, options)).EnsureSuccess();
+        return (await _wikiClient.ListPagesAsync(wikiId, options, versionDescriptor)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets wiki page content.")]
-    public static async Task<string> GetPageTextAsync(string organizationUrl, string projectName, string personalAccessToken, Guid wikiId, string path, ILogger? logger = null)
+    [McpServerTool, Description("Gets wiki page text content.")]
+    public async Task<string> GetPageTextAsync(Guid wikiId, string path)
     {
-        return (await CreateWikiClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetPageTextAsync(wikiId, path)).EnsureSuccess();
+        return (await _wikiClient.GetPageTextAsync(wikiId, path)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves project summary information.")]
-    public static async Task<TeamProject> GetProjectSummaryAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    [McpServerTool, Description("Gets project summary information.")]
+    public async Task<TeamProject> GetProjectSummaryAsync()
     {
-        return (await CreateSummaryClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetProjectSummaryAsync()).EnsureSuccess();
+        return (await _summaryClient.GetProjectSummaryAsync()).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists dashboards under the project.")]
-    public static async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    [McpServerTool, Description("Retrieves a dashboard.")]
+    public async Task<Dashboard> GetDashboardAsync(Guid dashboardId, string teamName)
     {
-        return (await CreateDashboardClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListDashboardsAsync()).EnsureSuccess();
+        return (await _dashboardClient.GetDashboardAsync(dashboardId, teamName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves a dashboard by identifier and team name.")]
-    public static async Task<Dashboard> GetDashboardAsync(string organizationUrl, string projectName, string personalAccessToken, Guid dashboardId, string teamName, ILogger? logger = null)
+    [McpServerTool, Description("Lists dashboards.")]
+    public async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync()
     {
-        return (await CreateDashboardClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetDashboardAsync(dashboardId, teamName)).EnsureSuccess();
+        return (await _dashboardClient.ListDashboardsAsync()).EnsureSuccess(_logger);
     }
 }

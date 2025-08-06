@@ -23,7 +23,7 @@ public partial class PipelinesClient : IPipelinesClient
         _projectName = projectName;
         _logger = logger ?? NullLogger.Instance;
 
-        var connection = new VssConnection(new Uri(organizationUrl),
+        VssConnection connection = new VssConnection(new Uri(organizationUrl),
             new VssBasicCredential(string.Empty, personalAccessToken));
         _build = connection.GetClient<BuildHttpClient>();
     }
@@ -183,7 +183,7 @@ public partial class PipelinesClient : IPipelinesClient
             using var zipArchive = new ZipArchive(buildLogsStream);
 
             // Find all script-related log entries in the correct order
-            var logEntries = zipArchive.Entries
+            List<ZipArchiveEntry> logEntries = zipArchive.Entries
                 .Where(e =>
                     e.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) &&
                     (e.FullName.Contains("Run a one-line script", StringComparison.OrdinalIgnoreCase) ||

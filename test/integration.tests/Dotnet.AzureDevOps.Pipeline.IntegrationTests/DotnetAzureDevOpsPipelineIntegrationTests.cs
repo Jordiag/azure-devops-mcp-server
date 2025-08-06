@@ -114,7 +114,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         _queuedBuildIds.Add(queuedBuildId);
 
         // Wait for the build to complete
-        Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 600, 1000);
+        Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 600, 1000, BuildResult.Succeeded);
         Assert.NotNull(queuedBuildIdCompleted);
         Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded , "Build did not complete in time.");
 
@@ -179,7 +179,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         Assert.Contains(list, d => d.Id == _definitionId);
     }
 
-    [Fact(Skip = "fails flaky in pipelines, skip for now")]
+    [Fact]
     public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
     {
         BuildQueueOptions queueOptions = new BuildQueueOptions
@@ -193,13 +193,13 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         int buildId = queueResult.Value;
         _queuedBuildIds.Add(buildId);
 
-        Build? build = await WaitForBuildStatusAsync(buildId, BuildStatus.InProgress, 20, 500);
+        Build? build = await WaitForBuildStatusAsync(buildId, BuildStatus.InProgress, 300, 1000);
         Assert.NotNull(build);
 
         AzureDevOpsActionResult<bool> updateResult = await _pipelines.UpdateBuildStageAsync(buildId, "SimpleStage", StageUpdateType.Cancel);
         Assert.True(updateResult.IsSuccessful);
 
-        build = await WaitForBuildToCompleteAsync(buildId, 20, 500);
+        build = await WaitForBuildToCompleteAsync(buildId, 300, 1000, BuildResult.Canceled);
         Assert.NotNull(build);
         Assert.Equal(BuildResult.Canceled, build!.Result);
     }
@@ -225,7 +225,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         return build;
     }
 
-    private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs)
+    private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs, BuildResult buildResult)
     {
         Build? build = null;
         try
@@ -236,7 +236,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
                 if (!runResult.IsSuccessful)
                     return false;
                 build = runResult.Value;
-                return build?.Result is BuildResult.Succeeded;
+                return build?.Result == buildResult;
             }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
         }
         catch(TimeoutException)

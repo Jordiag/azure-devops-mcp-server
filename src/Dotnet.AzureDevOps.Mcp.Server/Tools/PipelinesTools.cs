@@ -14,132 +14,120 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 [McpServerToolType]
 public class PipelinesTools
 {
-    private static PipelinesClient CreateClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new PipelinesClient(organizationUrl, projectName, personalAccessToken, logger);
+    private readonly IPipelinesClient _pipelinesClient;
+    private readonly ILogger<PipelinesTools> _logger;
+
+    public PipelinesTools(IPipelinesClient pipelinesClient, ILogger<PipelinesTools> logger)
+    {
+        _pipelinesClient = pipelinesClient;
+        _logger = logger;
+    }
 
     [McpServerTool, Description("Queues a new build run.")]
-    public static async Task<int> QueueRunAsync(string organizationUrl, string projectName, string personalAccessToken, BuildQueueOptions options, ILogger? logger = null)
+    public async Task<int> QueueRunAsync(BuildQueueOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .QueueRunAsync(options)).EnsureSuccess();
+        return (await _pipelinesClient.QueueRunAsync(options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Gets a build run by id.")]
-    public static async Task<Build> GetRunAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, ILogger? logger = null)
+    public async Task<Build> GetRunAsync(int buildId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetRunAsync(buildId)).EnsureSuccess();
+        return (await _pipelinesClient.GetRunAsync(buildId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Lists build runs.")]
-    public static async Task<IReadOnlyList<Build>> ListRunsAsync(string organizationUrl, string projectName, string personalAccessToken, BuildListOptions options, ILogger? logger = null)
+    public async Task<IReadOnlyList<Build>> ListRunsAsync(BuildListOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListRunsAsync(options)).EnsureSuccess();
+        return (await _pipelinesClient.ListRunsAsync(options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Cancels a running build.")]
-    public static async Task<bool> CancelRunAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, TeamProjectReference project, ILogger? logger = null)
+    public async Task<bool> CancelRunAsync(int buildId, TeamProjectReference project)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CancelRunAsync(buildId, project)).EnsureSuccess();
+        return (await _pipelinesClient.CancelRunAsync(buildId, project)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Retries a completed build run.")]
-    public static async Task<int> RetryRunAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, ILogger? logger = null)
+    public async Task<int> RetryRunAsync(int buildId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .RetryRunAsync(buildId)).EnsureSuccess();
+        return (await _pipelinesClient.RetryRunAsync(buildId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Downloads the console log for a build.")]
-    public static async Task<string> DownloadConsoleLogAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, ILogger? logger = null)
+    [McpServerTool, Description("Gets build definition by id.")]
+    public async Task<BuildDefinition> GetPipelineAsync(int definitionId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DownloadConsoleLogAsync(buildId)).EnsureSuccess();
+        return (await _pipelinesClient.GetPipelineAsync(definitionId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Creates a new pipeline definition.")]
-    public static async Task<int> CreatePipelineAsync(string organizationUrl, string projectName, string personalAccessToken, PipelineCreateOptions options, ILogger? logger = null)
+    [McpServerTool, Description("Lists build definitions.")]
+    public async Task<IReadOnlyList<BuildDefinitionReference>> ListDefinitionsAsync(BuildDefinitionListOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreatePipelineAsync(options)).EnsureSuccess();
+        return (await _pipelinesClient.ListDefinitionsAsync(options)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves a pipeline definition.")]
-    public static async Task<BuildDefinition> GetPipelineAsync(string organizationUrl, string projectName, string personalAccessToken, int definitionId, ILogger? logger = null)
+    [McpServerTool, Description("Lists all pipelines.")]
+    public async Task<IReadOnlyList<BuildDefinitionReference>> ListPipelinesAsync()
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetPipelineAsync(definitionId)).EnsureSuccess();
+        return (await _pipelinesClient.ListPipelinesAsync()).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists pipeline definitions.")]
-    public static async Task<IReadOnlyList<BuildDefinitionReference>> ListPipelinesAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    [McpServerTool, Description("Creates a new pipeline.")]
+    public async Task<int> CreatePipelineAsync(PipelineCreateOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListPipelinesAsync()).EnsureSuccess();
+        return (await _pipelinesClient.CreatePipelineAsync(options)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Updates a pipeline definition.")]
-    public static async Task<bool> UpdatePipelineAsync(string organizationUrl, string projectName, string personalAccessToken, int definitionId, PipelineUpdateOptions options, ILogger? logger = null)
+    [McpServerTool, Description("Updates a pipeline.")]
+    public async Task<bool> UpdatePipelineAsync(int definitionId, PipelineUpdateOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .UpdatePipelineAsync(definitionId, options)).EnsureSuccess();
+        return (await _pipelinesClient.UpdatePipelineAsync(definitionId, options)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a pipeline definition.")]
-    public static async Task<bool> DeletePipelineAsync(string organizationUrl, string projectName, string personalAccessToken, int definitionId, ILogger? logger = null)
+    [McpServerTool, Description("Deletes a pipeline.")]
+    public async Task<bool> DeletePipelineAsync(int definitionId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeletePipelineAsync(definitionId)).EnsureSuccess();
+        return (await _pipelinesClient.DeletePipelineAsync(definitionId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists build definitions with advanced filters.")]
-    public static async Task<IReadOnlyList<BuildDefinitionReference>> ListDefinitionsAsync(string organizationUrl, string projectName, string personalAccessToken, BuildDefinitionListOptions options, ILogger? logger = null)
+    [McpServerTool, Description("Gets build logs for a specific build.")]
+    public async Task<List<BuildLog>> GetLogsAsync(int buildId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListDefinitionsAsync(options)).EnsureSuccess();
+        return (await _pipelinesClient.GetLogsAsync(buildId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets definition revision history.")]
-    public static async Task<List<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(string organizationUrl, string projectName, string personalAccessToken, int definitionId, ILogger? logger = null)
+    [McpServerTool, Description("Gets specific log lines.")]
+    public async Task<List<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetDefinitionRevisionsAsync(definitionId)).EnsureSuccess();
+        return (await _pipelinesClient.GetLogLinesAsync(buildId, logId, startLine, endLine)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves build logs.")]
-    public static async Task<List<BuildLog>> GetLogsAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, ILogger? logger = null)
+    [McpServerTool, Description("Downloads console log content.")]
+    public async Task<string> DownloadConsoleLogAsync(int buildId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetLogsAsync(buildId)).EnsureSuccess();
+        return (await _pipelinesClient.DownloadConsoleLogAsync(buildId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves lines from a build log.")]
-    public static async Task<List<string>> GetLogLinesAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, int logId, int? startLine = null, int? endLine = null, ILogger? logger = null)
+    [McpServerTool, Description("Gets build report metadata.")]
+    public async Task<BuildReportMetadata> GetBuildReportAsync(int buildId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetLogLinesAsync(buildId, logId, startLine, endLine)).EnsureSuccess();
+        return (await _pipelinesClient.GetBuildReportAsync(buildId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets changes associated with a build.")]
-    public static async Task<List<Change>> GetChangesAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false, ILogger? logger = null)
+    [McpServerTool, Description("Gets changes for a build.")]
+    public async Task<List<Change>> GetChangesAsync(int buildId, string? continuationToken = null, int top = 100, bool includeSourceChange = false)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetChangesAsync(buildId, continuationToken, top, includeSourceChange)).EnsureSuccess();
+        return (await _pipelinesClient.GetChangesAsync(buildId, continuationToken, top, includeSourceChange)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves the build report metadata.")]
-    public static async Task<BuildReportMetadata> GetBuildReportAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, ILogger? logger = null)
+    [McpServerTool, Description("Gets definition revisions.")]
+    public async Task<List<BuildDefinitionRevision>> GetDefinitionRevisionsAsync(int definitionId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetBuildReportAsync(buildId)).EnsureSuccess();
+        return (await _pipelinesClient.GetDefinitionRevisionsAsync(definitionId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Updates the state of a build stage.")]
-    public static async Task<bool> UpdateBuildStageAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, string stageName, StageUpdateType status, bool forceRetryAllJobs = false, ILogger? logger = null)
+    [McpServerTool, Description("Updates a build stage.")]
+    public async Task<bool> UpdateBuildStageAsync(int buildId, string stageName, StageUpdateType status, bool forceRetryAllJobs = false)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .UpdateBuildStageAsync(buildId, stageName, status, forceRetryAllJobs)).EnsureSuccess();
+        return (await _pipelinesClient.UpdateBuildStageAsync(buildId, stageName, status, forceRetryAllJobs)).EnsureSuccess(_logger);
     }
 }

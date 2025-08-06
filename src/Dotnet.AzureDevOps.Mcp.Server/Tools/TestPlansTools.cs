@@ -1,10 +1,13 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
-using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using ModelContextProtocol.Server;
 using Microsoft.Extensions.Logging;
+using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
+using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
+using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 
@@ -14,76 +17,78 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 [McpServerToolType]
 public class TestPlansTools
 {
-    private static TestPlansClient CreateClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new(organizationUrl, projectName, personalAccessToken, logger);
+    private readonly ITestPlansClient _testPlansClient;
+    private readonly ILogger<TestPlansTools> _logger;
+
+    public TestPlansTools(ITestPlansClient testPlansClient, ILogger<TestPlansTools> logger)
+    {
+        _testPlansClient = testPlansClient;
+        _logger = logger;
+    }
 
     [McpServerTool, Description("Creates a test plan.")]
-    public static async Task<int> CreateTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, TestPlanCreateOptions options, ILogger? logger = null)
+    public async Task<int> CreateTestPlanAsync(TestPlanCreateOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateTestPlanAsync(options)).EnsureSuccess();
+        return (await _testPlansClient.CreateTestPlanAsync(options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Retrieves a test plan.")]
-    public static async Task<TestPlan> GetTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, ILogger? logger = null)
+    public async Task<TestPlan> GetTestPlanAsync(int testPlanId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetTestPlanAsync(testPlanId)).EnsureSuccess();
+        return (await _testPlansClient.GetTestPlanAsync(testPlanId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Lists test plans.")]
-    public static async Task<IReadOnlyList<TestPlan>> ListTestPlansAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    public async Task<IReadOnlyList<TestPlan>> ListTestPlansAsync()
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListTestPlansAsync()).EnsureSuccess();
+        return (await _testPlansClient.ListTestPlansAsync()).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Deletes a test plan.")]
-    public static async Task<bool> DeleteTestPlanAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, ILogger? logger = null)
+    public async Task<bool> DeleteTestPlanAsync(int testPlanId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteTestPlanAsync(testPlanId)).EnsureSuccess();
+        return (await _testPlansClient.DeleteTestPlanAsync(testPlanId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Creates a test suite.")]
-    public static async Task<int> CreateTestSuiteAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, TestSuiteCreateOptions options, ILogger? logger = null)
+    public async Task<int> CreateTestSuiteAsync(int testPlanId, TestSuiteCreateOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateTestSuiteAsync(testPlanId, options)).EnsureSuccess();
+        return (await _testPlansClient.CreateTestSuiteAsync(testPlanId, options)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists test suites for a plan.")]
-    public static async Task<IReadOnlyList<TestSuite>> ListTestSuitesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, ILogger? logger = null)
+    [McpServerTool, Description("Retrieves the root test suite for a plan.")]
+    public async Task<TestSuite> GetRootSuiteAsync(int planId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListTestSuitesAsync(testPlanId)).EnsureSuccess();
+        return (await _testPlansClient.GetRootSuiteAsync(planId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Adds test cases to a suite.")]
-    public static async Task<bool> AddTestCasesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds, ILogger? logger = null)
+    [McpServerTool, Description("Lists test suites for a test plan.")]
+    public async Task<IReadOnlyList<TestSuite>> ListTestSuitesAsync(int testPlanId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .AddTestCasesAsync(testPlanId, testSuiteId, testCaseIds)).EnsureSuccess();
+        return (await _testPlansClient.ListTestSuitesAsync(testPlanId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets the root suite of a test plan.")]
-    public static async Task<TestSuite> GetRootSuiteAsync(string organizationUrl, string projectName, string personalAccessToken, int planId, ILogger? logger = null)
+    [McpServerTool, Description("Creates a test case.")]
+    public async Task<WorkItem> CreateTestCaseAsync(TestCaseCreateOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetRootSuiteAsync(planId)).EnsureSuccess();
+        return (await _testPlansClient.CreateTestCaseAsync(options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Lists test cases in a suite.")]
-    public static async Task<PagedList<TestCase>> ListTestCasesAsync(string organizationUrl, string projectName, string personalAccessToken, int testPlanId, int testSuiteId, ILogger? logger = null)
+    public async Task<object> ListTestCasesAsync(int testPlanId, int testSuiteId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListTestCasesAsync(testPlanId, testSuiteId)).EnsureSuccess();
+        return (await _testPlansClient.ListTestCasesAsync(testPlanId, testSuiteId)).EnsureSuccess(_logger);
+    }
+
+    [McpServerTool, Description("Adds test cases to a test suite.")]
+    public async Task<bool> AddTestCasesAsync(int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds)
+    {
+        return (await _testPlansClient.AddTestCasesAsync(testPlanId, testSuiteId, testCaseIds)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Gets test results for a build.")]
-    public static async Task<Microsoft.TeamFoundation.TestManagement.WebApi.TestResultsDetails> GetTestResultsForBuildAsync(string organizationUrl, string projectName, string personalAccessToken, int buildId, ILogger? logger = null)
+    public async Task<TestResultsDetails> GetTestResultsForBuildAsync(string projectName, int buildId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetTestResultsForBuildAsync(projectName, buildId)).EnsureSuccess();
+        return (await _testPlansClient.GetTestResultsForBuildAsync(projectName, buildId)).EnsureSuccess(_logger);
     }
 }

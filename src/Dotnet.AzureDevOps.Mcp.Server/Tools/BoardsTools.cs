@@ -14,87 +14,79 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
     [McpServerToolType()]
     public class BoardsTools
     {
-        private static WorkItemsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-            => new(organizationUrl, projectName, personalAccessToken, logger);
+        private readonly IWorkItemsClient _workItemsClient;
+        private readonly ILogger<BoardsTools> _logger;
+
+        public BoardsTools(IWorkItemsClient workItemsClient, ILogger<BoardsTools> logger)
+        {
+            _workItemsClient = workItemsClient;
+            _logger = logger;
+        }
 
         [McpServerTool, Description("Creates a new Epic work item.")]
-        public static async Task<int> CreateEpicAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> CreateEpicAsync(WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .CreateEpicAsync(options)).EnsureSuccess();
+            return (await _workItemsClient.CreateEpicAsync(options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Creates a new Feature work item.")]
-        public static async Task<int> CreateFeatureAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> CreateFeatureAsync(WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .CreateFeatureAsync(options)).EnsureSuccess();
+            return (await _workItemsClient.CreateFeatureAsync(options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Creates a new User Story work item.")]
-        public static async Task<int> CreateUserStoryAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> CreateUserStoryAsync(WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .CreateUserStoryAsync(options)).EnsureSuccess();
+            return (await _workItemsClient.CreateUserStoryAsync(options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Creates a new Task work item.")]
-        public static async Task<int> CreateTaskAsync(string organizationUrl, string projectName, string personalAccessToken, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> CreateTaskAsync(WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .CreateTaskAsync(options)).EnsureSuccess();
+            return (await _workItemsClient.CreateTaskAsync(options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Updates an Epic work item.")]
-        public static async Task<int> UpdateEpicAsync(string organizationUrl, string projectName, string personalAccessToken, int epicId, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> UpdateEpicAsync(int epicId, WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .UpdateEpicAsync(epicId, options)).EnsureSuccess();
+            return (await _workItemsClient.UpdateEpicAsync(epicId, options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Updates a Feature work item.")]
-        public static async Task<int> UpdateFeatureAsync(string organizationUrl, string projectName, string personalAccessToken, int featureId, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> UpdateFeatureAsync(int featureId, WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .UpdateFeatureAsync(featureId, options)).EnsureSuccess();
+            return (await _workItemsClient.UpdateFeatureAsync(featureId, options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Updates a User Story work item.")]
-        public static async Task<int> UpdateUserStoryAsync(string organizationUrl, string projectName, string personalAccessToken, int userStoryId, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .UpdateUserStoryAsync(userStoryId, options)).EnsureSuccess();
+            return (await _workItemsClient.UpdateUserStoryAsync(userStoryId, options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Updates a Task work item.")]
-        public static async Task<int> UpdateTaskAsync(string organizationUrl, string projectName, string personalAccessToken, int taskId, WorkItemCreateOptions options, ILogger? logger = null)
+        public async Task<int> UpdateTaskAsync(int taskId, WorkItemCreateOptions options)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .UpdateTaskAsync(taskId, options)).EnsureSuccess();
+            return (await _workItemsClient.UpdateTaskAsync(taskId, options)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Deletes a work item by its identifier.")]
-        public static async Task<bool> DeleteWorkItemAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, ILogger? logger = null)
+        public async Task<bool> DeleteWorkItemAsync(int workItemId)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .DeleteWorkItemAsync(workItemId)).EnsureSuccess();
+            return (await _workItemsClient.DeleteWorkItemAsync(workItemId)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Retrieves a work item by its identifier.")]
-        public static async Task<WorkItem> GetWorkItemAsync(string organizationUrl, string projectName, string personalAccessToken, int workItemId, ILogger? logger = null)
+        public async Task<WorkItem> GetWorkItemAsync(int workItemId)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .GetWorkItemAsync(workItemId)).EnsureSuccess();
+            return (await _workItemsClient.GetWorkItemAsync(workItemId)).EnsureSuccess(_logger);
         }
 
         [McpServerTool, Description("Runs a WIQL query and returns matching work items.")]
-        public static async Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string organizationUrl, string projectName, string personalAccessToken, string wiql, ILogger? logger = null)
+        public async Task<IReadOnlyList<WorkItem>> QueryWorkItemsAsync(string wiql)
         {
-            return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-                .QueryWorkItemsAsync(wiql)).EnsureSuccess();
+            return (await _workItemsClient.QueryWorkItemsAsync(wiql)).EnsureSuccess(_logger);
         }
-
-        // ... repeat for all other methods, adding ILogger? logger = null and passing it to CreateClient
-
     }
 }

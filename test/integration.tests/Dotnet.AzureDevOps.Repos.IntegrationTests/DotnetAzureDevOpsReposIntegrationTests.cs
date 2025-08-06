@@ -349,7 +349,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         }
 
         // TODO: Re-enable this test once the vote functionality works in the pipeline.
-        [Fact(Skip = "Vote doesn't work in pipeline")]
+        [Fact]
         public async Task AdvancedPullRequestWorkflow_SucceedsAsync()
         {
             PullRequestCreateOptions createOptions = new PullRequestCreateOptions

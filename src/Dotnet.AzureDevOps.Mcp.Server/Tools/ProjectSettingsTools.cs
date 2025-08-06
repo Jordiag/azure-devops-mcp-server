@@ -11,85 +11,80 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes project and process management operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public static class ProjectSettingsTools
+public class ProjectSettingsTools
 {
-    private static ProjectSettingsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new(organizationUrl, projectName, personalAccessToken, logger);
+    private readonly IProjectSettingsClient _projectSettingsClient;
+    private readonly ILogger<ProjectSettingsTools> _logger;
+
+    public ProjectSettingsTools(IProjectSettingsClient projectSettingsClient, ILogger<ProjectSettingsTools> logger)
+    {
+        _projectSettingsClient = projectSettingsClient;
+        _logger = logger;
+    }
 
     [McpServerTool, Description("Creates a new team in the project if it does not exist already.")]
-    public static async Task<bool> CreateTeamIfDoesNotExistAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string teamDescription, ILogger? logger = null)
+    public async Task<bool> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateTeamIfDoesNotExistAsync(teamName, teamDescription)).EnsureSuccess();
+        return (await _projectSettingsClient.CreateTeamIfDoesNotExistAsync(teamName, teamDescription)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Gets a team's identifier by name.")]
-    public static async Task<Guid> GetTeamIdAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, ILogger? logger = null)
+    public async Task<Guid> GetTeamIdAsync(string teamName)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetTeamIdAsync(teamName)).EnsureSuccess();
+        return (await _projectSettingsClient.GetTeamIdAsync(teamName)).EnsureSuccess(_logger);
+    }
+
+    [McpServerTool, Description("Gets all teams in the project.")]
+    public async Task<List<WebApiTeam>> GetAllTeamsAsync()
+    {
+        return (await _projectSettingsClient.GetAllTeamsAsync()).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Updates a team's description.")]
-    public static async Task<bool> UpdateTeamDescriptionAsync(string organizationUrl, string projectName, string personalAccessToken, string teamName, string newDescription, ILogger? logger = null)
+    public async Task<bool> UpdateTeamDescriptionAsync(string teamName, string newDescription)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .UpdateTeamDescriptionAsync(teamName, newDescription)).EnsureSuccess();
+        return (await _projectSettingsClient.UpdateTeamDescriptionAsync(teamName, newDescription)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Deletes a team by identifier.")]
-    public static async Task<bool> DeleteTeamAsync(string organizationUrl, string projectName, string personalAccessToken, Guid teamGuid, ILogger? logger = null)
+    public async Task<bool> DeleteTeamAsync(Guid teamGuid)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteTeamAsync(teamGuid)).EnsureSuccess();
+        return (await _projectSettingsClient.DeleteTeamAsync(teamGuid)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Creates an inherited process from a system process.")]
-    public static async Task<bool> CreateInheritedProcessAsync(string organizationUrl, string projectName, string personalAccessToken, string newProcessName, string description, string baseProcessName, ILogger? logger = null)
+    public async Task<bool> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateInheritedProcessAsync(newProcessName, description, baseProcessName)).EnsureSuccess();
+        return (await _projectSettingsClient.CreateInheritedProcessAsync(newProcessName, description, baseProcessName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes an inherited process by identifier.")]
-    public static async Task<bool> DeleteInheritedProcessAsync(string organizationUrl, string projectName, string personalAccessToken, string processId, ILogger? logger = null)
+    [McpServerTool, Description("Deletes an inherited process.")]
+    public async Task<bool> DeleteInheritedProcessAsync(string processId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteInheritedProcessAsync(processId)).EnsureSuccess();
+        return (await _projectSettingsClient.DeleteInheritedProcessAsync(processId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Gets a process identifier by name.")]
-    public static async Task<string> GetProcessIdAsync(string organizationUrl, string projectName, string personalAccessToken, string processName, ILogger? logger = null)
+    public async Task<string> GetProcessIdAsync(string processName)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetProcessIdAsync(processName)).EnsureSuccess();
+        return (await _projectSettingsClient.GetProcessIdAsync(processName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Creates a new project using a specified process.")]
-    public static async Task<Guid> CreateProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string newProjectName, string description, string processId, ILogger? logger = null)
+    [McpServerTool, Description("Creates a new project.")]
+    public async Task<Guid> CreateProjectAsync(string projectName, string description, string processId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateProjectAsync(newProjectName, description, processId)).EnsureSuccess();
+        return (await _projectSettingsClient.CreateProjectAsync(projectName, description, processId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a project by identifier.")]
-    public static async Task<bool> DeleteProjectAsync(string organizationUrl, string projectName, string personalAccessToken, Guid projectId, ILogger? logger = null)
+    [McpServerTool, Description("Gets project information.")]
+    public async Task<TeamProject> GetProjectAsync(string projectName)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteProjectAsync(projectId)).EnsureSuccess();
+        return (await _projectSettingsClient.GetProjectAsync(projectName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists all teams in the organization.")]
-    public static async Task<IReadOnlyList<WebApiTeam>> GetAllTeamsAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    [McpServerTool, Description("Deletes a project.")]
+    public async Task<bool> DeleteProjectAsync(Guid projectId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetAllTeamsAsync()).EnsureSuccess();
-    }
-
-    [McpServerTool, Description("Retrieves a project by name.")]
-    public static async Task<TeamProject> GetProjectAsync(string organizationUrl, string projectName, string personalAccessToken, string targetProjectName, ILogger? logger = null)
-    {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetProjectAsync(targetProjectName)).EnsureSuccess();
+        return (await _projectSettingsClient.DeleteProjectAsync(projectId)).EnsureSuccess(_logger);
     }
 }

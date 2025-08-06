@@ -13,132 +13,120 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 [McpServerToolType]
 public class ArtifactsTools
 {
-    private static ArtifactsClient CreateClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        => new ArtifactsClient(organizationUrl, projectName, personalAccessToken, logger);
+    private readonly IArtifactsClient _artifactsClient;
+    private readonly ILogger<ArtifactsTools> _logger;
+
+    public ArtifactsTools(IArtifactsClient artifactsClient, ILogger<ArtifactsTools> logger)
+    {
+        _artifactsClient = artifactsClient;
+        _logger = logger;
+    }
 
     [McpServerTool, Description("Creates a new feed.")]
-    public static async Task<Guid> CreateFeedAsync(string organizationUrl, string projectName, string personalAccessToken, FeedCreateOptions options, ILogger? logger = null)
+    public async Task<Guid> CreateFeedAsync(FeedCreateOptions options)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateFeedAsync(options)).EnsureSuccess();
+        return (await _artifactsClient.CreateFeedAsync(options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Updates an existing feed.")]
-    public static async Task UpdateFeedAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, FeedUpdateOptions options, ILogger? logger = null)
+    public async Task<bool> UpdateFeedAsync(Guid feedId, FeedUpdateOptions options)
     {
-        (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .UpdateFeedAsync(feedId, options)).EnsureSuccess();
+        return (await _artifactsClient.UpdateFeedAsync(feedId, options)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Retrieves a feed by identifier.")]
-    public static async Task<Feed> GetFeedAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, ILogger? logger = null)
+    public async Task<Feed> GetFeedAsync(Guid feedId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetFeedAsync(feedId)).EnsureSuccess();
+        return (await _artifactsClient.GetFeedAsync(feedId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Lists all feeds in the project.")]
-    public static async Task<IReadOnlyList<Feed>> ListFeedsAsync(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    public async Task<IReadOnlyList<Feed>> ListFeedsAsync()
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListFeedsAsync()).EnsureSuccess();
+        return (await _artifactsClient.ListFeedsAsync()).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Deletes a feed by identifier.")]
-    public static async Task DeleteFeedAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, ILogger? logger = null)
+    public async Task<bool> DeleteFeedAsync(Guid feedId)
     {
-        (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteFeedAsync(feedId)).EnsureSuccess();
+        return (await _artifactsClient.DeleteFeedAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists packages within a feed.")]
-    public static async Task<IReadOnlyList<Package>> ListPackagesAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, ILogger? logger = null)
+    [McpServerTool, Description("Lists packages in a feed.")]
+    public async Task<IReadOnlyList<Package>> ListPackagesAsync(Guid feedId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListPackagesAsync(feedId)).EnsureSuccess();
+        return (await _artifactsClient.ListPackagesAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a package from a feed.")]
-    public static async Task DeletePackageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version, ILogger? logger = null)
+    [McpServerTool, Description("Gets a package version.")]
+    public async Task<Package> GetPackageVersionAsync(Guid feedId, string packageName, string version)
     {
-        (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeletePackageAsync(feedId, packageName, version)).EnsureSuccess();
+        return (await _artifactsClient.GetPackageVersionAsync(feedId, packageName, version)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets permissions for a feed.")]
-    public static async Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, ILogger? logger = null)
+    [McpServerTool, Description("Updates package version details.")]
+    public async Task<bool> UpdatePackageVersionAsync(Guid feedId, string packageName, string version, PackageVersionDetails details)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetFeedPermissionsAsync(feedId)).EnsureSuccess();
+        return (await _artifactsClient.UpdatePackageVersionAsync(feedId, packageName, version, details)).EnsureSuccess(_logger);
+    }
+
+    [McpServerTool, Description("Deletes a package.")]
+    public async Task<bool> DeletePackageAsync(Guid feedId, string packageName, string version)
+    {
+        return (await _artifactsClient.DeletePackageAsync(feedId, packageName, version)).EnsureSuccess(_logger);
+    }
+
+    [McpServerTool, Description("Downloads a package.")]
+    public async Task<Stream> DownloadPackageAsync(Guid feedId, string packageName, string version)
+    {
+        return (await _artifactsClient.DownloadPackageAsync(feedId, packageName, version)).EnsureSuccess(_logger);
+    }
+
+    [McpServerTool, Description("Gets feed permissions.")]
+    public async Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(Guid feedId)
+    {
+        return (await _artifactsClient.GetFeedPermissionsAsync(feedId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Creates a feed view.")]
-    public static async Task<FeedView> CreateFeedViewAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, FeedView view, ILogger? logger = null)
+    public async Task<FeedView> CreateFeedViewAsync(Guid feedId, FeedView feedView)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .CreateFeedViewAsync(feedId, view)).EnsureSuccess();
+        return (await _artifactsClient.CreateFeedViewAsync(feedId, feedView)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists feed views.")]
-    public static async Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, ILogger? logger = null)
+    [McpServerTool, Description("Lists all views for a feed.")]
+    public async Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(Guid feedId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .ListFeedViewsAsync(feedId)).EnsureSuccess();
+        return (await _artifactsClient.ListFeedViewsAsync(feedId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Deletes a feed view.")]
-    public static async Task DeleteFeedViewAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string viewId, ILogger? logger = null)
+    public async Task<bool> DeleteFeedViewAsync(Guid feedId, string viewId)
     {
-        (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DeleteFeedViewAsync(feedId, viewId)).EnsureSuccess();
+        return (await _artifactsClient.DeleteFeedViewAsync(feedId, viewId)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Sets upstreaming behavior for a package.")]
-    public static async Task SetUpstreamingBehaviorAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, UpstreamingBehavior behavior, ILogger? logger = null)
+    public async Task<bool> SetUpstreamingBehaviorAsync(Guid feedId, string packageName, UpstreamingBehavior behavior)
     {
-        (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .SetUpstreamingBehaviorAsync(feedId, packageName, behavior)).EnsureSuccess();
+        return (await _artifactsClient.SetUpstreamingBehaviorAsync(feedId, packageName, behavior)).EnsureSuccess(_logger);
     }
 
     [McpServerTool, Description("Gets upstreaming behavior for a package.")]
-    public static async Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, ILogger? logger = null)
+    public async Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(Guid feedId, string packageName)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetUpstreamingBehaviorAsync(feedId, packageName)).EnsureSuccess();
+        return (await _artifactsClient.GetUpstreamingBehaviorAsync(feedId, packageName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets a specific package version.")]
-    public static async Task<Package> GetPackageVersionAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version, ILogger? logger = null)
+    [McpServerTool, Description("Gets feed retention policy.")]
+    public async Task<FeedRetentionPolicy> GetRetentionPolicyAsync(Guid feedId)
     {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetPackageVersionAsync(feedId, packageName, version)).EnsureSuccess();
+        return (await _artifactsClient.GetRetentionPolicyAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Updates metadata for a package version.")]
-    public static async Task UpdatePackageVersionAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version, PackageVersionDetails details, ILogger? logger = null)
+    [McpServerTool, Description("Sets feed retention policy.")]
+    public async Task<FeedRetentionPolicy> SetRetentionPolicyAsync(Guid feedId, FeedRetentionPolicy policy)
     {
-        (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .UpdatePackageVersionAsync(feedId, packageName, version, details)).EnsureSuccess();
-    }
-
-    [McpServerTool, Description("Downloads a package version.")]
-    public static async Task<Stream> DownloadPackageAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, string packageName, string version, ILogger? logger = null)
-    {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .DownloadPackageAsync(feedId, packageName, version)).EnsureSuccess();
-    }
-
-    [McpServerTool, Description("Gets the retention policy for a feed.")]
-    public static async Task<FeedRetentionPolicy> GetRetentionPolicyAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, ILogger? logger = null)
-    {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .GetRetentionPolicyAsync(feedId)).EnsureSuccess();
-    }
-
-    [McpServerTool, Description("Sets the retention policy for a feed.")]
-    public static async Task<FeedRetentionPolicy> SetRetentionPolicyAsync(string organizationUrl, string projectName, string personalAccessToken, Guid feedId, FeedRetentionPolicy policy, ILogger? logger = null)
-    {
-        return (await CreateClient(organizationUrl, projectName, personalAccessToken, logger)
-            .SetRetentionPolicyAsync(feedId, policy)).EnsureSuccess();
+        return (await _artifactsClient.SetRetentionPolicyAsync(feedId, policy)).EnsureSuccess(_logger);
     }
 }

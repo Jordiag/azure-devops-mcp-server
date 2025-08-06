@@ -8,7 +8,6 @@ public class AzureDevOpsActionResult<T>
     public bool IsSuccessful { get; }
     public T Value { get; }
     public string? ErrorMessage { get; }
-    public bool HasValue { get; set; }
 
     private AzureDevOpsActionResult(bool isSuccess, T value, string? errorMessage)
     {

@@ -40,7 +40,7 @@ public sealed class TestTypeTraitDiscoverer : ITraitDiscoverer
 {
     public IEnumerable<KeyValuePair<string, string>> GetTraits(IAttributeInfo traitAttribute)
     {
-        var type = (TestType)traitAttribute.GetConstructorArguments().First();
+        TestType type = (TestType)traitAttribute.GetConstructorArguments().First();
         yield return new KeyValuePair<string, string>("TestType", type.ToString().ToLowerInvariant());
     }
 }
@@ -49,7 +49,7 @@ public sealed class ComponentTraitDiscoverer : ITraitDiscoverer
 {
     public IEnumerable<KeyValuePair<string, string>> GetTraits(IAttributeInfo traitAttribute)
     {
-        var components = (Component[])traitAttribute.GetConstructorArguments().First();
+        Component[] components = (Component[])traitAttribute.GetConstructorArguments().First();
         foreach(Component component in components)
         {
             yield return new KeyValuePair<string, string>("Component", component.ToString().ToLowerInvariant());

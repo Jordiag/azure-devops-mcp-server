@@ -16,8 +16,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
         public IdentityClient(string organizationUrl, string personalAccessToken, ILogger? logger = null)
         {
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
             _logger = logger ?? NullLogger.Instance;
             _identityHttpClient = connection.GetClient<IdentityHttpClient>();
 

@@ -1,4 +1,5 @@
-﻿using Dotnet.AzureDevOps.Mcp.Server.Tools;
+﻿using Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
+using Dotnet.AzureDevOps.Mcp.Server.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,18 @@ internal static class HostingExtensionsMcpServer
                                             .Get<McpServerSettings>() ?? new();
 
         IServiceCollection services = builder.Services;
+
+        // Register Azure DevOps configuration
+        services.Configure<AzureDevOpsConfiguration>(options =>
+        {
+            options.OrganizationUrl = builder.Configuration["AZURE_DEVOPS_ORGANIZATION_URL"] ?? "";
+            options.ProjectName = builder.Configuration["AZURE_DEVOPS_PROJECT_NAME"] ?? "";
+            options.PersonalAccessToken = builder.Configuration["AZURE_DEVOPS_PAT"] ?? "";
+        });
+
+        // Register Azure DevOps clients
+        services.AddAzureDevOpsClients();
+
         IMcpServerBuilder mcpServerBuilder = services.AddMcpServer();
 
         mcpServerBuilder.WithHttpTransport()
@@ -23,7 +36,9 @@ internal static class HostingExtensionsMcpServer
             .WithTools<ArtifactsTools>()
             .WithTools<OverviewTools>()
             .WithTools<PipelinesTools>()
+            .WithTools<ProjectSettingsTools>()
             .WithTools<ReposTools>()
+            .WithTools<SearchTools>()
             .WithTools<TestPlansTools>();
 
         if(settings.EnableOpenTelemetry)
