@@ -14,15 +14,11 @@ namespace Dotnet.AzureDevOps.Core.Overview
     {
         private readonly string _projectName;
         private readonly WikiHttpClient _wikiHttpClient;
-        private readonly string _organizationUrl;
-        private readonly string _personalAccessToken;
         private readonly ILogger? _logger;
 
         public WikiClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
         {
             _projectName = projectName;
-            _organizationUrl = organizationUrl;
-            _personalAccessToken = personalAccessToken;
             _logger = logger;
 
             VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);

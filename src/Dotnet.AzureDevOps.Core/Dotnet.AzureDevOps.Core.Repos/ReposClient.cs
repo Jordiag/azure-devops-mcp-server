@@ -237,7 +237,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             foreach((string localId, string name) reviewer in reviewers)
             {
                 AzureDevOpsActionResult<bool> result = await AddReviewerAsync(repositoryId, pullRequestId, reviewer);
-                if(!result.IsSuccessful || result.Value != true)
+                if(!result.IsSuccessful || !result.Value)
                     allAdded = false;
             }
 
@@ -344,7 +344,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 }
                 else
                 {
-                    Comment commentResult = await _gitHttpClient.CreateCommentAsync(
+                    await _gitHttpClient.CreateCommentAsync(
                         comment: newComment,
                         repositoryId: commentReplyOptions.Repository,
                         pullRequestId: commentReplyOptions.PullRequestId,

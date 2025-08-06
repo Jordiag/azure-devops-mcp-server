@@ -132,7 +132,7 @@ public class SearchClient : ISearchClient
     /// </summary>
     /// <param name="options">Code search options.</param>
     /// <returns>Dictionary representing the request payload.</returns>
-    private static object BuildCodePayload(CodeSearchOptions options)
+    private static Dictionary<string, object?> BuildCodePayload(CodeSearchOptions options)
     {
         var filters = new Dictionary<string, IReadOnlyList<string>>();
         if(options.Project != null && options.Project.Count > 0)
@@ -190,7 +190,7 @@ public class SearchClient : ISearchClient
     /// </summary>
     /// <param name="options">Work item search options.</param>
     /// <returns>Dictionary representing the request payload.</returns>
-    private static object BuildWorkItemPayload(WorkItemSearchOptions options)
+    private static Dictionary<string, object?> BuildWorkItemPayload(WorkItemSearchOptions options)
     {
         var filters = new Dictionary<string, IReadOnlyList<string>>();
         if(options.Project != null && options.Project.Count > 0)

@@ -209,7 +209,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             {
                 var wikiOptions = new WikiCreateOptions
                 {
-                    Name = $"pages-wiki-{UtcStamp()}",
+                    Name = $"page-wiki-{UtcStamp()}",
                     ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
                     Type = WikiType.CodeWiki,
                     RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
@@ -261,12 +261,15 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             _ = await _wikiClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
 
-            AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>> pagesResult = await _wikiClient.ListPagesAsync(
-                wikiId,
-                new WikiPagesBatchOptions { Top = 100 },
-                null);
-            IReadOnlyList<WikiPageDetail> pages = pagesResult.Value;
-            Assert.Contains(pages, p => p.Path == wikiPath);
+            AzureDevOpsActionResult<WikiPageResponse> pageResult = null;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                pageResult = await _wikiClient.GetPageAsync(wikiId, wikiPath);
+
+                return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
+            Assert.True(pageResult?.Value?.Page?.Path == wikiPath);
 
             AzureDevOpsActionResult<string> textResult = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
             string? text = textResult.Value;

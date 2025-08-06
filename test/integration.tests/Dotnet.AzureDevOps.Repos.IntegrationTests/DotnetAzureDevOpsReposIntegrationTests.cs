@@ -85,7 +85,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.True(pullRequestId.HasValue);
             _createdPrIds.Add(pullRequestId.Value);
 
-            AzureDevOpsActionResult<GitPullRequest> gtPullRequestResult = null;
+            AzureDevOpsActionResult<GitPullRequest>? gtPullRequestResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 gtPullRequestResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
@@ -107,7 +107,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
             Assert.True(completeResult.IsSuccessful);
 
-            AzureDevOpsActionResult<GitPullRequest> prResult = null;
+            AzureDevOpsActionResult<GitPullRequest>? prResult = null;
             ;
             await WaitHelper.WaitUntilAsync(async () =>
             {
@@ -430,7 +430,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 new GitPullRequestCompletionOptions { MergeStrategy = GitPullRequestMergeStrategy.Squash });
             GitPullRequest gitPullRequest = gitPullRequestResult.Value!;
 
-            AzureDevOpsActionResult<GitPullRequest> afterAutoResult = default;
+            AzureDevOpsActionResult<GitPullRequest>? afterAutoResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 afterAutoResult = await _reposClient.GetPullRequestAsync(_repoName, prId);
