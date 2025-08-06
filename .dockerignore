@@ -1,0 +1,48 @@
+# Docker ignore file for Azure DevOps MCP Server
+# Ignore Git files
+.git/
+.gitignore
+.gitattributes
+
+# Ignore documentation
+README.md
+*.md
+docs/
+
+# Ignore build outputs
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+
+# Ignore IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+
+# Ignore test files
+test/
+tests/
+
+# Ignore package manager files
+.nuget/
+packages/
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore temporary files
+*.tmp
+*.temp

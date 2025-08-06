@@ -72,17 +72,40 @@ Integration tests exercise each client against a real Azure DevOps organization.
 
 ## Getting started
 
+### Prerequisites
+
 1. Install the latest [.NET 9](https://dotnet.microsoft.com/) release.
 2. Clone this repository.
-3. Restore dependencies and build:
+
+### Quick Start
+
+#### Option A: Run Locally
+```bash
+# Build and run
+dotnet build
+dotnet run --project src/Dotnet.AzureDevOps.Mcp.Server
+```
+
+#### Option B: Run with Docker
+```bash
+# Build and run in container
+docker build -t azure-devops-mcp-server .
+docker run -p 5050:5050 azure-devops-mcp-server
+```
+
+### Development Setup
+
+For development and testing:
+
+1. Restore dependencies and build:
    ```bash
    dotnet build
    ```
-4. Run the tests:
+2. Run the tests:
    ```bash
    dotnet test
    ```
-5. Start the MCP server:
+3. Start the MCP server:
    ```bash
    dotnet run --project src/Dotnet.AzureDevOps.Mcp.Server
    ```
@@ -157,23 +180,85 @@ await foreach (var update in agent.InvokeAsync(
 Running this program prints `Hello MCP!` once the agent invokes the `echo` tool
 exposed by your MCP server.
 
-## Running the MCP server locally
+## Deployment Options
 
-After building, start the server directly from the repository root:
+The Azure DevOps MCP Server supports two deployment methods:
+
+### Option 1: Local HTTP Server
+
+Run the server directly on your machine for development and testing:
 
 ```bash
+# Build and run directly
 dotnet run --project src/Dotnet.AzureDevOps.Mcp.Server
+
+# Or use the provided scripts
+./run-local.sh    # Linux/macOS
+run-local.cmd     # Windows
 ```
 
-The default configuration listens on port `5050`. Open <http://localhost:5050/health> to verify it is up.
+The server listens on [http://localhost:5050](http://localhost:5050) by default.
+Visit `/health` to check that it is running.
+
+### Option 2: Docker Container
+
+Run the server in a Docker container for consistent, isolated deployment:
+
+```bash
+# Build the Docker image
+docker build -t azure-devops-mcp-server .
+
+# Run the container
+docker run -d \
+    --name azure-devops-mcp-server \
+    -p 5050:5050 \
+    -e ASPNETCORE_ENVIRONMENT=Production \
+    azure-devops-mcp-server
+
+# Or use the provided scripts
+./run-docker.sh    # Linux/macOS
+run-docker.cmd     # Windows
+```
+
+The containerized server is available at [http://localhost:5050](http://localhost:5050).
+
+#### Docker Benefits
+
+- **Isolation**: Runs in its own environment
+- **Consistency**: Same behavior across different machines
+- **Production-ready**: Includes health checks and proper logging
+- **Easy deployment**: Single container to deploy anywhere
 
 ### Configuration
 
-Settings are read from `appsettings.json` and environment variables prefixed with `MCP_`.
-For example, to change the port or disable telemetry:
+Both deployment methods support the same configuration options:
 
+Settings are read from `appsettings.json` and environment variables prefixed with `MCP_`.
+
+#### Environment Variables
+
+- `MCP_McpServer__Port=5050` - Server port (default: 5050)
+- `MCP_McpServer__LogLevel=Information` - Log level
+- `MCP_McpServer__EnableOpenTelemetry=true` - Enable telemetry
+- `MCP_McpServer__EnableApplicationInsights=false` - Enable App Insights
+- `ASPNETCORE_ENVIRONMENT=Production` - ASP.NET Core environment
+
+#### Examples
+
+**Local server with custom port:**
 ```bash
-MCP_McpServer__Port=7070 MCP_McpServer__EnableOpenTelemetry=false dotnet run --project src/Dotnet.AzureDevOps.Mcp.Server
+MCP_McpServer__Port=7070 dotnet run --project src/Dotnet.AzureDevOps.Mcp.Server
+```
+
+**Docker container with custom configuration:**
+```bash
+docker run -d \
+    --name azure-devops-mcp-server \
+    -p 7070:7070 \
+    -e MCP_McpServer__Port=7070 \
+    -e MCP_McpServer__LogLevel=Debug \
+    -e MCP_McpServer__EnableOpenTelemetry=false \
+    azure-devops-mcp-server
 ```
 
 The script [`Set-Local-Test-Dev-Env-Vars.ps1`](Set-Local-Test-Dev-Env-Vars.ps1) can help define the environment variables used by the tests and examples.

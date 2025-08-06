@@ -52,51 +52,6 @@ public class ArtifactsClient : IArtifactsClient
         }
     }
 
-    public async Task<AzureDevOpsActionResult<RetentionPolicyResult>> SetRetentionPolicyAsync(
-        Guid feedId,
-        int daysToKeep,
-        string[] packageTypes,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            RetentionPolicyResult? retentionPolicyResult = null;
-            string retentionUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/feeds/{feedId}/retentionpolicies?api-version=7.1-preview.1";
-
-            var payload = new
-            {
-                retentionPolicy = new
-                {
-                    daysToKeep = daysToKeep,
-                    deleteUnreferenced = true,
-                    applyToAllVersions = true,
-                    packageTypes = packageTypes,
-                    filters = Array.Empty<object>()
-                }
-            };
-
-            HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(
-                _httpClient, retentionUrl, payload, cancellationToken);
-
-            if(response.IsSuccessStatusCode)
-            {
-                retentionPolicyResult = await response.Content.ReadFromJsonAsync<RetentionPolicyResult>(cancellationToken);
-                return retentionPolicyResult == null
-                    ? AzureDevOpsActionResult<RetentionPolicyResult>.Failure("Retention policy deserialization gave a null value on SetRetentionPolicy.", _logger)
-                    : AzureDevOpsActionResult<RetentionPolicyResult>.Success(retentionPolicyResult, _logger);
-            }
-            else
-            {
-                return AzureDevOpsActionResult<RetentionPolicyResult>.Failure(response.StatusCode, "Retention policy query failed on SetRetentionPolicy.", _logger);
-            }
-        }
-        catch(Exception ex)
-        {
-            return AzureDevOpsActionResult<RetentionPolicyResult>.Failure(ex, _logger);
-        }
-    }
-
-
     public async Task<AzureDevOpsActionResult<bool>> UpdateFeedAsync(Guid feedId, FeedUpdateOptions feedUpdateOptions, CancellationToken cancellationToken = default)
     {
         try
