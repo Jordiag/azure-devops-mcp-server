@@ -22,109 +22,109 @@ public class ArtifactsTools
         _logger = logger;
     }
 
-    [McpServerTool, Description("Creates a new feed.")]
+    [McpServerTool, Description("Creates a new package feed in Azure DevOps Artifacts. A feed is a container for storing and managing packages (NuGet, npm, Maven, etc.). Requires a name and optional description. Feeds support versioning, access control, and upstream sources. Returns the unique feed ID.")]
     public async Task<Guid> CreateFeedAsync(FeedCreateOptions options)
     {
         return (await _artifactsClient.CreateFeedAsync(options)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Updates an existing feed.")]
+    [McpServerTool, Description("Updates an existing package feed's properties such as name, description, or visibility settings. This modifies the feed metadata but does not affect stored packages. Returns true if the update was successful.")]
     public async Task<bool> UpdateFeedAsync(Guid feedId, FeedUpdateOptions options)
     {
         return (await _artifactsClient.UpdateFeedAsync(feedId, options)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Retrieves a feed by identifier.")]
+    [McpServerTool, Description("Retrieves detailed information about a specific package feed including its name, description, URL, capabilities, and creation details. The feed must exist and the caller must have read permissions.")]
     public async Task<Feed> GetFeedAsync(Guid feedId)
     {
         return (await _artifactsClient.GetFeedAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists all feeds in the project.")]
+    [McpServerTool, Description("Lists all package feeds in the Azure DevOps project that the current user has access to. Returns basic information about each feed including name, ID, description, and capabilities. Useful for discovering available package repositories.")]
     public async Task<IReadOnlyList<Feed>> ListFeedsAsync()
     {
         return (await _artifactsClient.ListFeedsAsync()).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a feed by identifier.")]
+    [McpServerTool, Description("Permanently deletes a package feed and all its packages from Azure DevOps Artifacts. This action cannot be undone and will break any builds or applications depending on packages in this feed. Returns true if deletion was successful.")]
     public async Task<bool> DeleteFeedAsync(Guid feedId)
     {
         return (await _artifactsClient.DeleteFeedAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists packages in a feed.")]
+    [McpServerTool, Description("Lists all packages stored in a specific feed. Returns package metadata including names, versions, download counts, and publish dates. An empty list is returned for new feeds with no packages. Useful for inventory management and package discovery.")]
     public async Task<IReadOnlyList<Package>> ListPackagesAsync(Guid feedId)
     {
         return (await _artifactsClient.ListPackagesAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets a package version.")]
+    [McpServerTool, Description("Retrieves detailed information about a specific version of a package in a feed. Returns package metadata, dependencies, size, and version-specific details. The package and version must exist in the specified feed.")]
     public async Task<Package> GetPackageVersionAsync(Guid feedId, string packageName, string version)
     {
         return (await _artifactsClient.GetPackageVersionAsync(feedId, packageName, version)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Updates package version details.")]
+    [McpServerTool, Description("Updates metadata and properties of a specific package version such as listing status, tags, or description. Does not modify the package contents. Returns true if the update was successful.")]
     public async Task<bool> UpdatePackageVersionAsync(Guid feedId, string packageName, string version, PackageVersionDetails details)
     {
         return (await _artifactsClient.UpdatePackageVersionAsync(feedId, packageName, version, details)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a package.")]
+    [McpServerTool, Description("Permanently deletes a specific version of a package from a feed. This action cannot be undone and may break builds or applications depending on this package version. Returns true if deletion was successful.")]
     public async Task<bool> DeletePackageAsync(Guid feedId, string packageName, string version)
     {
         return (await _artifactsClient.DeletePackageAsync(feedId, packageName, version)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Downloads a package.")]
+    [McpServerTool, Description("Downloads the binary content of a specific package version from a feed. Returns a stream containing the package file (e.g., .nupkg, .tgz). The caller is responsible for disposing the stream after use.")]
     public async Task<Stream> DownloadPackageAsync(Guid feedId, string packageName, string version)
     {
         return (await _artifactsClient.DownloadPackageAsync(feedId, packageName, version)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets feed permissions.")]
+    [McpServerTool, Description("Retrieves the access permissions for a feed, showing which users, groups, or service principals have read, contribute, or administrator rights. Returns permission entries with identity and role information.")]
     public async Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(Guid feedId)
     {
         return (await _artifactsClient.GetFeedPermissionsAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Creates a feed view.")]
+    [McpServerTool, Description("Creates a new view for a package feed. Feed views are filtered subsets of packages (e.g., 'Release' view showing only stable versions, 'Prerelease' showing all versions). Views help organize packages by quality or lifecycle stage. Returns the created view.")]
     public async Task<FeedView> CreateFeedViewAsync(Guid feedId, FeedView feedView)
     {
         return (await _artifactsClient.CreateFeedViewAsync(feedId, feedView)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Lists all views for a feed.")]
+    [McpServerTool, Description("Lists all views configured for a specific feed. Views provide filtered perspectives of feed packages (e.g., 'Release', 'Prerelease'). Returns view metadata including names, visibility, and filtering criteria.")]
     public async Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(Guid feedId)
     {
         return (await _artifactsClient.ListFeedViewsAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a feed view.")]
+    [McpServerTool, Description("Permanently deletes a view from a feed. This removes the filtered perspective but does not affect the underlying packages. Applications using the view URL will no longer be able to access packages through this view. Returns true if deletion was successful.")]
     public async Task<bool> DeleteFeedViewAsync(Guid feedId, string viewId)
     {
         return (await _artifactsClient.DeleteFeedViewAsync(feedId, viewId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Sets upstreaming behavior for a package.")]
+    [McpServerTool, Description("Controls how a specific package behaves with upstream sources (e.g., NuGet.org, npmjs.com). Can allow, block, or use external caching. This determines whether the feed will fetch packages from external sources when not found locally. Returns true if setting was successful.")]
     public async Task<bool> SetUpstreamingBehaviorAsync(Guid feedId, string packageName, UpstreamingBehavior behavior)
     {
         return (await _artifactsClient.SetUpstreamingBehaviorAsync(feedId, packageName, behavior)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets upstreaming behavior for a package.")]
+    [McpServerTool, Description("Retrieves the current upstreaming behavior configuration for a specific package, indicating how it interacts with upstream sources like NuGet.org or npmjs.com. Returns the behavior setting (Allow, Block, or UseExternalCache).")]
     public async Task<UpstreamingBehavior> GetUpstreamingBehaviorAsync(Guid feedId, string packageName)
     {
         return (await _artifactsClient.GetUpstreamingBehaviorAsync(feedId, packageName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets feed retention policy.")]
+    [McpServerTool, Description("Retrieves the current retention policy for a feed, which defines how long packages are kept, maximum package count, and how recently downloaded packages are handled. Helps manage feed storage costs and cleanup old packages.")]
     public async Task<FeedRetentionPolicy> GetRetentionPolicyAsync(Guid feedId)
     {
         return (await _artifactsClient.GetRetentionPolicyAsync(feedId)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Sets feed retention policy.")]
+    [McpServerTool, Description("Sets or updates the retention policy for a feed, controlling automatic cleanup of old packages. Policies can limit by age (days), count, or protect recently downloaded packages. Helps manage storage costs and maintain feed performance. Returns the updated policy.")]
     public async Task<FeedRetentionPolicy> SetRetentionPolicyAsync(Guid feedId, FeedRetentionPolicy policy)
     {
         return (await _artifactsClient.SetRetentionPolicyAsync(feedId, policy)).EnsureSuccess(_logger);

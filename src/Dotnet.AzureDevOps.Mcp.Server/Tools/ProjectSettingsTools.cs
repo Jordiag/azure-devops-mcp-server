@@ -22,31 +22,31 @@ public class ProjectSettingsTools
         _logger = logger;
     }
 
-    [McpServerTool, Description("Creates a new team in the project if it does not exist already.")]
+    [McpServerTool, Description("Creates a new team in the Azure DevOps project if it doesn't already exist. Teams organize users and define area paths, iterations, and dashboard access. Prevents duplicate creation by checking for existing team name. Returns true if team was created or already exists.")]
     public async Task<bool> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription)
     {
         return (await _projectSettingsClient.CreateTeamIfDoesNotExistAsync(teamName, teamDescription)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets a team's identifier by name.")]
+    [McpServerTool, Description("Retrieves the unique identifier (GUID) of a team by its name. Team IDs are required for many Azure DevOps operations involving team-specific configurations, dashboards, or work item area paths.")]
     public async Task<Guid> GetTeamIdAsync(string teamName)
     {
         return (await _projectSettingsClient.GetTeamIdAsync(teamName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Gets all teams in the project.")]
+    [McpServerTool, Description("Lists all teams in the Azure DevOps project with their details including names, descriptions, IDs, and member information. Useful for team management and understanding project organization structure.")]
     public async Task<List<WebApiTeam>> GetAllTeamsAsync()
     {
         return (await _projectSettingsClient.GetAllTeamsAsync()).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Updates a team's description.")]
+    [McpServerTool, Description("Updates the description of an existing team. Team descriptions help users understand the purpose and responsibilities of each team within the project. Returns true if the update was successful.")]
     public async Task<bool> UpdateTeamDescriptionAsync(string teamName, string newDescription)
     {
         return (await _projectSettingsClient.UpdateTeamDescriptionAsync(teamName, newDescription)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a team by identifier.")]
+    [McpServerTool, Description("Permanently deletes a team from the Azure DevOps project. This removes team-specific configurations, dashboards, and area path assignments. Work items and other artifacts remain but lose team association. Returns true if deletion was successful.")]
     public async Task<bool> DeleteTeamAsync(Guid teamGuid)
     {
         return (await _projectSettingsClient.DeleteTeamAsync(teamGuid)).EnsureSuccess(_logger);
@@ -82,7 +82,7 @@ public class ProjectSettingsTools
         return (await _projectSettingsClient.GetProjectAsync(projectName)).EnsureSuccess(_logger);
     }
 
-    [McpServerTool, Description("Deletes a project.")]
+    [McpServerTool, Description("Permanently deletes an Azure DevOps project and all its contents including repositories, work items, pipelines, and artifacts. This action cannot be undone. All project data will be lost. Returns true if deletion was successful.")]
     public async Task<bool> DeleteProjectAsync(Guid projectId)
     {
         return (await _projectSettingsClient.DeleteProjectAsync(projectId)).EnsureSuccess(_logger);
