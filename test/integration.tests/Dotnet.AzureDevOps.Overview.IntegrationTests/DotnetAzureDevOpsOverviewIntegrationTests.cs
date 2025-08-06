@@ -261,7 +261,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             _ = await _wikiClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
 
-            AzureDevOpsActionResult<WikiPageResponse> pageResult = null;
+            AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 pageResult = await _wikiClient.GetPageAsync(wikiId, wikiPath);
