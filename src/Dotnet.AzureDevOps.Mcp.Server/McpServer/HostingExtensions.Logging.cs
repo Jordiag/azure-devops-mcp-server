@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -14,8 +14,19 @@ internal static class HostingExtensionsLogging
 
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
+
+        if (settings.EnableApplicationInsights &&
+            !string.IsNullOrWhiteSpace(settings.ApplicationInsightsConnectionString))
+        {
+            builder.Logging.AddApplicationInsights(config =>
+            {
+                config.ConnectionString = settings.ApplicationInsightsConnectionString;
+            }, _ => { });
+        }
+
         builder.Logging.SetMinimumLevel(settings.LogLevel);
 
         return builder;
     }
 }
+
