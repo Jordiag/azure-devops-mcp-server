@@ -118,7 +118,7 @@ jobs:
 
       - name: Run Tests with Coverage
         run: |
-          dotnet test "${{ env.solution }}" --logger:"console;verbosity=detailed"`
+          dotnet test "${{ env.solution }}""`
             -c "${{ env.buildConfiguration }}" `
             --no-restore --no-build `
             --settings "${{ github.workspace }}/.runsettings" `
