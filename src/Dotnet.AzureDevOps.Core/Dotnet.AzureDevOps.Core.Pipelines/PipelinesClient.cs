@@ -191,7 +191,7 @@ public partial class PipelinesClient : IPipelinesClient
                 .OrderBy(e => e.FullName) // Ensure correct order
                 .ToList();
 
-            if(!logEntries.Any())
+            if(logEntries.Count == 0)
                 return AzureDevOpsActionResult<string>.Failure("No console logs were found in the build output.", _logger);
 
             var fullLog = new StringBuilder();

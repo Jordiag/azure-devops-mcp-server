@@ -143,7 +143,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 if(!response.IsSuccessStatusCode)
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
+                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                     return AzureDevOpsActionResult<bool>.Failure($"Failed to create query: {response.StatusCode} - {responseBody}", _logger);
                 }
 
@@ -167,7 +167,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 if(!response.IsSuccessStatusCode)
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
+                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                     return AzureDevOpsActionResult<bool>.Failure($"Failed to delete query: {response.StatusCode} - {responseBody}", _logger);
                 }
 

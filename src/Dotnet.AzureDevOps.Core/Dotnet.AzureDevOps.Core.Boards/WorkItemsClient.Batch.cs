@@ -114,10 +114,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                if(links == null)
-                {
-                    throw new ArgumentNullException(nameof(links));
-                }
+                ArgumentNullException.ThrowIfNull(links);
 
                 var batch = new List<WitBatchRequest>();
 
@@ -320,10 +317,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                if(links == null)
-                {
-                    throw new ArgumentNullException(nameof(links));
-                }
+                ArgumentNullException.ThrowIfNull(links);
 
                 List<WitBatchRequest> batch = new List<WitBatchRequest>();
 
