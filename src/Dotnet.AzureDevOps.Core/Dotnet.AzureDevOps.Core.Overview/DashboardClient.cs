@@ -18,8 +18,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             _projectName = projectName;
             _logger = logger ?? NullLogger.Instance;
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
             _dashboardHttpClient = connection.GetClient<DashboardHttpClient>();
         }
 

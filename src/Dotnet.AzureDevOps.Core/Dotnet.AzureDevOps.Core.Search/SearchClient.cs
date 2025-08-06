@@ -3,27 +3,31 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Search.Options;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.Search;
 
 public class SearchClient : ISearchClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger? _logger;
 
-    public SearchClient(string organisation, string personalAccessToken)
+    public SearchClient(string organisation, string personalAccessToken, ILogger? logger = null)
     {
         string searchBaseAddress = $"https://almsearch.dev.azure.com/{organisation}/";
         _httpClient = new HttpClient { BaseAddress = new Uri(searchBaseAddress) };
         string token = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{personalAccessToken}"));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        _logger = logger ?? NullLogger.Instance;
     }
 
     public Task<AzureDevOpsActionResult<string>> SearchCodeAsync(CodeSearchOptions options, CancellationToken cancellationToken = default)
     {
         string? projectName = options.Project?[0];
         return projectName == null
-            ? Task.FromResult(AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions."))
+            ? Task.FromResult(AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", _logger))
             : SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
     }
 
@@ -66,13 +70,13 @@ public class SearchClient : ISearchClient
 
             if(response.StatusCode == HttpStatusCode.NotFound)
             {
-                return AzureDevOpsActionResult<bool>.Success(false);
+                return AzureDevOpsActionResult<bool>.Success(false, _logger);
             }
 
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
             }
 
             string content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -82,14 +86,14 @@ public class SearchClient : ISearchClient
             {
                 bool enabled = installState.TryGetProperty("flags", out JsonElement flags) &&
                                flags.GetString()?.Contains("trusted") == true;
-                return AzureDevOpsActionResult<bool>.Success(enabled);
+                return AzureDevOpsActionResult<bool>.Success(enabled, _logger);
             }
 
-            return AzureDevOpsActionResult<bool>.Success(true);
+            return AzureDevOpsActionResult<bool>.Success(true, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex);
+            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
         }
     }
 
@@ -111,14 +115,14 @@ public class SearchClient : ISearchClient
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<string>.Failure(response.StatusCode, error);
+                return AzureDevOpsActionResult<string>.Failure(response.StatusCode, error, _logger);
             }
             string content = await response.Content.ReadAsStringAsync(cancellationToken);
-            return AzureDevOpsActionResult<string>.Success(content);
+            return AzureDevOpsActionResult<string>.Success(content, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<string>.Failure(ex);
+            return AzureDevOpsActionResult<string>.Failure(ex, _logger);
         }
     }
 

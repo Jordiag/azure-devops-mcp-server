@@ -8,7 +8,6 @@ public class AzureDevOpsActionResult<T>
     public bool IsSuccessful { get; }
     public T Value { get; }
     public string? ErrorMessage { get; }
-    public bool HasValue { get; set; }
 
     private AzureDevOpsActionResult(bool isSuccess, T value, string? errorMessage)
     {
@@ -51,12 +50,15 @@ public class AzureDevOpsActionResult<T>
         return new(false, default!, errorMessage);
     }
 
-    public T EnsureSuccess()
+    public T EnsureSuccess(ILogger? logger = null)
     {
-        if(IsSuccessful)
-            return Value;      // Value is guaranteed non-null on success.
-
-        throw new InvalidOperationException(
-            ErrorMessage ?? "Azure DevOps operation failed.");
+        if (!IsSuccessful)
+        {
+            logger?.LogError("Operation failed: {ErrorMessage}", ErrorMessage);
+            throw new InvalidOperationException(ErrorMessage ?? "Operation failed");
+        }
+        
+        logger?.LogDebug("Operation succeeded");
+        return Value;
     }
 }

@@ -7,6 +7,8 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Operations;
 using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
@@ -18,9 +20,9 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         private readonly TeamHttpClient _teamClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly OperationsHttpClient _operationsClient;
+        private readonly ILogger? _logger;
 
-
-        public ProjectSettingsClient(string organizationUrl, string projectName, string personalAccessToken)
+        public ProjectSettingsClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
@@ -35,15 +37,17 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
             _httClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
+
+            _logger = logger ?? NullLogger.Instance;
         }
 
         public async Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription)
         {
             AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName);
 
-            if (teamNameResult.IsSuccessful)
+            if(teamNameResult.IsSuccessful)
             {
-                return AzureDevOpsActionResult<bool>.Success(true);
+                return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
 
             WebApiTeam newTeam = new WebApiTeam
@@ -57,12 +61,12 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName);
                 bool success = createdTeam.Description == teamDescription && createdTeam.Name == teamName;
                 return success
-                    ? AzureDevOpsActionResult<bool>.Success(true)
-                    : AzureDevOpsActionResult<bool>.Failure("Created team does not match the expected values.");
+                    ? AzureDevOpsActionResult<bool>.Success(true, _logger)
+                    : AzureDevOpsActionResult<bool>.Failure("Created team does not match the expected values.", _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 
@@ -71,11 +75,11 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             try
             {
                 WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
-                return AzureDevOpsActionResult<Guid>.Success(team.Id);
+                return AzureDevOpsActionResult<Guid>.Success(team.Id, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Guid>.Failure(ex);
+                return AzureDevOpsActionResult<Guid>.Failure(ex, _logger);
             }
         }
 
@@ -84,11 +88,11 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             try
             {
                 List<WebApiTeam> teams = await _teamClient.GetAllTeamsAsync();
-                return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams);
+                return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<List<WebApiTeam>>.Failure(ex);
+                return AzureDevOpsActionResult<List<WebApiTeam>>.Failure(ex, _logger);
             }
         }
 
@@ -107,12 +111,12 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 bool success = webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
                 return success
-                    ? AzureDevOpsActionResult<bool>.Success(true)
-                    : AzureDevOpsActionResult<bool>.Failure("Updated team values do not match expected.");
+                    ? AzureDevOpsActionResult<bool>.Success(true, _logger)
+                    : AzureDevOpsActionResult<bool>.Failure("Updated team values do not match expected.", _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 
@@ -127,14 +131,14 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync();
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
                 }
 
-                return AzureDevOpsActionResult<bool>.Success(true);
+                return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 
@@ -165,13 +169,13 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync();
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
                 }
-                return AzureDevOpsActionResult<bool>.Success(true);
+                return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 
@@ -185,14 +189,14 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync();
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error);
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
                 }
 
-                return AzureDevOpsActionResult<bool>.Success(true);
+                return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 
@@ -212,16 +216,16 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                         string? typeId = element.GetProperty("typeId").GetString();
                         if(!string.IsNullOrEmpty(typeId))
                         {
-                            return AzureDevOpsActionResult<string>.Success(typeId);
+                            return AzureDevOpsActionResult<string>.Success(typeId, _logger);
                         }
                     }
                 }
 
-                return AzureDevOpsActionResult<string>.Failure("ProcessId couldn't be found listing and inspecting all processes");
+                return AzureDevOpsActionResult<string>.Failure("ProcessId couldn't be found listing and inspecting all processes", _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<string>.Failure(ex);
+                return AzureDevOpsActionResult<string>.Failure(ex, _logger);
             }
         }
 
@@ -245,18 +249,18 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 Operation operation = await WaitForOperationAsync(operationReference.Id);
                 if(operation.Status != OperationStatus.Succeeded)
                 {
-                    return AzureDevOpsActionResult<Guid>.Failure($"Project creation did not succeed: {operation.Status}");
+                    return AzureDevOpsActionResult<Guid>.Failure($"Project creation did not succeed: {operation.Status}", _logger);
                 }
 
                 TeamProject? createdProject = await _projectClient.GetProject(projectName);
                 if(createdProject == null)
-                    return AzureDevOpsActionResult<Guid>.Failure("Project not found after creation.");
+                    return AzureDevOpsActionResult<Guid>.Failure("Project not found after creation.", _logger);
 
-                return AzureDevOpsActionResult<Guid>.Success(createdProject.Id);
+                return AzureDevOpsActionResult<Guid>.Success(createdProject.Id, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Guid>.Failure(ex);
+                return AzureDevOpsActionResult<Guid>.Failure(ex, _logger);
             }
         }
 
@@ -265,15 +269,15 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             try
             {
                 TeamProject project = await _projectClient.GetProject(projectName);
-                return AzureDevOpsActionResult<TeamProject>.Success(project);
+                return AzureDevOpsActionResult<TeamProject>.Success(project, _logger);
             }
             catch(ProjectDoesNotExistWithNameException ex)
             {
-                return AzureDevOpsActionResult<TeamProject>.Failure(ex);
+                return AzureDevOpsActionResult<TeamProject>.Failure(ex, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<TeamProject>.Failure(ex);
+                return AzureDevOpsActionResult<TeamProject>.Failure(ex, _logger);
             }
         }
 
@@ -285,12 +289,12 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 Operation operation = await WaitForOperationAsync(operationReference.Id);
                 bool success = operation.Status == OperationStatus.Succeeded;
                 return success
-                    ? AzureDevOpsActionResult<bool>.Success(true)
-                    : AzureDevOpsActionResult<bool>.Failure($"Project deletion did not succeed: {operation.Status}");
+                    ? AzureDevOpsActionResult<bool>.Success(true, _logger)
+                    : AzureDevOpsActionResult<bool>.Failure($"Project deletion did not succeed: {operation.Status}", _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 

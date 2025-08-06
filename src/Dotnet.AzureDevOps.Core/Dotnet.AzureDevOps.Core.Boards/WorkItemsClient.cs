@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -14,6 +16,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
     {
         private readonly string _organizationUrl;
         private readonly string _projectName;
+        private readonly ILogger _logger;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
         private readonly HttpClient _httpClient;
@@ -21,18 +24,19 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private const string ContentTypeHeader = Constants.ContentTypeHeader;
         private const string JsonPatchContentType = Constants.JsonPatchContentType;
 
-        public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken)
+        public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
+            _logger = logger ?? NullLogger.Instance;
 
             _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
 
             string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
 
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(_organizationUrl), credentials);
+            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            VssConnection connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _workItemClient = connection.GetClient<WorkItemTrackingHttpClient>();
             _workClient = connection.GetClient<WorkHttpClient>();
         }
@@ -65,11 +69,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 }
 
                 bool isSystem = processType.Equals("system", StringComparison.OrdinalIgnoreCase);
-                return AzureDevOpsActionResult<bool>.Success(isSystem);
+                return AzureDevOpsActionResult<bool>.Success(isSystem, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
     }
