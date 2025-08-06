@@ -439,7 +439,15 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 new GitPullRequestCompletionOptions { MergeStrategy = GitPullRequestMergeStrategy.Squash });
             GitPullRequest gitPullRequest = gitPullRequestResult.Value!;
 
-            AzureDevOpsActionResult<GitPullRequest> afterAutoResult = await _reposClient.GetPullRequestAsync(_repoName, prId);
+            AzureDevOpsActionResult<GitPullRequest> afterAutoResult = default;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                afterAutoResult = await _reposClient.GetPullRequestAsync(_repoName, prId);
+                return afterAutoResult.IsSuccessful;
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
+            Assert.NotNull(afterAutoResult!.Value);
+
             GitPullRequest? afterAuto = afterAutoResult.Value;
             Assert.Equal(afterAuto?.AutoCompleteSetBy.DisplayName, userResult.Value.displayName);
         }

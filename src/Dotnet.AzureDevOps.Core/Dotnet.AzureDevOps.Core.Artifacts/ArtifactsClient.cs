@@ -214,7 +214,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            JsonSerializerOptions options = new JsonSerializerOptions
+            var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             };
@@ -332,7 +332,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}")
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}")
             {
                 Content = JsonContent.Create(details)
             };
