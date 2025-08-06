@@ -85,10 +85,18 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.True(pullRequestId.HasValue);
             _createdPrIds.Add(pullRequestId.Value);
 
-            AzureDevOpsActionResult<GitPullRequest> gtPullRequestResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
-            GitPullRequest? gtPullRequest = gtPullRequestResult.Value;
+            AzureDevOpsActionResult<GitPullRequest> gtPullRequestResult = null;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                gtPullRequestResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
+                return gtPullRequestResult.IsSuccessful && gtPullRequestResult.Value?.Status == PullRequestStatus.Active;
+            }, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1));
+
+            GitPullRequest? gtPullRequest = gtPullRequestResult!.Value;
             Assert.NotNull(gtPullRequest);
             Assert.Equal(PullRequestStatus.Active, gtPullRequest!.Status);
+
+            await Task.Delay(1000);
 
             AzureDevOpsActionResult<GitPullRequest> completeResult = await _reposClient.CompletePullRequestAsync(
                 _repoName,
@@ -99,32 +107,15 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
             Assert.True(completeResult.IsSuccessful);
 
-            GitPullRequest? completed = await WaitForCompletePullRequestAsync(pullRequestId.Value);
-
-            Assert.Equal(PullRequestStatus.Completed, completed!.Status);
-        }
-
-        private async Task<GitPullRequest?> WaitForCompletePullRequestAsync(int pullRequestId)
-        {
-            const int maxAttempts = 20;
-            const int delayMs = 500;
-
-            GitPullRequest? gtPullRequest = null;
-            try
+            AzureDevOpsActionResult<GitPullRequest> prResult = null;
+            ;
+            await WaitHelper.WaitUntilAsync(async () =>
             {
-                await WaitHelper.WaitUntilAsync(async () =>
-                {
-                    AzureDevOpsActionResult<GitPullRequest> prResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId);
-                    gtPullRequest = prResult.Value;
-                    return gtPullRequest?.Status == PullRequestStatus.Completed;
-                }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
+                prResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
+                return prResult.IsSuccessful && prResult.Value?.Status == PullRequestStatus.Completed;
+            }, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1));
 
-                return gtPullRequest;
-            }
-            catch(TimeoutException)
-            {
-                return gtPullRequest;
-            }
+            Assert.Equal(PullRequestStatus.Completed, prResult!.Value.Status);
         }
 
         // TODO: Re-enable this test once the API is working again
