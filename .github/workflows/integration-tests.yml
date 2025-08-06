@@ -120,7 +120,6 @@ jobs:
         run: |
           dotnet test "${{ env.solution }}" --logger:"console;verbosity=detailed"`
             -c "${{ env.buildConfiguration }}" `
-            --filter "TestType!=End2End" `
             --no-restore --no-build `
             --settings "${{ github.workspace }}/.runsettings" `
             --collect:"Code Coverage" `
