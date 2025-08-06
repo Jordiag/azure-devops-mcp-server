@@ -10,7 +10,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                CommentCreate commentCreate = new CommentCreate { Text = comment };
+                var commentCreate = new CommentCreate { Text = comment };
                 _ = await _workItemClient.AddCommentAsync(commentCreate, projectName, workItemId, cancellationToken: cancellationToken);
                 return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
