@@ -64,11 +64,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true);
+                return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex);
+                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
         }
 
@@ -92,14 +92,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 if(newWorkItem.Id.HasValue)
                 {
-                    return AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value);
+                    return AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value, _logger);
                 }
 
-                return AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.");
+                return AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.", _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex);
+                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
             }
         }
 
@@ -117,14 +117,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 if(updatedWorkItem.Id.HasValue)
                 {
-                    return AzureDevOpsActionResult<int>.Success(updatedWorkItem.Id.Value);
+                    return AzureDevOpsActionResult<int>.Success(updatedWorkItem.Id.Value, _logger);
                 }
 
-                return AzureDevOpsActionResult<int>.Failure("Work item update returned null identifier.");
+                return AzureDevOpsActionResult<int>.Failure("Work item update returned null identifier.", _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex);
+                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
             }
         }
 
@@ -230,11 +230,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     type: workItemType,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<WorkItem>.Success(workItem);
+                return AzureDevOpsActionResult<WorkItem>.Success(workItem, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
             }
         }
 
@@ -272,11 +272,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     id: workItemId,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<WorkItem>.Success(result);
+                return AzureDevOpsActionResult<WorkItem>.Success(result, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
             }
         }
 
@@ -285,13 +285,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
             if(!itemResult.IsSuccessful)
             {
-                return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!);
+                return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!, _logger);
             }
 
             WorkItem item = itemResult.Value;
             return item.Fields.TryGetValue(fieldName, out object? value)
-                ? AzureDevOpsActionResult<object>.Success(value)
-                : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.");
+                ? AzureDevOpsActionResult<object>.Success(value, _logger)
+                : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.", _logger);
         }
 
         /// <summary>
@@ -317,11 +317,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 };
 
                 WorkItem result = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WorkItem>.Success(result);
+                return AzureDevOpsActionResult<WorkItem>.Success(result, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
             }
         }
 
@@ -339,22 +339,21 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 WorkItemField2 created = await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WorkItemField2>.Success(created);
+                return AzureDevOpsActionResult<WorkItemField2>.Success(created, _logger);
             }
             catch(VssServiceException ex)
             {
                 if(ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
                 {
-                    return AzureDevOpsActionResult<WorkItemField2>.Success(field);
+                    return AzureDevOpsActionResult<WorkItemField2>.Success(field, _logger);
                 }
 
-                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex);
+                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex);
+                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, _logger);
             }
         }
     }
 }
-

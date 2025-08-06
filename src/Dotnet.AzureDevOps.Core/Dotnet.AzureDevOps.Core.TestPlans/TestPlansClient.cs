@@ -9,6 +9,8 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using WorkItem = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.WorkItem;
 using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
@@ -21,14 +23,16 @@ public class TestPlansClient : ITestPlansClient
     private readonly string _projectName;
     private readonly TestPlanHttpClient _testPlanClient;
     private readonly VssConnection _connection;
+    private readonly ILogger? _logger;
 
-    public TestPlansClient(string organizationUrl, string projectName, string personalAccessToken)
+    public TestPlansClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
     {
         _projectName = projectName;
 
         VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
         _connection = new VssConnection(new Uri(organizationUrl), credentials);
         _testPlanClient = _connection.GetClient<TestPlanHttpClient>();
+        _logger = logger ?? NullLogger.Instance;
     }
 
     public async Task<AzureDevOpsActionResult<int>> CreateTestPlanAsync(TestPlanCreateOptions testPlanCreateOptions, CancellationToken cancellationToken = default)
@@ -50,11 +54,11 @@ public class TestPlansClient : ITestPlansClient
                 project: _projectName,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(plan.Id);
+            return AzureDevOpsActionResult<int>.Success(plan.Id, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex);
+            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
         }
     }
 
@@ -66,15 +70,15 @@ public class TestPlansClient : ITestPlansClient
                 project: _projectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<TestPlan>.Success(plan);
+            return AzureDevOpsActionResult<TestPlan>.Success(plan, _logger);
         }
         catch(VssServiceException)
         {
-            return AzureDevOpsActionResult<TestPlan>.Failure("Test plan is not found");
+            return AzureDevOpsActionResult<TestPlan>.Failure("Test plan is not found", _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestPlan>.Failure(ex);
+            return AzureDevOpsActionResult<TestPlan>.Failure(ex, _logger);
         }
     }
 
@@ -85,11 +89,11 @@ public class TestPlansClient : ITestPlansClient
             PagedList<TestPlan> plans = await _testPlanClient.GetTestPlansAsync(
                 project: _projectName,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Success(plans);
+            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Success(plans, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Failure(ex);
+            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Failure(ex, _logger);
         }
     }
 
@@ -101,11 +105,11 @@ public class TestPlansClient : ITestPlansClient
                 project: _projectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<bool>.Success(true);
+            return AzureDevOpsActionResult<bool>.Success(true, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex);
+            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
         }
     }
 
@@ -126,11 +130,11 @@ public class TestPlansClient : ITestPlansClient
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(suite.Id);
+            return AzureDevOpsActionResult<int>.Success(suite.Id, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex);
+            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
         }
     }
 
@@ -143,11 +147,11 @@ public class TestPlansClient : ITestPlansClient
                 planId: testPlanId,
                 asTreeView: false,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Success(suites);
+            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Success(suites, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Failure(ex);
+            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Failure(ex, _logger);
         }
     }
 
@@ -175,11 +179,11 @@ public class TestPlansClient : ITestPlansClient
                 suiteId: testSuiteId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<bool>.Success(true);
+            return AzureDevOpsActionResult<bool>.Success(true, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex);
+            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
         }
     }
 
@@ -230,11 +234,11 @@ public class TestPlansClient : ITestPlansClient
                 "Test Case",
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Success(result);
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Success(result, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Failure(ex);
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Failure(ex, _logger);
         }
     }
 
@@ -247,11 +251,11 @@ public class TestPlansClient : ITestPlansClient
                 testPlanId,
                 testSuiteId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<PagedList<TestCase>>.Success(testCases);
+            return AzureDevOpsActionResult<PagedList<TestCase>>.Success(testCases, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<PagedList<TestCase>>.Failure(ex);
+            return AzureDevOpsActionResult<PagedList<TestCase>>.Failure(ex, _logger);
         }
     }
 
@@ -264,11 +268,11 @@ public class TestPlansClient : ITestPlansClient
                 projectName,
                 buildId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<TestResultsDetails>.Success(details);
+            return AzureDevOpsActionResult<TestResultsDetails>.Success(details, _logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestResultsDetails>.Failure(ex);
+            return AzureDevOpsActionResult<TestResultsDetails>.Failure(ex, _logger);
         }
     }
 
@@ -277,18 +281,18 @@ public class TestPlansClient : ITestPlansClient
         try
         {
             AzureDevOpsActionResult<IReadOnlyList<TestSuite>> suitesResult = await ListTestSuitesAsync(planId);
-            if (!suitesResult.IsSuccessful || suitesResult.Value == null)
-                return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.");
+            if(!suitesResult.IsSuccessful || suitesResult.Value == null)
+                return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.", _logger);
 
             IReadOnlyList<TestSuite> suites = suitesResult.Value;
             TestSuite? root = suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id != -1);
             return root is null
-                ? AzureDevOpsActionResult<TestSuite>.Failure($"No root suite found for test plan {planId}.")
-                : AzureDevOpsActionResult<TestSuite>.Success(root);
+                ? AzureDevOpsActionResult<TestSuite>.Failure($"No root suite found for test plan {planId}.", _logger)
+                : AzureDevOpsActionResult<TestSuite>.Success(root, _logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestSuite>.Failure(ex);
+            return AzureDevOpsActionResult<TestSuite>.Failure(ex, _logger);
         }
     }
 }

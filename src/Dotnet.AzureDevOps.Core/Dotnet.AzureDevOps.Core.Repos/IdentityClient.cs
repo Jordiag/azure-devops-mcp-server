@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using Dotnet.AzureDevOps.Core.Common;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Identity;
 using Microsoft.VisualStudio.Services.Identity.Client;
@@ -10,14 +12,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
     public class IdentityClient : IIdentityClient
     {
         private readonly IdentityHttpClient _identityHttpClient;
+        private readonly ILogger? _logger;
 
-        public IdentityClient(string organizationUrl, string personalAccessToken)
+        public IdentityClient(string organizationUrl, string personalAccessToken, ILogger? logger = null)
         {
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             var connection = new VssConnection(new Uri(organizationUrl), credentials);
+            _logger = logger ?? NullLogger.Instance;
             _identityHttpClient = connection.GetClient<IdentityHttpClient>();
 
             _ = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
+
         }
 
         public async Task<AzureDevOpsActionResult<(string localId, string displayName)>> GetUserLocalIdFromEmailAsync(
@@ -43,11 +48,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 }
 
                 // This gives you the actual local ID
-                return AzureDevOpsActionResult<(string localId, string displayName)>.Success((identity.Id.ToString(), identity.DisplayName ?? string.Empty));
+                return AzureDevOpsActionResult<(string localId, string displayName)>.Success((identity.Id.ToString(), identity.DisplayName ?? string.Empty), _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<(string localId, string displayName)>.Failure(ex);
+                return AzureDevOpsActionResult<(string localId, string displayName)>.Failure(ex, _logger);
             }
         }
     }

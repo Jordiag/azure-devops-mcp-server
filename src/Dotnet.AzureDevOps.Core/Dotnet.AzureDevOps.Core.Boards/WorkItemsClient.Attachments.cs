@@ -30,11 +30,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 };
 
                 _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Guid>.Success(reference.Id);
+                return AzureDevOpsActionResult<Guid>.Success(reference.Id, _logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Guid>.Failure(ex);
+                return AzureDevOpsActionResult<Guid>.Failure(ex, _logger);
             }
         }
 
@@ -43,11 +43,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 Stream content = await _workItemClient.GetAttachmentContentAsync(projectName, attachmentId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Stream>.Success(content);
+                return AzureDevOpsActionResult<Stream>.Success(content, _logger);
             }
             catch(VssServiceException ex)
             {
-                return AzureDevOpsActionResult<Stream>.Failure(ex);
+                return AzureDevOpsActionResult<Stream>.Failure(ex, _logger);
             }
         }
     }
