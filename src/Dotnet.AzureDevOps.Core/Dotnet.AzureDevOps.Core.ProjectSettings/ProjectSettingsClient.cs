@@ -27,8 +27,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             _organizationUrl = organizationUrl;
             _projectName = projectName;
 
-            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            VssConnection connection = new VssConnection(new Uri(_organizationUrl), credentials);
+            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            var connection = new VssConnection(new Uri(_organizationUrl), credentials);
             _teamClient = connection.GetClient<TeamHttpClient>();
             _projectClient = connection.GetClient<ProjectHttpClient>();
             _operationsClient = connection.GetClient<OperationsHttpClient>();
@@ -50,7 +50,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
 
-            WebApiTeam newTeam = new WebApiTeam
+            var newTeam = new WebApiTeam
             {
                 Name = teamName,
                 Description = teamDescription
@@ -102,7 +102,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             {
                 WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
 
-                WebApiTeam updatedTeam = new WebApiTeam
+                var updatedTeam = new WebApiTeam
                 {
                     Description = newDescription
                 };
@@ -161,7 +161,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 parentProcessTypeId = parentProcessId
             };
 
-            StringContent content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
             try
             {
@@ -231,7 +231,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
         public async Task<AzureDevOpsActionResult<Guid>> CreateProjectAsync(string projectName, string description, string processId)
         {
-            TeamProject teamProject = new TeamProject
+            var teamProject = new TeamProject
             {
                 Name = projectName,
                 Description = description,

@@ -1,6 +1,3 @@
-using System;
-using System.Threading.Tasks;
-
 namespace Dotnet.AzureDevOps.Tests.Common;
 
 public static class WaitHelper

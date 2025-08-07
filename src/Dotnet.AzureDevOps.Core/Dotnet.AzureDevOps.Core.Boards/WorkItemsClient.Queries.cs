@@ -48,7 +48,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     int[] ids = [.. result.WorkItems.Select(w => w.Id)];
                     const int BatchSize = 200;
 
-                    List<WorkItem> allItems = new List<WorkItem>();
+                    var allItems = new List<WorkItem>();
 
                     foreach(int[] batch in ids.Chunk(BatchSize))
                     {
@@ -130,7 +130,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     isFolder = false
                 };
 
-                StringContent content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+                var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
                 string requestUrl = $"{_organizationUrl}/{projectName}/_apis/wit/queries/Shared%20Queries?api-version={GlobalConstants.ApiVersion}";
 

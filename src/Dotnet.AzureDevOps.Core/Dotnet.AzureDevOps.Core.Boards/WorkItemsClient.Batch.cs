@@ -54,7 +54,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 ArgumentNullException.ThrowIfNull(requests);
-                List<WitBatchRequest> requestList = requests.ToList();
+                var requestList = requests.ToList();
 
                 List<WitBatchResponse> result = await _workItemClient
                     .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
@@ -78,13 +78,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(updates);
 
-                List<WitBatchRequest> batch = new List<WitBatchRequest>();
+                var batch = new List<WitBatchRequest>();
 
                 foreach((int id, WorkItemCreateOptions options) in updates)
                 {
                     JsonPatchDocument patch = BuildPatchDocument(options);
 
-                    WitBatchRequest request = new WitBatchRequest
+                    var request = new WitBatchRequest
                     {
                         Method = _patchMethod,
                         Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}",
@@ -125,7 +125,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         throw new ArgumentException("Relation cannot be null or whitespace.", nameof(links));
                     }
 
-                    JsonPatchDocument patch = new JsonPatchDocument
+                    var patch = new JsonPatchDocument
                     {
                         new JsonPatchOperation
                         {
@@ -140,7 +140,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         }
                     };
 
-                    WitBatchRequest request = new WitBatchRequest
+                    var request = new WitBatchRequest
                     {
                         Method = _patchMethod,
                         Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
@@ -174,11 +174,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(workItemIds);
 
-                List<WitBatchRequest> batch = new List<WitBatchRequest>();
+                var batch = new List<WitBatchRequest>();
 
                 foreach(int id in workItemIds)
                 {
-                    JsonPatchDocument patch = new JsonPatchDocument
+                    var patch = new JsonPatchDocument
                     {
                         new JsonPatchOperation
                         {
@@ -198,7 +198,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         });
                     }
 
-                    WitBatchRequest request = new WitBatchRequest
+                    var request = new WitBatchRequest
                     {
                         Method = "PATCH",
                         Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}",
@@ -230,11 +230,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(pairs);
 
-                List<WitBatchRequest> batch = new List<WitBatchRequest>();
+                var batch = new List<WitBatchRequest>();
 
                 foreach((int duplicateId, int canonicalId) in pairs)
                 {
-                    JsonPatchDocument patch = new JsonPatchDocument
+                    var patch = new JsonPatchDocument
                     {
                         new JsonPatchOperation
                         {
@@ -261,7 +261,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         }
                     };
 
-                    WitBatchRequest request = new WitBatchRequest
+                    var request = new WitBatchRequest
                     {
                         Method = "PATCH",
                         Uri = $"/_apis/wit/workitems/{duplicateId}?api-version={GlobalConstants.ApiVersion}",
@@ -293,7 +293,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(ids);
 
-                WorkItemBatchGetRequest request = new WorkItemBatchGetRequest
+                var request = new WorkItemBatchGetRequest
                 {
                     Ids = ids.ToList(),
                     Expand = expand,
@@ -319,13 +319,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(links);
 
-                List<WitBatchRequest> batch = new List<WitBatchRequest>();
+                var batch = new List<WitBatchRequest>();
 
                 foreach((int sourceId, int targetId, string type, string? comment) in links)
                 {
                     string relation = GetRelationFromName(type);
 
-                    JsonPatchDocument patch = new JsonPatchDocument
+                    var patch = new JsonPatchDocument
                     {
                         new JsonPatchOperation
                         {
@@ -340,7 +340,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         }
                     };
 
-                    WitBatchRequest request = new WitBatchRequest
+                    var request = new WitBatchRequest
                     {
                         Method = _patchMethod,
                         Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}",

@@ -187,7 +187,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            JsonSerializerOptions options = new JsonSerializerOptions
+            var options = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 PropertyNameCaseInsensitive = true,

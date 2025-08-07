@@ -90,12 +90,9 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     cancellationToken: cancellationToken
                 );
 
-                if(newWorkItem.Id.HasValue)
-                {
-                    return AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value, _logger);
-                }
-
-                return AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.", _logger);
+                return newWorkItem.Id.HasValue
+                    ? AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value, _logger)
+                    : AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.", _logger);
             }
             catch(Exception ex)
             {
@@ -159,7 +156,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         private JsonPatchDocument BuildPatchDocument(WorkItemCreateOptions workItemCreateOptions)
         {
-            JsonPatchDocument patchDocument = new JsonPatchDocument();
+            var patchDocument = new JsonPatchDocument();
 
             // Strings
             AddStringField(patchDocument, workItemCreateOptions.Title, "/fields/System.Title");
@@ -202,7 +199,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 ArgumentException.ThrowIfNullOrWhiteSpace(workItemType);
                 ArgumentNullException.ThrowIfNull(fields);
 
-                JsonPatchDocument patchDocument = new JsonPatchDocument();
+                var patchDocument = new JsonPatchDocument();
 
                 foreach(WorkItemFieldValue field in fields)
                 {
@@ -244,7 +241,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(updates);
 
-                JsonPatchDocument patchDocument = new JsonPatchDocument();
+                var patchDocument = new JsonPatchDocument();
 
                 foreach(WorkItemFieldUpdate update in updates)
                 {
@@ -306,7 +303,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                JsonPatchDocument patch = new JsonPatchDocument
+                var patch = new JsonPatchDocument
                 {
                     new JsonPatchOperation
                     {
@@ -327,7 +324,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         public async Task<AzureDevOpsActionResult<WorkItemField2>> CreateCustomFieldIfDoesntExistAsync(string fieldName, string referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type, string? description = null, CancellationToken cancellationToken = default)
         {
-            WorkItemField2 field = new WorkItemField2
+            var field = new WorkItemField2
             {
                 Name = fieldName,
                 ReferenceName = referenceName,

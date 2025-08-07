@@ -1,11 +1,10 @@
 ﻿using Dotnet.AzureDevOps.Core.Common;
 
-namespace Dotnet.AzureDevOps.Core.Repos
+namespace Dotnet.AzureDevOps.Core.Repos;
+
+public interface IIdentityClient
 {
-    public interface IIdentityClient
-    {
-        Task<AzureDevOpsActionResult<(string localId, string displayName)>> GetUserLocalIdFromEmailAsync(
-            string email,
-            CancellationToken cancellationToken = default);
-    }
+    Task<AzureDevOpsActionResult<(string localId, string displayName)>> GetUserLocalIdFromEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default);
 }

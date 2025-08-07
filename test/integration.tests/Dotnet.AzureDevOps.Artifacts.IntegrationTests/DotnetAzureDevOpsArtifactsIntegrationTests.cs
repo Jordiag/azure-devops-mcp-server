@@ -13,18 +13,16 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
     {
         private readonly ArtifactsClient _artifactsClient;
         private readonly List<Guid> _createdFeedIds = new List<Guid>();
-        private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
 
         public DotnetAzureDevOpsArtifactsIntegrationTests(IntegrationTestFixture fixture)
         {
-            _azureDevOpsConfiguration = fixture.Configuration;
             _artifactsClient = fixture.ArtifactsClient;
         }
 
         [Fact]
         public async Task FeedCrud_SucceedsAsync()
         {
-            FeedCreateOptions feedCreateOptions = new FeedCreateOptions
+            var feedCreateOptions = new FeedCreateOptions
             {
                 Name = $"it-feed-{UtcStamp()}",
                 Description = "Created by integration test"
@@ -40,7 +38,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Feed feed = getResult.Value;
             Assert.Equal(feedCreateOptions.Name, feed.Name);
 
-            FeedUpdateOptions updateOptions = new FeedUpdateOptions
+            var updateOptions = new FeedUpdateOptions
             {
                 Description = "Updated via test"
             };
@@ -66,7 +64,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         [Fact]
         public async Task ListPackages_Empty_ForNewFeed()
         {
-            FeedCreateOptions feedCreateOptions = new FeedCreateOptions
+            var feedCreateOptions = new FeedCreateOptions
             {
                 Name = $"pkg-feed-{UtcStamp()}"
             };
@@ -83,7 +81,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         [Fact]
         public async Task FeedGetPermissions_SucceedsAsync()
         {
-            FeedCreateOptions feedCreateOptions = new FeedCreateOptions
+            var feedCreateOptions = new FeedCreateOptions
             {
                 Name = $"perm-feed-{UtcStamp()}"
             };
@@ -100,7 +98,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         [Fact]
         public async Task FeedViewsWorkflow_SucceedsAsync()
         {
-            FeedCreateOptions feedCreateOptions = new FeedCreateOptions
+            var feedCreateOptions = new FeedCreateOptions
             {
                 Name = $"view-feed-{UtcStamp()}"
             };
@@ -109,7 +107,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Guid feedId = createResult.Value;
             _createdFeedIds.Add(feedId);
 
-            FeedView view = new FeedView
+            var view = new FeedView
             {
                 Name = $"view-{UtcStamp()}",
                 Visibility = "private",
@@ -136,7 +134,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         public async Task RetentionPolicyWorkflow_SucceedsAsync()
         {
             int days = 30;
-            FeedCreateOptions feedCreateOptions = new FeedCreateOptions
+            var feedCreateOptions = new FeedCreateOptions
             {
                 Name = $"ret-feed-{UtcStamp()}"
             };
@@ -145,7 +143,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             Guid feedId = createResult.Value;
             _createdFeedIds.Add(feedId);
 
-            FeedRetentionPolicy create = new FeedRetentionPolicy
+            var create = new FeedRetentionPolicy
             {
                 AgeLimitInDays = days - 1,
                 CountLimit = days - 1,
@@ -155,7 +153,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             AzureDevOpsActionResult<FeedRetentionPolicy> feedRetentionPolicyResult = await _artifactsClient.SetRetentionPolicyAsync(feedId, create);
             Assert.True(feedRetentionPolicyResult.IsSuccessful);
 
-            FeedRetentionPolicy update = new FeedRetentionPolicy
+            var update = new FeedRetentionPolicy
             {
                 AgeLimitInDays = 3000,
                 CountLimit = create.CountLimit,
@@ -177,7 +175,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         [Fact]
         public async Task PackageAndUpstreaming_Methods_ReturnNotFoundAsync()
         {
-            FeedCreateOptions feedCreateOptions = new FeedCreateOptions
+            var feedCreateOptions = new FeedCreateOptions
             {
                 Name = $"pkgerr-feed-{UtcStamp()}"
             };

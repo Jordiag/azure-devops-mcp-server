@@ -29,7 +29,7 @@ public class TestPlansClient : ITestPlansClient
     {
         _projectName = projectName;
 
-        VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+        var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
         _connection = new VssConnection(new Uri(organizationUrl), credentials);
         _testPlanClient = _connection.GetClient<TestPlanHttpClient>();
         _logger = logger ?? NullLogger.Instance;
@@ -39,7 +39,7 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            TestPlanCreateParams createParameters = new TestPlanCreateParams
+            var createParameters = new TestPlanCreateParams
             {
                 Name = testPlanCreateOptions.Name,
                 AreaPath = testPlanCreateOptions.AreaPath,
@@ -117,7 +117,7 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            TestSuiteCreateParams createParameters = new TestSuiteCreateParams
+            var createParameters = new TestSuiteCreateParams
             {
                 Name = testSuiteCreateOptions.Name,
                 SuiteType = TestSuiteType.StaticTestSuite,
@@ -164,7 +164,7 @@ public class TestPlansClient : ITestPlansClient
 
             foreach(WorkItem workItem in references)
             {
-                SuiteTestCaseCreateUpdateParameters suiteTestCase = new SuiteTestCaseCreateUpdateParameters
+                var suiteTestCase = new SuiteTestCaseCreateUpdateParameters
                 {
                     workItem = new WorkItem { Id = workItem.Id },
                     PointAssignments = []

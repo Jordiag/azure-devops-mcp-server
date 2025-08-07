@@ -18,8 +18,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             _projectName = projectName;
             _logger = logger ?? NullLogger.Instance;
-            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
+            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            var connection = new VssConnection(new Uri(organizationUrl), credentials);
             _dashboardHttpClient = connection.GetClient<DashboardHttpClient>();
         }
 
@@ -27,7 +27,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                TeamContext teamContext = new TeamContext(_projectName);
+                var teamContext = new TeamContext(_projectName);
                 List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
                 IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? new List<Dashboard>();
                 return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, _logger);
@@ -42,7 +42,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                TeamContext teamContext = new TeamContext(_projectName, teamName);
+                var teamContext = new TeamContext(_projectName, teamName);
                 Dashboard dashboard = await _dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
                 return AzureDevOpsActionResult<Dashboard>.Success(dashboard, _logger);
             }

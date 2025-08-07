@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
@@ -25,8 +25,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             _projectName = projectName;
             _organizationUrl = organizationUrl;
 
-            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
+            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            var connection = new VssConnection(new Uri(organizationUrl), credentials);
             _gitHttpClient = connection.GetClient<GitHttpClient>();
             _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
             string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
@@ -112,7 +112,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitPullRequest pullRequestUpdate = new GitPullRequest
+                var pullRequestUpdate = new GitPullRequest
                 {
                     LastMergeSourceCommit = lastMergeSourceCommit,
                     Status = PullRequestStatus.Completed,
@@ -250,7 +250,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                IdentityRefWithVote reviewerUpdate = new IdentityRefWithVote
+                var reviewerUpdate = new IdentityRefWithVote
                 {
                     Id = reviewerId,
                     Vote = vote
@@ -275,13 +275,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                Comment comment = new Comment
+                var comment = new Comment
                 {
                     Content = commentThreadOptions.Comment,
                     CommentType = CommentType.Text
                 };
 
-                GitPullRequestCommentThread commentThread = new GitPullRequestCommentThread
+                var commentThread = new GitPullRequestCommentThread
                 {
                     Comments = [comment],
                     Status = CommentThreadStatus.Active
@@ -318,7 +318,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                Comment newComment = new Comment
+                var newComment = new Comment
                 {
                     Content = commentReplyOptions.Comment,
                     CommentType = CommentType.Text
@@ -370,10 +370,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                List<WebApiTagDefinition> webApiTagDefinitions = new List<WebApiTagDefinition>();
+                var webApiTagDefinitions = new List<WebApiTagDefinition>();
                 foreach(string label in labels.Distinct(StringComparer.OrdinalIgnoreCase))
                 {
-                    WebApiCreateTagRequestData tagRequestData = new WebApiCreateTagRequestData { Name = label };
+                    var tagRequestData = new WebApiCreateTagRequestData { Name = label };
 
                     WebApiTagDefinition webApiTagDefinition = await _gitHttpClient.CreatePullRequestLabelAsync(
                         label: tagRequestData,
@@ -450,7 +450,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitPullRequestStatus status = new GitPullRequestStatus
+                var status = new GitPullRequestStatus
                 {
                     Context = new GitStatusContext { Name = pullRequestStatusOptions.ContextName, Genre = pullRequestStatusOptions.ContextGenre },
                     State = pullRequestStatusOptions.State,
@@ -481,7 +481,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitPullRequest pullRequestUpdate = new GitPullRequest
+                var pullRequestUpdate = new GitPullRequest
                 {
                     AutoCompleteSetBy = new IdentityRef { DisplayName = displayName, Id = localId },
                     CompletionOptions = gitPullRequestCompletionOptions
@@ -564,7 +564,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitRefUpdate refUpdate = new GitRefUpdate
+                var refUpdate = new GitRefUpdate
                 {
                     Name = newRefName,
                     OldObjectId = "0000000000000000000000000000000000000000",
@@ -589,13 +589,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitBaseVersionDescriptor baseDesc = new GitBaseVersionDescriptor
+                var baseDesc = new GitBaseVersionDescriptor
                 {
                     Version = baseSha,
                     VersionType = GitVersionType.Commit
                 };
 
-                GitTargetVersionDescriptor targetDesc = new GitTargetVersionDescriptor
+                var targetDesc = new GitTargetVersionDescriptor
                 {
                     Version = targetSha,
                     VersionType = GitVersionType.Commit
@@ -621,7 +621,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitRepositoryCreateOptions newRepositoryOptions = new GitRepositoryCreateOptions { Name = newRepositoryName };
+                var newRepositoryOptions = new GitRepositoryCreateOptions { Name = newRepositoryName };
 
                 GitRepository repo = await _gitHttpClient.CreateRepositoryAsync(
                     gitRepositoryToCreate: newRepositoryOptions,
@@ -669,7 +669,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                Comment update = new Comment { Content = commentEditOptions.NewContent };
+                var update = new Comment { Content = commentEditOptions.NewContent };
                 Comment result = await _gitHttpClient.UpdateCommentAsync(
                     comment: update,
                     repositoryId: commentEditOptions.Repository,
@@ -707,7 +707,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitAnnotatedTag annotatedTag = new GitAnnotatedTag
+                var annotatedTag = new GitAnnotatedTag
                 {
                     Name = tagCreateOptions.Name,
                     ObjectId = string.Empty,
@@ -769,7 +769,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 GitRef? tagRef = refs.FirstOrDefault(r => r.Name.Equals($"refs/tags/{tagName}", StringComparison.OrdinalIgnoreCase)) ??
                     throw new InvalidOperationException($"Tag '{tagName}' does not exist in repositoryId '{repositoryId}'.");
 
-                GitRefUpdate refUpdate = new GitRefUpdate
+                var refUpdate = new GitRefUpdate
                 {
                     Name = fullRefName,
                     OldObjectId = tagRef.ObjectId,
@@ -793,7 +793,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitQueryCommitsCriteria criteria = new GitQueryCommitsCriteria
+                var criteria = new GitQueryCommitsCriteria
                 {
                     ItemVersion = new GitVersionDescriptor
                     {
@@ -834,7 +834,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitPullRequestSearchCriteria criteria = new GitPullRequestSearchCriteria
+                var criteria = new GitPullRequestSearchCriteria
                 {
                     Status = pullRequestSearchOptions.Status,
                     TargetRefName = pullRequestSearchOptions.TargetBranch,
@@ -985,7 +985,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitPullRequestCommentThread update = new GitPullRequestCommentThread
+                var update = new GitPullRequestCommentThread
                 {
                     Id = threadId,
                     Status = CommentThreadStatus.Fixed
@@ -1036,7 +1036,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 GitRef branch = branchResult.Value;
 
-                GitChange change = new GitChange
+                var change = new GitChange
                 {
                     ChangeType = VersionControlChangeType.Add,
                     Item = new GitItem
@@ -1050,19 +1050,19 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     }
                 };
 
-                GitCommitRef commit = new GitCommitRef
+                var commit = new GitCommitRef
                 {
                     Comment = fileCommitOptions.CommitMessage,
                     Changes = [change]
                 };
 
-                GitRefUpdate referenceUpdate = new GitRefUpdate
+                var referenceUpdate = new GitRefUpdate
                 {
                     Name = $"refs/heads/{fileCommitOptions.BranchName}",
                     OldObjectId = branch.ObjectId
                 };
 
-                GitPush push = new GitPush
+                var push = new GitPush
                 {
                     RefUpdates = [referenceUpdate],
                     Commits = [commit]

@@ -81,7 +81,7 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
             Assert.True(rootSuiteResult.IsSuccessful);
             TestSuite rootSuite = rootSuiteResult.Value!;
 
-            TestSuiteCreateOptions suiteCreate = new TestSuiteCreateOptions
+            var suiteCreate = new TestSuiteCreateOptions
             {
                 Name = $"it-suite-{UtcStamp()}",
                 ParentSuite = new TestSuiteReference

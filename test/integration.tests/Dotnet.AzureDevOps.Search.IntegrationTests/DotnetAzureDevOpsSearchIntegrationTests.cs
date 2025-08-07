@@ -15,18 +15,14 @@ namespace Dotnet.AzureDevOps.Search.IntegrationTests;
 
 [TestType(TestType.Integration)]
 [Component(Component.Search)]
-public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
+public class DotnetAzureDevOpsSearchIntegrationTests : BaseIntegrationTestFixture, IClassFixture<IntegrationTestFixture>
 {
-    private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
     private readonly WikiClient _wikiClient;
     private readonly WorkItemsClient _workItemsClient;
     private readonly SearchClient _searchClient;
-    private readonly List<Guid> _createdWikis = [];
-    private readonly List<int> _createdWorkItemIds = [];
 
-    public DotnetAzureDevOpsSearchIntegrationTests(IntegrationTestFixture fixture)
+    public DotnetAzureDevOpsSearchIntegrationTests(IntegrationTestFixture fixture) : base(fixture)
     {
-        _azureDevOpsConfiguration = fixture.Configuration;
         _wikiClient = fixture.WikiClient;
         _workItemsClient = fixture.WorkItemsClient;
         _searchClient = fixture.SearchClient;
@@ -37,15 +33,15 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
     {
         var wikiCreateOptions = new WikiCreateOptions
         {
-            Name = $"it-wiki-{UtcStamp()}",
-            ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
-            RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
+            Name = GenerateTestId("it-wiki"),
+            ProjectId = Guid.Parse(Configuration.ProjectId),
+            RepositoryId = Guid.Parse(Configuration.RepositoryId),
             Type = WikiType.CodeWiki,
             MappedPath = "/",
             Version = new GitVersionDescriptor
             {
                 VersionType = GitVersionType.Branch,
-                Version = _azureDevOpsConfiguration.MainBranchName
+                Version = Configuration.MainBranchName
             }
         };
         await WaitHelper.WaitUntilAsync(async () =>
@@ -64,7 +60,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
             return true;
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
-        _createdWikis.Add(wikiId);
+        RegisterCreatedWiki(wikiId);
 
         string wikiPath = $"/Home-{UtcStamp()}.md";
         var pageOptions = new WikiPageUpdateOptions
@@ -77,7 +73,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         var versionDescriptor = new GitVersionDescriptor
         {
             VersionType = GitVersionType.Branch,
-            Version = _azureDevOpsConfiguration.MainBranchName
+            Version = Configuration.MainBranchName
         };
 
         await WaitHelper.WaitUntilAsync(async () =>
@@ -89,7 +85,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
         {
             SearchText = "Searchable",
-            Project = [_azureDevOpsConfiguration.ProjectName],
+            Project = [Configuration.ProjectName],
             Wiki = [wikiCreateOptions.Name],
             IncludeFacets = false,
             Skip = 0,
@@ -114,9 +110,9 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         var codeSearchOptions = new CodeSearchOptions
         {
             SearchText = "var findme",
-            Project = [_azureDevOpsConfiguration.ProjectName],
-            Repository = [_azureDevOpsConfiguration.RepoName],
-            Branch = [_azureDevOpsConfiguration.MainBranchName],
+            Project = [Configuration.ProjectName],
+            Repository = [Configuration.RepoName],
+            Branch = [Configuration.MainBranchName],
             IncludeFacets = true,
             Skip = 0,
             Top = 1
@@ -146,7 +142,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
     [Fact]
     public async Task WorkItemSearch_ReturnsResultsAsync()
     {
-        string title = $"search-workitem-{UtcStamp()}";
+        string title = GenerateTestId("search-workitem");
         AzureDevOpsActionResult<int> workItemId = await _workItemsClient.CreateTaskAsync(new WorkItemCreateOptions
         {
             Title = title,
@@ -154,12 +150,12 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
             Tags = "IntegrationTest"
         });
         Assert.True(workItemId.IsSuccessful);
-        _createdWorkItemIds.Add(workItemId!.Value);
+        RegisterCreatedWorkItem(workItemId!.Value);
 
         var searchOptions = new WorkItemSearchOptions
         {
             SearchText = title,
-            Project = [_azureDevOpsConfiguration.ProjectName],
+            Project = [Configuration.ProjectName],
             WorkItemType = ["Task"],
             IncludeFacets = false,
             Skip = 0,
@@ -178,22 +174,4 @@ public class DotnetAzureDevOpsSearchIntegrationTests : IClassFixture<Integration
         Assert.True(result.IsSuccessful, $"Expected IsCodeSearchEnabledAsync to succeed, but got error: {result.ErrorMessage}");
         Assert.True(result.Value == true || result.Value == false, "Result should be a boolean value.");
     }
-
-    public Task InitializeAsync() => Task.CompletedTask;
-
-    public async Task DisposeAsync()
-    {
-        foreach(Guid id in _createdWikis.AsEnumerable().Reverse())
-        {
-            _ = await _wikiClient.DeleteWikiAsync(id);
-        }
-
-        foreach(int id in _createdWorkItemIds.AsEnumerable().Reverse())
-        {
-            await _workItemsClient.DeleteWorkItemAsync(id);
-        }
-    }
-
-    private static string UtcStamp() =>
-        DateTime.UtcNow.ToString("O").Replace(':', '-');
 }
