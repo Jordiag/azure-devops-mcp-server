@@ -6,6 +6,7 @@ namespace Dotnet.AzureDevOps.Tests.Common
     {
         public string Organisation { get; private set; } = null!;
         public string OrganisationUrl { get; private set; } = null!;
+        public string SearchOrganisationUrl { get; private set; } = null!;
         public string ProjectName { get; private set; } = null!;
         public string PersonalAccessToken { get; private set; } = null!;
         public string ProjectId { get; private set; } = null!;
@@ -30,6 +31,7 @@ namespace Dotnet.AzureDevOps.Tests.Common
             {
                 Organisation = config.GetRequiredSection("AZURE_DEVOPS_ORG").Value!,
                 OrganisationUrl = config.GetRequiredSection("AZURE_DEVOPS_ORG_URL").Value!,
+                SearchOrganisationUrl = config.GetRequiredSection("AZURE_DEVOPS_SEARCH_ORG_URL").Value!,
                 ProjectName = config.GetRequiredSection("AZURE_DEVOPS_PROJECT_NAME").Value!,
                 PersonalAccessToken = config.GetRequiredSection("AZURE_DEVOPS_PAT").Value!,
                 ProjectId = config.GetRequiredSection("AZURE_DEVOPS_PROJECT_ID").Value!,

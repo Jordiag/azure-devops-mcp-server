@@ -18,9 +18,9 @@ internal static class HostingExtensionsLogging
         if (settings.EnableApplicationInsights &&
             !string.IsNullOrWhiteSpace(settings.ApplicationInsightsConnectionString))
         {
-            builder.Logging.AddApplicationInsights(config =>
+            builder.Logging.AddApplicationInsights(configuration =>
             {
-                config.ConnectionString = settings.ApplicationInsightsConnectionString;
+                configuration.ConnectionString = settings.ApplicationInsightsConnectionString;
             }, _ => { });
         }
 

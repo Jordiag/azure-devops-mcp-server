@@ -6,10 +6,10 @@ namespace Dotnet.AzureDevOps.Tests.Common;
 /// <summary>
 /// Base class for integration tests that provides common resource tracking and cleanup functionality.
 /// </summary>
-public abstract class BaseIntegrationTestFixture : IAsyncLifetime
+public abstract class BaseIntegrationTestFixture(IntegrationTestFixture fixture) : IAsyncLifetime
 {
-    protected readonly IntegrationTestFixture Fixture;
-    protected readonly AzureDevOpsConfiguration Configuration;
+    protected readonly IntegrationTestFixture Fixture = fixture;
+    protected readonly AzureDevOpsConfiguration Configuration = fixture.Configuration;
 
     // Resource tracking collections
     private readonly List<int> _createdWorkItemIds = [];
@@ -19,12 +19,6 @@ public abstract class BaseIntegrationTestFixture : IAsyncLifetime
     private readonly List<int> _createdBuildIds = [];
     private readonly List<int> _createdDefinitionIds = [];
     private readonly List<Guid> _createdProjectIds = [];
-
-    protected BaseIntegrationTestFixture(IntegrationTestFixture fixture)
-    {
-        Fixture = fixture;
-        Configuration = fixture.Configuration;
-    }
 
     /// <summary>
     /// Registers a work item ID for cleanup during test disposal.
