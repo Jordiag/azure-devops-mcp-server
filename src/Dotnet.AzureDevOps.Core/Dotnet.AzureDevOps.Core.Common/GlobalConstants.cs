@@ -1,7 +1,6 @@
-﻿namespace Dotnet.AzureDevOps.Core.Common
+﻿namespace Dotnet.AzureDevOps.Core.Common;
+
+public static class GlobalConstants
 {
-    public static class GlobalConstants
-    {
-        public const string ApiVersion = "7.1";
-    }
+    public const string ApiVersion = "7.1";
 }
