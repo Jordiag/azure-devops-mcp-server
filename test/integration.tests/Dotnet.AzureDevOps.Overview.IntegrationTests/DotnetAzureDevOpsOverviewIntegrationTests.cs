@@ -274,7 +274,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Assert.Contains("Searchable", text);
 
             var searchClient = new SearchClient(
-                _azureDevOpsConfiguration.Organisation,
+                _azureDevOpsConfiguration.SearchOrganisationUrl,
                 _azureDevOpsConfiguration.PersonalAccessToken);
 
             var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions

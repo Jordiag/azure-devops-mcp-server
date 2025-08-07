@@ -13,10 +13,9 @@ public class SearchClient : ISearchClient
     private readonly HttpClient _httpClient;
     private readonly ILogger? _logger;
 
-    public SearchClient(string organisation, string personalAccessToken, ILogger? logger = null)
+    public SearchClient(string searchOrganizationUrl, string personalAccessToken, ILogger? logger = null)
     {
-        string searchBaseAddress = $"https://almsearch.dev.azure.com/{organisation}/";
-        _httpClient = new HttpClient { BaseAddress = new Uri(searchBaseAddress) };
+        _httpClient = new HttpClient { BaseAddress = new Uri(searchOrganizationUrl) };
         string token = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{personalAccessToken}"));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");

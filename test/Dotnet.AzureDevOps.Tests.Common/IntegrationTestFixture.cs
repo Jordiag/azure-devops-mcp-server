@@ -58,7 +58,7 @@ public class IntegrationTestFixture : IAsyncLifetime
             Configuration.PersonalAccessToken);
 
         SearchClient = new SearchClient(
-            Configuration.Organisation,
+            Configuration.SearchOrganisationUrl,
             Configuration.PersonalAccessToken);
 
         IdentityClient = new IdentityClient(

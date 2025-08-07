@@ -26,29 +26,29 @@ public class TestFixture : WebApplicationFactory<Program>
                 .AddScoped(provider =>
                 {
                     IKernelBuilder builder = Kernel.CreateBuilder();
-                    McpConfiguration mcpConfig = provider.GetRequiredService<McpConfiguration>();
+                    McpConfiguration mcpConfiguration = provider.GetRequiredService<McpConfiguration>();
 
-                    if(mcpConfig.UseAzureOpenAi)
+                    if(mcpConfiguration.UseAzureOpenAi)
                     {
                         builder.AddAzureOpenAIChatCompletion(
                             serviceId: OpenAiServiceId,
-                            deploymentName: mcpConfig.AzureOpenAiDeployment,
-                            endpoint: mcpConfig.AzureOpenAiEndpoint,
-                            apiKey: mcpConfig.AzureOpenAiKey);
+                            deploymentName: mcpConfiguration.AzureOpenAiDeployment,
+                            endpoint: mcpConfiguration.AzureOpenAiEndpoint,
+                            apiKey: mcpConfiguration.AzureOpenAiKey);
                     }
-                    else if(string.IsNullOrEmpty(mcpConfig.SelfHostedUrl))
+                    else if(string.IsNullOrEmpty(mcpConfiguration.SelfHostedUrl))
                     {
                         builder.AddOpenAIChatCompletion(
                             serviceId: OpenAiServiceId,
-                            modelId: mcpConfig.OpenAiModel,
-                            apiKey: mcpConfig.OpenAiApiKey);
+                            modelId: mcpConfiguration.OpenAiModel,
+                            apiKey: mcpConfiguration.OpenAiApiKey);
                     }
                     else
                     {
                         builder.AddOpenAIChatCompletion(
-                            modelId: mcpConfig.OpenAiModel,
-                            endpoint: new Uri(mcpConfig.SelfHostedUrl),
-                            apiKey: mcpConfig.OpenAiApiKey);
+                            modelId: mcpConfiguration.OpenAiModel,
+                            endpoint: new Uri(mcpConfiguration.SelfHostedUrl),
+                            apiKey: mcpConfiguration.OpenAiApiKey);
                     }
 
                     Kernel kernel = builder

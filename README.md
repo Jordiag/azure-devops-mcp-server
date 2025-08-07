@@ -243,6 +243,23 @@ Settings are read from `appsettings.json` and environment variables prefixed wit
 - `MCP_McpServer__EnableApplicationInsights=false` - Enable App Insights
 - `ASPNETCORE_ENVIRONMENT=Production` - ASP.NET Core environment
 
+#### Azure DevOps Configuration
+
+For connecting to Azure DevOps services, set these environment variables:
+
+- `AZURE_DEVOPS_ORG` - Your Azure DevOps organization name (e.g., "mycompany")
+- `AZURE_DEVOPS_PAT` - Personal Access Token with appropriate permissions
+- `AZURE_DEVOPS_SEARCH_ENDPOINT` (optional) - Custom search endpoint URL
+
+**Example:**
+```bash
+export AZURE_DEVOPS_ORG=mycompany
+export AZURE_DEVOPS_PAT=your_personal_access_token_here
+
+# Optional: Custom search endpoint
+export AZURE_DEVOPS_SEARCH_ENDPOINT=https://custom-search.mydomain.com/
+```
+
 #### Examples
 
 **Local server with custom port:**
