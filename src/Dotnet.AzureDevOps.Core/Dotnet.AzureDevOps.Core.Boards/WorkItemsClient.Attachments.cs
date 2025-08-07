@@ -15,7 +15,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 using FileStream fileStream = File.OpenRead(filePath);
                 AttachmentReference reference = await _workItemClient.CreateAttachmentAsync(fileStream, fileName: Path.GetFileName(filePath), cancellationToken: cancellationToken);
 
-                JsonPatchDocument patch = new JsonPatchDocument
+                var patch = new JsonPatchDocument
                 {
                     new JsonPatchOperation
                     {

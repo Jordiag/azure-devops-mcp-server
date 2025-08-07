@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
@@ -549,7 +549,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ListBoards_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<BoardReference>> boardRefsResult = await _workItemsClient.ListBoardsAsync(teamContext);
             Assert.True(boardRefsResult.IsSuccessful);
             IReadOnlyList<BoardReference> boardReferences = boardRefsResult.Value;
@@ -559,7 +559,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task GetTeamIteration_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>> iterationsResult = await _workItemsClient.GetTeamIterationsAsync(teamContext, string.Empty);
             Assert.True(iterationsResult.IsSuccessful);
             IReadOnlyList<TeamSettingsIteration> iterations = iterationsResult.Value;
@@ -575,7 +575,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task GetTeamIterations_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>> iterationsResult2 = await _workItemsClient.GetTeamIterationsAsync(teamContext, string.Empty);
             Assert.True(iterationsResult2.IsSuccessful);
             IReadOnlyList<TeamSettingsIteration> iterations = iterationsResult2.Value;
@@ -585,7 +585,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ListBoardColumns_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<BoardReference>> boardsResult = await _workItemsClient.ListBoardsAsync(teamContext);
             Assert.True(boardsResult.IsSuccessful);
             IReadOnlyList<BoardReference> boards = boardsResult.Value;
@@ -619,7 +619,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ListBacklogWorkItems_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, "Dotnet.McpIntegrationTest Team");
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName, "Dotnet.McpIntegrationTest Team");
             AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>> backlogsResult2 = await _workItemsClient.ListBacklogsAsync(teamContext);
             Assert.True(backlogsResult2.IsSuccessful);
             IReadOnlyList<BacklogLevelConfiguration> backlogs = backlogsResult2.Value;
@@ -690,7 +690,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task GetWorkItemsForIteration_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>> listIterationsResult = await _workItemsClient.ListIterationsAsync(teamContext);
             Assert.True(listIterationsResult.IsSuccessful);
             IReadOnlyList<TeamSettingsIteration> iterations = listIterationsResult.Value;
@@ -729,7 +729,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task AssignIterations_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>> existingResult = await _workItemsClient.ListIterationsAsync(teamContext);
             Assert.True(existingResult.IsSuccessful);
             IReadOnlyList<TeamSettingsIteration> existing = existingResult.Value;
@@ -748,7 +748,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ListAreas_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<TeamFieldValues> areasResult = await _workItemsClient.ListAreasAsync(teamContext);
             Assert.True(areasResult.IsSuccessful);
             TeamFieldValues areas = areasResult.Value;
@@ -862,7 +862,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         [Fact]
         public async Task ExportBoard_SucceedsAsync()
         {
-            TeamContext teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
+            var teamContext = new TeamContext(_azureDevOpsConfiguration.ProjectName);
             AzureDevOpsActionResult<IReadOnlyList<BoardReference>> boardsResult2 = await _workItemsClient.ListBoardsAsync(teamContext);
             Assert.True(boardsResult2.IsSuccessful);
             IReadOnlyList<BoardReference> boards = boardsResult2.Value;

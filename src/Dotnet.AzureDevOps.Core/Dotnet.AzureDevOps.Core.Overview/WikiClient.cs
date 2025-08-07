@@ -21,8 +21,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
             _projectName = projectName;
             _logger = logger;
 
-            VssBasicCredential credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            VssConnection connection = new VssConnection(new Uri(organizationUrl), credentials);
+            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
+            var connection = new VssConnection(new Uri(organizationUrl), credentials);
             _wikiHttpClient = connection.GetClient<WikiHttpClient>();
         }
 
@@ -30,7 +30,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiCreateParametersV2 wikiCreateParameters = new WikiCreateParametersV2
+                var wikiCreateParameters = new WikiCreateParametersV2
                 {
                     Name = wikiCreateOptions.Name,
                     ProjectId = wikiCreateOptions.ProjectId,
@@ -95,7 +95,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiPageCreateOrUpdateParameters pageParameters = new WikiPageCreateOrUpdateParameters
+                var pageParameters = new WikiPageCreateOrUpdateParameters
                 {
                     Content = wikiPageUpdateOptions.Content
                 };
@@ -142,7 +142,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiPagesBatchRequest request = new WikiPagesBatchRequest
+                var request = new WikiPagesBatchRequest
                 {
                     Top = pagesOptions.Top,
                     ContinuationToken = pagesOptions.ContinuationToken,

@@ -1,4 +1,4 @@
-﻿using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
@@ -40,7 +40,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         [Fact]
         public async Task CreateReadCompletePullRequest_SucceedsAsync()
         {
-            PullRequestCreateOptions createOptions = new PullRequestCreateOptions
+            var createOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"Advanced PR {UtcStamp()}",
@@ -69,7 +69,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 Assert.True(branchResult.IsSuccessful);
             }
 
-            PullRequestCreateOptions pullRequestCreateOptions = new PullRequestCreateOptions
+            var pullRequestCreateOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"Integration PR {DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -122,7 +122,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         [Fact(Skip = "API not longer working")]
         public async Task ListAndReviewers_Workflow_SucceedsAsync()
         {
-            PullRequestCreateOptions pullRequestCreateOptions = new PullRequestCreateOptions
+            var pullRequestCreateOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -193,7 +193,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         public async Task LabelsAndCommentsWorkflow_SucceedsAsync()
         {
             // create PR
-            PullRequestCreateOptions pullRequestCreateOptions = new PullRequestCreateOptions
+            var pullRequestCreateOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"Tier2 PR {DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -343,7 +343,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         [Fact]
         public async Task AdvancedPullRequestWorkflow_SucceedsAsync()
         {
-            PullRequestCreateOptions createOptions = new PullRequestCreateOptions
+            var createOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"Advanced PR {UtcStamp()}",
@@ -372,7 +372,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 Assert.True(branchResult.IsSuccessful);
             }
 
-            FileCommitOptions fileCommitOptions = new FileCommitOptions
+            var fileCommitOptions = new FileCommitOptions
             {
                 RepositoryName = _azureDevOpsConfiguration.RepoName,
                 BranchName = "feature/integration-test",
@@ -465,7 +465,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         [Fact]
         public async Task UpdateIterationsAndThreads_SucceedsAsync()
         {
-            PullRequestCreateOptions createOptions = new PullRequestCreateOptions
+            var createOptions = new PullRequestCreateOptions
             {
                 RepositoryIdOrName = _repoName,
                 Title = $"Update PR {UtcStamp()}",
@@ -498,7 +498,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             int prId = prIdResult.Value;
             _createdPrIds.Add(prId);
 
-            PullRequestUpdateOptions updateOptions = new PullRequestUpdateOptions
+            var updateOptions = new PullRequestUpdateOptions
             {
                 Title = "Updated by integration test",
                 Description = "Updated description",
@@ -595,7 +595,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             IReadOnlyList<GitRef> myBranches = myBranchesResult.Value ?? [];
             Assert.NotEmpty(myBranches);
 
-            GitQueryCommitsCriteria searchCriteria = new GitQueryCommitsCriteria
+            var searchCriteria = new GitQueryCommitsCriteria
             {
                 FromDate = DateTime.UtcNow.AddMonths(-1).ToString("o"),
                 ItemVersion = new GitVersionDescriptor

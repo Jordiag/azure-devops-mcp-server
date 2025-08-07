@@ -4,36 +4,30 @@ using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Build.WebApi;
-using Xunit;
 
 namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests;
 
 [TestType(TestType.Integration)]
 [Component(Component.Pipelines)]
-public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
+public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixture, IClassFixture<IntegrationTestFixture>
 {
     private readonly PipelinesClient _pipelines;
-    private readonly List<int> _queuedBuildIds = new List<int>();
-    private readonly List<int> _createdDefinitionIds = new List<int>();
-    private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
-
     private readonly int _definitionId;
     private readonly string _branch;
     private readonly string? _commitSha;
 
-    public DotnetAzureDevOpsPipelineIntegrationTests(IntegrationTestFixture fixture)
+    public DotnetAzureDevOpsPipelineIntegrationTests(IntegrationTestFixture fixture) : base(fixture)
     {
-        _azureDevOpsConfiguration = fixture.Configuration;
-        _definitionId = _azureDevOpsConfiguration.PipelineDefinitionId;
-        _branch = _azureDevOpsConfiguration.BuildBranch;
-        _commitSha = _azureDevOpsConfiguration.CommitSha;
+        _definitionId = Configuration.PipelineDefinitionId;
+        _branch = Configuration.BuildBranch;
+        _commitSha = Configuration.CommitSha;
         _pipelines = fixture.PipelinesClient;
     }
 
     [Fact]
     public async Task QueueAndCancelBuild_SucceedsAsync()
     {
-        BuildQueueOptions buildQueueOptions = new BuildQueueOptions
+        var buildQueueOptions = new BuildQueueOptions
         {
             DefinitionId = _definitionId,
             Branch = _branch,
@@ -43,7 +37,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(buildQueueOptions);
         Assert.True(queueResult.IsSuccessful);
         int buildId = queueResult.Value;
-        _queuedBuildIds.Add(buildId);
+        RegisterCreatedBuild(buildId);
 
         AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
         Assert.True(runResult.IsSuccessful);
@@ -65,12 +59,12 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         AzureDevOpsActionResult<int> queuedResult = await _pipelines.QueueRunAsync(new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
         Assert.True(queuedResult.IsSuccessful);
         int queuedBuild = queuedResult.Value;
-        _queuedBuildIds.Add(queuedBuild);
+        RegisterCreatedBuild(queuedBuild);
 
         AzureDevOpsActionResult<int> retryResult = await _pipelines.RetryRunAsync(queuedBuild);
         Assert.True(retryResult.IsSuccessful);
         int retryQueuedBuild = retryResult.Value;
-        _queuedBuildIds.Add(retryQueuedBuild);
+        RegisterCreatedBuild(retryQueuedBuild);
         Assert.NotEqual(queuedBuild, retryQueuedBuild);
 
         AzureDevOpsActionResult<Build> retriedResult = await _pipelines.GetRunAsync(retryQueuedBuild);
@@ -85,7 +79,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
         Assert.True(queueResult.IsSuccessful);
         int buildId = queueResult.Value;
-        _queuedBuildIds.Add(buildId);
+        RegisterCreatedBuild(buildId);
 
         AzureDevOpsActionResult<IReadOnlyList<Build>> listResult = await _pipelines.ListRunsAsync(new BuildListOptions
         {
@@ -111,12 +105,12 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
 
         Assert.True(queuedBuildResult.IsSuccessful);
         int queuedBuildId = queuedBuildResult.Value;
-        _queuedBuildIds.Add(queuedBuildId);
+        RegisterCreatedBuild(queuedBuildId);
 
         // Wait for the build to complete
         Build? queuedBuildIdCompleted = await WaitForBuildToCompleteAsync(queuedBuildId, 600, 1000, BuildResult.Succeeded);
         Assert.NotNull(queuedBuildIdCompleted);
-        Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded , "Build did not complete in time.");
+        Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded, "Build did not complete in time.");
 
         // Download and validate the console log
         AzureDevOpsActionResult<string> consoleLogResult = await _pipelines.DownloadConsoleLogAsync(queuedBuildId);
@@ -130,7 +124,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
     [Fact]
     public async Task BuildReport_Changes_LogLines_CanBeRetrievedAsync()
     {
-        BuildQueueOptions queueOptions = new BuildQueueOptions
+        var queueOptions = new BuildQueueOptions
         {
             DefinitionId = _definitionId,
             Branch = _branch,
@@ -140,7 +134,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(queueOptions);
         Assert.True(queueResult.IsSuccessful);
         int buildId = queueResult.Value;
-        _queuedBuildIds.Add(buildId);
+        RegisterCreatedBuild(buildId);
 
         AzureDevOpsActionResult<List<Change>> changesResult = await _pipelines.GetChangesAsync(buildId);
         Assert.True(changesResult.IsSuccessful);
@@ -150,7 +144,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         AzureDevOpsActionResult<List<BuildLog>> logsResult = await _pipelines.GetLogsAsync(buildId);
         Assert.True(logsResult.IsSuccessful);
         List<BuildLog> logs = logsResult.Value!;
-        if (logs.Count > 0)
+        if(logs.Count > 0)
         {
             int logId = logs[0].Id;
             AzureDevOpsActionResult<List<string>> linesResult = await _pipelines.GetLogLinesAsync(buildId, logId);
@@ -168,7 +162,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
     [Fact]
     public async Task ListDefinitions_FiltersByIdAsync()
     {
-        BuildDefinitionListOptions options = new BuildDefinitionListOptions
+        var options = new BuildDefinitionListOptions
         {
             DefinitionIds = new List<int> { _definitionId }
         };
@@ -182,7 +176,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
     [Fact]
     public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
     {
-        BuildQueueOptions queueOptions = new BuildQueueOptions
+        var queueOptions = new BuildQueueOptions
         {
             DefinitionId = _definitionId,
             Branch = _branch
@@ -191,7 +185,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(queueOptions);
         Assert.True(queueResult.IsSuccessful);
         int buildId = queueResult.Value;
-        _queuedBuildIds.Add(buildId);
+        RegisterCreatedBuild(buildId);
 
         Build? build = await WaitForBuildStatusAsync(buildId, BuildStatus.InProgress, 300, 1000);
         Assert.NotNull(build);
@@ -212,7 +206,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
-                if (!runResult.IsSuccessful)
+                if(!runResult.IsSuccessful)
                     return false;
                 build = runResult.Value;
                 return build?.Status == targetStatus;
@@ -233,7 +227,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
-                if (!runResult.IsSuccessful)
+                if(!runResult.IsSuccessful)
                     return false;
                 build = runResult.Value;
                 return build?.Result == buildResult;
@@ -256,7 +250,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         });
         Assert.True(queueResult.IsSuccessful);
         int buildId = queueResult.Value;
-        _queuedBuildIds.Add(buildId);
+        RegisterCreatedBuild(buildId);
 
         AzureDevOpsActionResult<List<BuildLog>> logsResult = await _pipelines.GetLogsAsync(buildId);
         Assert.True(logsResult.IsSuccessful);
@@ -272,10 +266,10 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
     [Fact]
     public async Task PipelineCrud_SucceedsAsync()
     {
-        PipelineCreateOptions pipelineCreateOptions = new PipelineCreateOptions
+        var pipelineCreateOptions = new PipelineCreateOptions
         {
-            Name = $"it-pipe-{UtcStamp()}",
-            RepositoryId = _azureDevOpsConfiguration.RepoId!,
+            Name = GenerateTestId("it-pipe"),
+            RepositoryId = Configuration.RepoId!,
             YamlPath = "/azure-pipelines-pipelines.yml",
             Description = "Created by integration test",
         };
@@ -284,7 +278,7 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
         Assert.True(createResult.IsSuccessful);
         int pipelineId = createResult.Value;
 
-        _createdDefinitionIds.Add(pipelineId);
+        RegisterCreatedDefinition(pipelineId);
 
         AzureDevOpsActionResult<BuildDefinition> getResult = await _pipelines.GetPipelineAsync(pipelineId);
         Assert.True(getResult.IsSuccessful);
@@ -309,36 +303,10 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : IClassFixture<Integrati
 
         AzureDevOpsActionResult<bool> deleteResult = await _pipelines.DeletePipelineAsync(pipelineId);
         Assert.True(deleteResult.IsSuccessful);
-        _createdDefinitionIds.Remove(pipelineId);
+        UnregisterCreatedDefinition(pipelineId);
 
         AzureDevOpsActionResult<BuildDefinition> afterDelete = await _pipelines.GetPipelineAsync(pipelineId);
         Assert.False(afterDelete.IsSuccessful);
-    }
-
-    private static string UtcStamp() =>
-        DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-
-    public Task InitializeAsync() => Task.CompletedTask;
-
-    public async Task DisposeAsync()
-    {
-        foreach(int defId in _createdDefinitionIds)
-        {
-            try { _ = await _pipelines.DeletePipelineAsync(defId); }
-            catch { }
-        }
-
-        foreach(int id in _queuedBuildIds.AsEnumerable().Reverse())
-        {
-            try
-            {
-                AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(id);
-                Build? build = runResult.IsSuccessful ? runResult.Value : null;
-                if(build != null && build.Status == BuildStatus.InProgress)
-                    _ = await _pipelines.CancelRunAsync(id, build.Project);
-            }
-            catch {}
-        }
     }
 }
 

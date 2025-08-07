@@ -23,7 +23,7 @@ public partial class PipelinesClient : IPipelinesClient
         _projectName = projectName;
         _logger = logger ?? NullLogger.Instance;
 
-        VssConnection connection = new VssConnection(new Uri(organizationUrl),
+        var connection = new VssConnection(new Uri(organizationUrl),
             new VssBasicCredential(string.Empty, personalAccessToken));
         _build = connection.GetClient<BuildHttpClient>();
     }
@@ -54,7 +54,7 @@ public partial class PipelinesClient : IPipelinesClient
     {
         try
         {
-            Build build = new Build
+            var build = new Build
             {
                 Definition = new DefinitionReference { Id = buildQueueOptions.DefinitionId },
                 SourceBranch = buildQueueOptions.Branch
@@ -151,7 +151,7 @@ public partial class PipelinesClient : IPipelinesClient
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
-            Build clone = new Build
+            var clone = new Build
             {
                 Definition = original.Definition,
                 SourceBranch = original.SourceBranch,
@@ -220,16 +220,16 @@ public partial class PipelinesClient : IPipelinesClient
     {
         try
         {
-            BuildRepository repository = new BuildRepository
+            var repository = new BuildRepository
             {
                 Id = pipelineCreateOptions.RepositoryId,
                 Type = "TfsGit",
                 DefaultBranch = pipelineCreateOptions.DefaultBranch
             };
 
-            YamlProcess yamlProcess = new YamlProcess { YamlFilename = pipelineCreateOptions.YamlPath };
+            var yamlProcess = new YamlProcess { YamlFilename = pipelineCreateOptions.YamlPath };
 
-            BuildDefinition definition = new BuildDefinition
+            var definition = new BuildDefinition
             {
                 Name = pipelineCreateOptions.Name,
                 Repository = repository,
@@ -389,7 +389,7 @@ public partial class PipelinesClient : IPipelinesClient
     {
         try
         {
-            UpdateStageParameters parameters = new UpdateStageParameters { State = status, ForceRetryAllJobs = forceRetryAllJobs };
+            var parameters = new UpdateStageParameters { State = status, ForceRetryAllJobs = forceRetryAllJobs };
             await _build.UpdateStageAsync(parameters, _projectName, buildId, stageName, cancellationToken: cancellationToken);
             return AzureDevOpsActionResult<bool>.Success(true, _logger);
         }

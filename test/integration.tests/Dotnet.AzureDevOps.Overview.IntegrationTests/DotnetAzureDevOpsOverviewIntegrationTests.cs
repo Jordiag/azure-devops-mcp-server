@@ -1,4 +1,3 @@
-using System.Threading;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview;
 using Dotnet.AzureDevOps.Core.Overview.Options;
@@ -6,7 +5,6 @@ using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Core.Search;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
-using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
@@ -58,7 +56,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 return id != Guid.Empty;
             }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
-            if (id == Guid.Empty)
+            if(id == Guid.Empty)
             {
                 throw new InvalidOperationException("Wiki creation failed, returned ID is empty.");
             }
@@ -169,7 +167,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         [Fact]
         public async Task DashboardSummaryAndWikiHelpers_SucceedAsync()
         {
-            DashboardClient dashboardClient = new DashboardClient(
+            var dashboardClient = new DashboardClient(
                 _azureDevOpsConfiguration.OrganisationUrl,
                 _azureDevOpsConfiguration.ProjectName,
                 _azureDevOpsConfiguration.PersonalAccessToken);
@@ -183,7 +181,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             WebApiTeam? team = teams.FirstOrDefault(t => t.Name == teamName);
             Dashboard? dashboard = dashboards.FirstOrDefault(d => d.OwnerId == team?.Id) ?? dashboards[0];
             Guid dashboardId = dashboard?.Id ?? Guid.Empty;
-            if (dashboardId == Guid.Empty)
+            if(dashboardId == Guid.Empty)
             {
                 throw new InvalidOperationException("No dashboard found for the specified team or project.");
             }
@@ -289,7 +287,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 Top = 1
             };
 
-            AzureDevOpsActionResult<string> result =  await searchClient.SearchWikiAsync(searchOptions);
+            AzureDevOpsActionResult<string> result = await searchClient.SearchWikiAsync(searchOptions);
             Assert.False(string.IsNullOrEmpty(result.Value));
             Assert.True(result.Value.Length > 0, "Expected result to contain at least one item, but it was empty.");
 

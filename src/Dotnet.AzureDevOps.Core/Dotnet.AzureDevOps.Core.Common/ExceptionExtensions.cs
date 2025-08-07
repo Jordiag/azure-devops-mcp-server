@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace Dotnet.AzureDevOps.Core.Common;
 
@@ -16,7 +16,7 @@ public static class ExceptionExtensions
         if(ex == null)
             return;
 
-        string indent = new string(' ', level * 2);
+        string indent = new(' ', level * 2);
         stringBuilder.AppendLine($"{indent}Exception Type: {ex.GetType().FullName}");
         stringBuilder.AppendLine($"{indent}Message       : {ex.Message}");
         stringBuilder.AppendLine($"{indent}Source        : {ex.Source}");

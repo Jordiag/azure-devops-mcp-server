@@ -12,7 +12,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                JsonPatchDocument patch = new JsonPatchDocument
+                var patch = new JsonPatchDocument
                 {
                     new JsonPatchOperation
                     {
@@ -63,7 +63,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
             try
             {
-                JsonPatchDocument patch = new JsonPatchDocument
+                var patch = new JsonPatchDocument
                 {
                     new JsonPatchOperation
                     {
@@ -102,7 +102,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 string encodedPath = Uri.EscapeDataString(artifactPathValue);
                 string vstfsUrl = $"vstfs:///Git/PullRequestId/{encodedPath}";
 
-                JsonPatchDocument patch = new JsonPatchDocument
+                var patch = new JsonPatchDocument
                 {
                     new JsonPatchOperation
                     {

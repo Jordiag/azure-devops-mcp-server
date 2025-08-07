@@ -132,11 +132,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 ArgumentNullException.ThrowIfNullOrWhiteSpace(projectName);
                 ArgumentNullException.ThrowIfNull(iterations);
 
-                List<WorkItemClassificationNode> created = new List<WorkItemClassificationNode>();
+                var created = new List<WorkItemClassificationNode>();
 
                 foreach(IterationCreateOptions iteration in iterations)
                 {
-                    WorkItemClassificationNode node = new WorkItemClassificationNode
+                    var node = new WorkItemClassificationNode
                     {
                         Name = iteration.IterationName,
                         Attributes = new Dictionary<string, object?>()
@@ -176,10 +176,10 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 ArgumentNullException.ThrowIfNull(iterations);
 
-                List<TeamSettingsIteration> assigned = new List<TeamSettingsIteration>();
+                var assigned = new List<TeamSettingsIteration>();
                 foreach(IterationAssignmentOptions iteration in iterations)
                 {
-                    TeamSettingsIteration data = new TeamSettingsIteration
+                    var data = new TeamSettingsIteration
                     {
                         Id = iteration.Identifier,
                         Path = iteration.Path
