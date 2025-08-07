@@ -12,16 +12,10 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools
     /// through Model Context Protocol.
     /// </summary>
     [McpServerToolType()]
-    public class BoardsTools
+    public class BoardsTools(IWorkItemsClient workItemsClient, ILogger<BoardsTools> logger)
     {
-        private readonly IWorkItemsClient _workItemsClient;
-        private readonly ILogger<BoardsTools> _logger;
-
-        public BoardsTools(IWorkItemsClient workItemsClient, ILogger<BoardsTools> logger)
-        {
-            _workItemsClient = workItemsClient;
-            _logger = logger;
-        }
+        private readonly IWorkItemsClient _workItemsClient = workItemsClient;
+        private readonly ILogger<BoardsTools> _logger = logger;
 
         [McpServerTool, Description("Creates a new Epic work item in Azure DevOps. Epics represent large bodies of work that can be broken down into features and stories. Accepts title, description, tags, and other work item fields. Returns the unique work item ID of the created epic.")]
         public async Task<int> CreateEpicAsync(WorkItemCreateOptions options) =>

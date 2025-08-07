@@ -12,16 +12,10 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes pipeline operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public class PipelinesTools
+public class PipelinesTools(IPipelinesClient pipelinesClient, ILogger<PipelinesTools> logger)
 {
-    private readonly IPipelinesClient _pipelinesClient;
-    private readonly ILogger<PipelinesTools> _logger;
-
-    public PipelinesTools(IPipelinesClient pipelinesClient, ILogger<PipelinesTools> logger)
-    {
-        _pipelinesClient = pipelinesClient;
-        _logger = logger;
-    }
+    private readonly IPipelinesClient _pipelinesClient = pipelinesClient;
+    private readonly ILogger<PipelinesTools> _logger = logger;
 
     [McpServerTool, Description("Queues a new build run (execution) of an Azure DevOps pipeline. This triggers a new build/CI/CD process based on a pipeline definition. Requires definition ID, target branch, and optional commit SHA. Returns the unique build ID that can be used to track progress, get logs, or cancel the run.")]
     public async Task<int> QueueRunAsync(BuildQueueOptions options) =>

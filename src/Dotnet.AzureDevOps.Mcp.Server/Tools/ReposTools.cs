@@ -1,25 +1,17 @@
 using System.ComponentModel;
-using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
-using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using ModelContextProtocol.Server;
-using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 
 [McpServerToolType]
-public class ReposTools
+public class ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
 {
-    private readonly IReposClient _reposClient;
-    private readonly ILogger<ReposTools> _logger;
-
-    public ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
-    {
-        _reposClient = reposClient;
-        _logger = logger;
-    }
+    private readonly IReposClient _reposClient = reposClient;
+    private readonly ILogger<ReposTools> _logger = logger;
 
     [McpServerTool, Description("Creates a new pull request in Azure DevOps to propose code changes from a source branch to a target branch. Requires repository name/ID, title, description, source branch, target branch, and optionally whether it's a draft. Returns the unique pull request ID. The pull request will be in Active status and available for review.")]
     public async Task<int> CreatePullRequestAsync(PullRequestCreateOptions options) =>
@@ -62,10 +54,8 @@ public class ReposTools
         (await _reposClient.DeleteRepositoryAsync(repositoryId)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves all branches from an Azure DevOps Git repository. Returns branch information including names, commit SHAs, and whether they are the default branch. Useful for understanding the repository's branch structure before creating pull requests or new branches.")]
-    public async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId)
-    {
-        return (await _reposClient.ListBranchesAsync(repositoryId)).EnsureSuccess(_logger);
-    }
+    public async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId) => 
+        (await _reposClient.ListBranchesAsync(repositoryId)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Creates a new branch in an Azure DevOps Git repository based on a specific commit SHA. The new branch will point to the specified commit and can be used for feature development or pull requests. Returns the result of the branch creation operation including success status.")]
     public async Task<List<GitRefUpdateResult>> CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha) =>

@@ -11,16 +11,10 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes project and process management operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public class ProjectSettingsTools
+public class ProjectSettingsTools(IProjectSettingsClient projectSettingsClient, ILogger<ProjectSettingsTools> logger)
 {
-    private readonly IProjectSettingsClient _projectSettingsClient;
-    private readonly ILogger<ProjectSettingsTools> _logger;
-
-    public ProjectSettingsTools(IProjectSettingsClient projectSettingsClient, ILogger<ProjectSettingsTools> logger)
-    {
-        _projectSettingsClient = projectSettingsClient;
-        _logger = logger;
-    }
+    private readonly IProjectSettingsClient _projectSettingsClient = projectSettingsClient;
+    private readonly ILogger<ProjectSettingsTools> _logger = logger;
 
     [McpServerTool, Description("Creates a new team in the Azure DevOps project if it doesn't already exist. Teams organize users and define area paths, iterations, and dashboard access. Prevents duplicate creation by checking for existing team name. Returns true if team was created or already exists.")]
     public async Task<bool> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription) =>
@@ -31,10 +25,8 @@ public class ProjectSettingsTools
         (await _projectSettingsClient.GetTeamIdAsync(teamName)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Lists all teams in the Azure DevOps project with their details including names, descriptions, IDs, and member information. Useful for team management and understanding project organization structure.")]
-    public async Task<List<WebApiTeam>> GetAllTeamsAsync()
-    {
-        return (await _projectSettingsClient.GetAllTeamsAsync()).EnsureSuccess(_logger);
-    }
+    public async Task<List<WebApiTeam>> GetAllTeamsAsync() =>
+        (await _projectSettingsClient.GetAllTeamsAsync()).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Updates the description of an existing team. Team descriptions help users understand the purpose and responsibilities of each team within the project. Returns true if the update was successful.")]
     public async Task<bool> UpdateTeamDescriptionAsync(string teamName, string newDescription) =>

@@ -10,16 +10,10 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes Search operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public class SearchTools
+public class SearchTools(ISearchClient searchClient, ILogger<SearchTools> logger)
 {
-    private readonly ISearchClient _searchClient;
-    private readonly ILogger<SearchTools> _logger;
-
-    public SearchTools(ISearchClient searchClient, ILogger<SearchTools> logger)
-    {
-        _searchClient = searchClient;
-        _logger = logger;
-    }
+    private readonly ISearchClient _searchClient = searchClient;
+    private readonly ILogger<SearchTools> _logger = logger;
 
     [McpServerTool, Description("Searches for source code files within Azure DevOps repositories using full-text search. Supports filtering by project name, repository name, file path, and branch. Returns JSON containing search results with file paths, line matches, and code snippets. Requires the Code Search extension to be enabled in the Azure DevOps organization.")]
     public async Task<string> SearchCodeAsync(CodeSearchOptions options) =>

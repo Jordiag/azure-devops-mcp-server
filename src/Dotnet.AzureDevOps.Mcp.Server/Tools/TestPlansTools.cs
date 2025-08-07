@@ -1,10 +1,9 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
-using Microsoft.VisualStudio.Services.WebApi;
-using ModelContextProtocol.Server;
 using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
+using ModelContextProtocol.Server;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
 using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
@@ -15,16 +14,10 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 /// Exposes Test Plans operations through Model Context Protocol.
 /// </summary>
 [McpServerToolType]
-public class TestPlansTools
+public class TestPlansTools(ITestPlansClient testPlansClient, ILogger<TestPlansTools> logger)
 {
-    private readonly ITestPlansClient _testPlansClient;
-    private readonly ILogger<TestPlansTools> _logger;
-
-    public TestPlansTools(ITestPlansClient testPlansClient, ILogger<TestPlansTools> logger)
-    {
-        _testPlansClient = testPlansClient;
-        _logger = logger;
-    }
+    private readonly ITestPlansClient _testPlansClient = testPlansClient;
+    private readonly ILogger<TestPlansTools> _logger = logger;
 
     [McpServerTool, Description("Creates a new test plan in Azure DevOps Test Plans for organizing and managing test cases. Test plans define the overall testing strategy for a release or iteration, including scope, approach, and test environments. Returns the test plan ID.")]
     public async Task<int> CreateTestPlanAsync(TestPlanCreateOptions options) =>
