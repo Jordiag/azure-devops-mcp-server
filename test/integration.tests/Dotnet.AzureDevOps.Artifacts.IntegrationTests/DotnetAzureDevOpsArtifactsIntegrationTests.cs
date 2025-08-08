@@ -45,6 +45,12 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             AzureDevOpsActionResult<bool> updateResult = await _artifactsClient.UpdateFeedAsync(id, updateOptions);
             Assert.True(updateResult.IsSuccessful);
 
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                getResult = await _artifactsClient.GetFeedAsync(id);
+                return getResult.IsSuccessful && getResult.Value.Description == updateOptions.Description;
+            }, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
+
             getResult = await _artifactsClient.GetFeedAsync(id);
             Assert.True(getResult.IsSuccessful);
             Assert.Equal("Updated via test", getResult.Value.Description);
@@ -125,7 +131,12 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             AzureDevOpsActionResult<bool> deleteViewResult = await _artifactsClient.DeleteFeedViewAsync(feedId, created.Id);
             Assert.True(deleteViewResult.IsSuccessful);
 
-            listViewsResult = await _artifactsClient.ListFeedViewsAsync(feedId);
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                listViewsResult = await _artifactsClient.ListFeedViewsAsync(feedId);
+                return listViewsResult.IsSuccessful && !listViewsResult.Value.Any(v => v.Id == created.Id);
+            }, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
+
             Assert.True(listViewsResult.IsSuccessful);
             Assert.DoesNotContain(listViewsResult.Value, v => v.Id == created.Id);
         }

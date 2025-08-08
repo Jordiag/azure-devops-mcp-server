@@ -1,28 +1,12 @@
 using Dotnet.AzureDevOps.Core.Common;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public class DashboardClient : IDashboardClient
+    public partial class OverviewClient
     {
-        private readonly string _projectName;
-        private readonly DashboardHttpClient _dashboardHttpClient;
-        private readonly ILogger _logger;
-
-        public DashboardClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        {
-            _projectName = projectName;
-            _logger = logger ?? NullLogger.Instance;
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
-            _dashboardHttpClient = connection.GetClient<DashboardHttpClient>();
-        }
-
         /// <summary>
         /// Retrieves all dashboards available within the Azure DevOps project, providing comprehensive overview of project visualization and monitoring tools.
         /// Returns collection of dashboards including team dashboards, project dashboards, and custom visualization configurations for complete project insights.
@@ -42,14 +26,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var teamContext = new TeamContext(_projectName);
+                var teamContext = new TeamContext(this._projectName);
                 List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
                 IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? new List<Dashboard>();
-                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Failure(ex, this._logger);
             }
         }
 
@@ -74,13 +58,13 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var teamContext = new TeamContext(_projectName, teamName);
-                Dashboard dashboard = await _dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Dashboard>.Success(dashboard, _logger);
+                var teamContext = new TeamContext(this._projectName, teamName);
+                Dashboard dashboard = await this._dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<Dashboard>.Success(dashboard, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Dashboard>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<Dashboard>.Failure(ex, this._logger);
             }
         }
     }

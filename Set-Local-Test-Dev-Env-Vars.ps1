@@ -32,6 +32,7 @@ $vars = @{
     "AZURE_DEVOPS_COMMIT_SHA"       = "<SET-LATEST-COMMIT-SHA>" # can be retrieved from your latest build metadata
     "AZURE_DEVOPS_MAIN_BRANCH_NAME" = "main" # or 'master', depending on repo setup
     "AZURE_DEVOPS_ORG_URL"          = "https://dev.azure.com/<your-org-name>" # Replace <your-org-name>
+    "AZURE_DEVOPS_SEARCH_ORG_URL"   = "https://almsearch.dev.azure.com/<your-org-name>/" # Replace <your-org-name>
     "AZURE_DEVOPS_ORG"              = "<your-org-name>" # Replace <your-org-name>
 
     "AZURE_DEVOPS_PAT"              = "<CHANGE-ME-PAT>" # Generate a Personal Access Token: https://dev.azure.com/ -> User Settings -> Personal Access Tokens

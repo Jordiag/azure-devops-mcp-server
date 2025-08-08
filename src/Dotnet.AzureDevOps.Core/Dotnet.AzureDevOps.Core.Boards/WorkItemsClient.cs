@@ -41,6 +41,20 @@ namespace Dotnet.AzureDevOps.Core.Boards
             _workClient = connection.GetClient<WorkHttpClient>();
         }
 
+        /// <summary>
+        /// Determines whether the Azure DevOps project uses a system-managed process template.
+        /// System processes are predefined templates (Agile, Scrum, CMMI) that cannot be customized,
+        /// while inherited processes allow for customization of work item types, fields, and workflow states.
+        /// This information is crucial for understanding customization capabilities and compliance requirements.
+        /// </summary>
+        /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
+        /// <returns>
+        /// An <see cref="AzureDevOpsActionResult{T}"/> containing true if the project uses a system process template,
+        /// false if it uses an inherited/custom process, or error details if the operation fails.
+        /// </returns>
+        /// <exception cref="HttpRequestException">Thrown when the API requests fail.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access project or process information.</exception>
+        /// <exception cref="JsonException">Thrown when the API response cannot be parsed correctly.</exception>
         public async Task<AzureDevOpsActionResult<bool>> IsSystemProcessAsync(CancellationToken cancellationToken = default)
         {
             try

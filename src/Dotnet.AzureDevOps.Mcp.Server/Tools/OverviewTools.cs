@@ -45,19 +45,19 @@ public class OverviewTools(IWikiClient wikiClient, ISummaryClient summaryClient,
     public async Task<WikiPageResponse> GetPageAsync(Guid wikiId, string path) =>
         (await _wikiClient.GetPageAsync(wikiId, path)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Deletes a wiki page.")]
+    [McpServerTool, Description("Permanently deletes a wiki page and its content from Azure DevOps. For code wikis, this creates a commit in the underlying Git repository removing the page file. This action cannot be undone and will break any links to the deleted page. Returns information about the deleted page.")]
     public async Task<WikiPageResponse> DeletePageAsync(Guid wikiId, string path, GitVersionDescriptor gitVersionDescriptor) =>
         (await _wikiClient.DeletePageAsync(wikiId, path, gitVersionDescriptor)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Lists wiki pages.")]
+    [McpServerTool, Description("Lists all pages within a wiki, including their paths, titles, and hierarchy structure. Supports filtering and pagination options to manage large wikis efficiently. Returns page metadata without content, useful for navigation, indexing, or bulk operations on wiki pages.")]
     public async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(Guid wikiId, WikiPagesBatchOptions options, GitVersionDescriptor? versionDescriptor = null) => 
         (await _wikiClient.ListPagesAsync(wikiId, options, versionDescriptor)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Gets wiki page text content.")]
+    [McpServerTool, Description("Retrieves the raw text content of a wiki page without metadata or formatting. Returns the Markdown source content that can be used for editing, parsing, or content analysis. The page path should include the .md extension for proper identification.")]
     public async Task<string> GetPageTextAsync(Guid wikiId, string path) =>
         (await _wikiClient.GetPageTextAsync(wikiId, path)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Gets project summary information.")]
+    [McpServerTool, Description("Retrieves comprehensive project summary information including name, description, state, visibility settings, capabilities, and basic statistics. Provides a high-level overview of the Azure DevOps project configuration and current status for administrative and reporting purposes.")]
     public async Task<TeamProject> GetProjectSummaryAsync() =>
         (await _summaryClient.GetProjectSummaryAsync()).EnsureSuccess(_logger);
 
