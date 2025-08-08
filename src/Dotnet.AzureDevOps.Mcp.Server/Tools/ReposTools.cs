@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using ModelContextProtocol.Server;
 
@@ -57,6 +59,10 @@ public class ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
     public async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId) => 
         (await _reposClient.ListBranchesAsync(repositoryId)).EnsureSuccess(_logger);
 
+    [McpServerTool, Description("Retrieves branches created by the current authenticated user from an Azure DevOps Git repository. This filters branches to show only those where the user is the creator. Useful for finding your own feature branches or personal development work.")]
+    public async Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string repositoryId) => 
+        (await _reposClient.ListMyBranchesAsync(repositoryId)).EnsureSuccess(_logger);
+
     [McpServerTool, Description("Creates a new branch in an Azure DevOps Git repository based on a specific commit SHA. The new branch will point to the specified commit and can be used for feature development or pull requests. Returns the result of the branch creation operation including success status.")]
     public async Task<List<GitRefUpdateResult>> CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha) =>
         (await _reposClient.CreateBranchAsync(repositoryId, newRefName, baseCommitSha)).EnsureSuccess(_logger);
@@ -100,4 +106,76 @@ public class ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
     [McpServerTool, Description("Sets or updates a reviewer's vote on a pull request in Azure DevOps. Vote values: 10=Approved, 5=Approved with suggestions, 0=No vote, -5=Waiting for author, -10=Rejected. The vote affects whether the pull request can be completed. Returns the updated reviewer information.")]
     public async Task<IdentityRefWithVote> SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote) =>
         (await _reposClient.SetReviewerVoteAsync(repositoryId, pullRequestId, reviewerId, vote)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Adds one or more labels to a pull request in Azure DevOps. Labels help categorize and filter pull requests for easier management. Requires repository name/ID, pull request ID, and one or more label names. Returns the list of labels after addition.")]
+    public async Task<AzureDevOpsActionResult<IList<Microsoft.TeamFoundation.Core.WebApi.WebApiTagDefinition>>> AddLabelsAsync(string repository, int pullRequestId, params string[] labels) =>
+        await _reposClient.AddLabelsAsync(repository, pullRequestId, labels);
+
+    [McpServerTool, Description("Adds a single reviewer to an active pull request in Azure DevOps. The reviewer will be notified and can provide feedback, approve, or reject the pull request. Returns true if the reviewer was added successfully.")]
+    public async Task<bool> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer) =>
+        (await _reposClient.AddReviewerAsync(repositoryId, pullRequestId, reviewer)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Creates a new comment thread on a pull request in Azure DevOps. Useful for starting a discussion or requesting changes on a specific line or file. Requires thread options including content, file path, and position. Returns the unique thread ID.")]
+    public async Task<int> CreateCommentThreadAsync(CommentThreadOptions commentThreadOptions) =>
+        (await _reposClient.CreateCommentThreadAsync(commentThreadOptions)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Deletes a specific comment from a pull request in Azure DevOps. Requires repository ID, pull request ID, thread ID, and comment ID. Returns true if the comment was deleted successfully.")]
+    public async Task<bool> DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId) =>
+        (await _reposClient.DeleteCommentAsync(repositoryId, pullRequestId, threadId, commentId)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Edits an existing comment on a pull request in Azure DevOps. Requires comment edit options including repository, pull request, thread, comment ID, and new content. Returns the updated comment object.")]
+    public async Task<Comment> EditCommentAsync(CommentEditOptions commentEditOptions) =>
+        (await _reposClient.EditCommentAsync(commentEditOptions)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Enables auto-complete for a pull request in Azure DevOps. When enabled, the pull request will be automatically completed when all policies and requirements are met. Requires repository ID, pull request ID, user info, and completion options. Returns the updated pull request object.")]
+    public async Task<GitPullRequest> EnableAutoCompleteAsync(string repositoryId, int pullRequestId, string displayName, string localId, GitPullRequestCompletionOptions gitPullRequestCompletionOptions) =>
+        (await _reposClient.EnableAutoCompleteAsync(repositoryId, pullRequestId, displayName, localId, gitPullRequestCompletionOptions)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves the diff between two commits in a repository. Useful for understanding what changes were introduced between two points in history. Requires repository ID, base commit SHA, and target commit SHA. Returns the commit diffs object.")]
+    public async Task<GitCommitDiffs> GetCommitDiffAsync(string repositoryId, string baseSha, string targetSha) =>
+        (await _reposClient.GetCommitDiffAsync(repositoryId, baseSha, targetSha)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Updates an existing pull request in Azure DevOps, allowing changes to title, description, reviewers, or draft status. Useful for modifying pull request details after creation without needing to close and recreate. Returns the updated pull request object.")]
+    public async Task<GitPullRequest> UpdatePullRequestAsync(string repositoryId, int pullRequestId, PullRequestUpdateOptions pullRequestUpdateOptions) =>
+        (await _reposClient.UpdatePullRequestAsync(repositoryId, pullRequestId, pullRequestUpdateOptions)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves all iterations (versions) of a pull request in Azure DevOps. Each iteration represents a set of changes pushed to the source branch. Useful for tracking the evolution of a pull request and reviewing incremental changes. Returns iteration metadata including creation dates and commit ranges.")]
+    public async Task<IReadOnlyList<GitPullRequestIteration>> ListIterationsAsync(string repositoryId, int pullRequestId) =>
+        (await _reposClient.ListIterationsAsync(repositoryId, pullRequestId)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves all labels associated with a specific pull request in Azure DevOps. Labels help categorize and organize pull requests for easier filtering and management. Returns the list of label definitions applied to the pull request.")]
+    public async Task<IReadOnlyList<WebApiTagDefinition>> GetPullRequestLabelsAsync(string repository, int pullRequestId) =>
+        (await _reposClient.GetPullRequestLabelsAsync(repository, pullRequestId)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Removes a specific label from a pull request in Azure DevOps. Useful for cleaning up or reorganizing pull request categorization. Requires repository ID, pull request ID, and the label name to remove. Returns true if removal was successful.")]
+    public async Task<bool> RemoveLabelAsync(string repositoryId, int pullRequestId, string label) =>
+        (await _reposClient.RemoveLabelAsync(repositoryId, pullRequestId, label)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves all pull requests from the entire Azure DevOps project (across all repositories) based on search criteria. Useful for getting a project-wide view of pull request activity. Returns pull requests matching the specified status, branch, or other criteria.")]
+    public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByProjectAsync(PullRequestSearchOptions pullRequestSearchOptions) =>
+        (await _reposClient.ListPullRequestsByProjectAsync(pullRequestSearchOptions)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves pull requests from a repository that are tagged with a specific label and match the given status. Useful for finding pull requests in specific categories or workflows. Returns filtered pull requests based on label and status criteria.")]
+    public async Task<IReadOnlyList<GitPullRequest>> ListPullRequestsByLabelAsync(string repositoryId, string labelName, PullRequestStatus pullRequestStatus) =>
+        (await _reposClient.ListPullRequestsByLabelAsync(repositoryId, labelName, pullRequestStatus)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves all comment threads from a pull request in Azure DevOps. Comment threads represent discussions, feedback, and review comments. Useful for getting an overview of all conversations happening on a pull request. Returns thread metadata and basic comment information.")]
+    public async Task<IReadOnlyList<GitPullRequestCommentThread>> ListPullRequestThreadsAsync(string repositoryId, int pullRequestId) =>
+        (await _reposClient.ListPullRequestThreadsAsync(repositoryId, pullRequestId)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Retrieves all individual comments within a specific comment thread of a pull request. Useful for getting the complete conversation history within a thread. Returns detailed comment information including content, authors, and timestamps.")]
+    public async Task<IReadOnlyList<Comment>> ListPullRequestThreadCommentsAsync(string repositoryId, int pullRequestId, int threadId) =>
+        (await _reposClient.ListPullRequestThreadCommentsAsync(repositoryId, pullRequestId, threadId)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Replies to an existing comment thread in a pull request, optionally resolving the thread. Useful for continuing conversations and providing feedback responses. Can mark discussions as resolved when issues are addressed. Returns the thread ID.")]
+    public async Task<int> ReplyToCommentThreadAsync(CommentReplyOptions commentReplyOptions) =>
+        (await _reposClient.ReplyToCommentThreadAsync(commentReplyOptions)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Marks a comment thread as resolved in a pull request. Useful for indicating that feedback has been addressed or discussions are complete. Helps track which comments still need attention. Returns the updated comment thread.")]
+    public async Task<GitPullRequestCommentThread> ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId) =>
+        (await _reposClient.ResolveCommentThreadAsync(repositoryId, pullRequestId, threadId)).EnsureSuccess(_logger);
+
+    [McpServerTool, Description("Sets a status on a pull request in Azure DevOps, such as build results, code analysis, or custom validation checks. Useful for integrating external tools and providing status feedback. Returns the created pull request status object.")]
+    public async Task<GitPullRequestStatus> SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions) =>
+        (await _reposClient.SetPullRequestStatusAsync(repositoryId, pullRequestId, pullRequestStatusOptions)).EnsureSuccess(_logger);
 }

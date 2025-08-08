@@ -1,9 +1,8 @@
 using System.ComponentModel;
-using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.ProjectSettings;
+using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Core.WebApi;
 using ModelContextProtocol.Server;
-using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 
@@ -36,23 +35,23 @@ public class ProjectSettingsTools(IProjectSettingsClient projectSettingsClient, 
     public async Task<bool> DeleteTeamAsync(Guid teamGuid) =>
         (await _projectSettingsClient.DeleteTeamAsync(teamGuid)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Creates an inherited process from a system process.")]
+    [McpServerTool, Description("Creates a new inherited process template based on an existing system process (Agile, Scrum, CMMI, or Basic). Inherited processes allow customization of work item types, fields, states, and rules while maintaining compatibility with system processes. Returns true if the process was created successfully.")]
     public async Task<bool> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName) =>
         (await _projectSettingsClient.CreateInheritedProcessAsync(newProcessName, description, baseProcessName)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Deletes an inherited process.")]
+    [McpServerTool, Description("Permanently deletes an inherited process template from Azure DevOps. Only inherited processes that are not being used by any projects can be deleted. System processes (Agile, Scrum, CMMI, Basic) cannot be deleted. Returns true if the process was successfully removed.")]
     public async Task<bool> DeleteInheritedProcessAsync(string processId) =>
         (await _projectSettingsClient.DeleteInheritedProcessAsync(processId)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Gets a process identifier by name.")]
+    [McpServerTool, Description("Retrieves the unique identifier (GUID) of a process template by its name. Process IDs are required for creating projects and managing process customizations. Supports both system processes and inherited process templates.")]
     public async Task<string> GetProcessIdAsync(string processName) =>
         (await _projectSettingsClient.GetProcessIdAsync(processName)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Creates a new project.")]
+    [McpServerTool, Description("Creates a new Azure DevOps project with specified name, description, and process template. The project will be initialized with the chosen process (Agile, Scrum, CMMI, Basic, or inherited) which defines work item types and workflow. Returns the unique project GUID identifier.")]
     public async Task<Guid> CreateProjectAsync(string projectName, string description, string processId) =>
         (await _projectSettingsClient.CreateProjectAsync(projectName, description, processId)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Gets project information.")]
+    [McpServerTool, Description("Retrieves detailed information about a specific Azure DevOps project including name, description, state, visibility, capabilities, and process template information. The project must exist and the caller must have read access to the project.")]
     public async Task<TeamProject> GetProjectAsync(string projectName) =>
         (await _projectSettingsClient.GetProjectAsync(projectName)).EnsureSuccess(_logger);
 

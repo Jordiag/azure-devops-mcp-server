@@ -1,6 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Overview.Options;
-using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi.Contracts;
@@ -9,36 +8,8 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public class WikiClient : IWikiClient
+    public partial class OverviewClient
     {
-        private readonly string _projectName;
-        private readonly WikiHttpClient _wikiHttpClient;
-        private readonly ILogger? _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the WikiClient with authenticated Azure DevOps connection for comprehensive wiki and content management operations.
-        /// Establishes secure connection to Azure DevOps Wiki HTTP client enabling complete wiki lifecycle management, page operations, and content collaboration.
-        /// Provides dedicated access to wiki creation, content management, page operations, and collaborative documentation workflows within Azure DevOps projects.
-        /// Essential for building comprehensive knowledge management solutions, documentation systems, and collaborative content creation platforms.
-        /// </summary>
-        /// <param name="organizationUrl">Complete URL of the Azure DevOps organization including protocol and domain for secure service connection and wiki API access.</param>
-        /// <param name="projectName">Name of the specific Azure DevOps project for scoped wiki operations and project-specific content management.</param>
-        /// <param name="personalAccessToken">Personal Access Token with wiki management permissions for authenticated access to wiki creation, content operations, and page management services.</param>
-        /// <param name="logger">Optional logger instance for comprehensive operation tracking, error reporting, and diagnostic information during wiki operations. Uses null if not provided.</param>
-        /// <exception cref="ArgumentNullException">Thrown when organizationUrl, projectName, or personalAccessToken are null or empty</exception>
-        /// <exception cref="ArgumentException">Thrown when organizationUrl is malformed, projectName contains invalid characters, or personalAccessToken format is incorrect</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown when the personal access token lacks required permissions for wiki operations or project access</exception>
-        /// <exception cref="VssServiceException">Thrown when connection to Azure DevOps wiki services fails or organization validation encounters issues</exception>
-        public WikiClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
-        {
-            _projectName = projectName;
-            _logger = logger;
-
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
-            _wikiHttpClient = connection.GetClient<WikiHttpClient>();
-        }
-
         /// <summary>
         /// Creates a new wiki in Azure DevOps with comprehensive configuration including name, repository mapping, and version control integration.
         /// Establishes structured knowledge base with configurable repository backing, path mapping, and version control for collaborative documentation.
@@ -69,15 +40,15 @@ namespace Dotnet.AzureDevOps.Core.Overview
                     Version = wikiCreateOptions.Version,
                 };
 
-                WikiV2 wiki = await _wikiHttpClient.CreateWikiAsync(
+                WikiV2 wiki = await this._wikiHttpClient.CreateWikiAsync(
                     wikiCreateParams: wikiCreateParameters,
-                    project: _projectName,
+                    project: this._projectName,
                     cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Guid>.Success(wiki.Id, _logger);
+                return AzureDevOpsActionResult<Guid>.Success(wiki.Id, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Guid>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<Guid>.Failure(ex, this._logger);
             }
         }
 
@@ -101,12 +72,12 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiV2 wiki = await _wikiHttpClient.GetWikiAsync(project: _projectName, wikiIdentifier: wikiId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WikiV2>.Success(wiki, _logger);
+                WikiV2 wiki = await this._wikiHttpClient.GetWikiAsync(project: this._projectName, wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<WikiV2>.Success(wiki, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WikiV2>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WikiV2>.Failure(ex, this._logger);
             }
         }
 
@@ -129,12 +100,12 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                List<WikiV2> wikis = await _wikiHttpClient.GetAllWikisAsync(project: _projectName, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Success(wikis, _logger);
+                List<WikiV2> wikis = await this._wikiHttpClient.GetAllWikisAsync(project: this._projectName, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Success(wikis, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Failure(ex, this._logger);
             }
         }
 
@@ -158,12 +129,12 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiV2 wiki = await _wikiHttpClient.DeleteWikiAsync(wikiIdentifier: wikiId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WikiV2>.Success(wiki, _logger);
+                WikiV2 wiki = await this._wikiHttpClient.DeleteWikiAsync(wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<WikiV2>.Success(wiki, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WikiV2>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WikiV2>.Failure(ex, this._logger);
             }
         }
 
@@ -194,9 +165,9 @@ namespace Dotnet.AzureDevOps.Core.Overview
                     Content = wikiPageUpdateOptions.Content
                 };
 
-                WikiPageResponse response = await _wikiHttpClient.CreateOrUpdatePageAsync(
+                WikiPageResponse response = await this._wikiHttpClient.CreateOrUpdatePageAsync(
                     parameters: pageParameters,
-                    project: _projectName,
+                    project: this._projectName,
                     wikiIdentifier: wikiId,
                     path: wikiPageUpdateOptions.Path,
                     Version: wikiPageUpdateOptions.Version,
@@ -205,12 +176,12 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 int? pageId = response.Page?.Id;
                 return pageId.HasValue
-                    ? AzureDevOpsActionResult<int>.Success(pageId.Value, _logger)
-                    : AzureDevOpsActionResult<int>.Failure("Wiki page id is null.", _logger);
+                    ? AzureDevOpsActionResult<int>.Success(pageId.Value, this._logger)
+                    : AzureDevOpsActionResult<int>.Failure("Wiki page id is null.", this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<int>.Failure(ex, this._logger);
             }
         }
 
@@ -235,17 +206,17 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiPageResponse response = await _wikiHttpClient.GetPageAsync(
-                    project: _projectName,
+                WikiPageResponse response = await this._wikiHttpClient.GetPageAsync(
+                    project: this._projectName,
                     wikiIdentifier: wikiId,
                     path: path,
                     includeContent: true,
                     cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WikiPageResponse>.Success(response, _logger);
+                return AzureDevOpsActionResult<WikiPageResponse>.Success(response, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, this._logger);
             }
         }
 
@@ -278,18 +249,18 @@ namespace Dotnet.AzureDevOps.Core.Overview
                     PageViewsForDays = pagesOptions.PageViewsForDays
                 };
 
-                PagedList<WikiPageDetail> pages = await _wikiHttpClient.GetPagesBatchAsync(
+                PagedList<WikiPageDetail> pages = await this._wikiHttpClient.GetPagesBatchAsync(
                     pagesBatchRequest: request,
-                    project: _projectName,
+                    project: this._projectName,
                     wikiIdentifier: wikiId,
                     versionDescriptor: versionDescriptor,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Success(pages, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Success(pages, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Failure(ex, this._logger);
             }
         }
 
@@ -314,8 +285,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                Stream stream = await _wikiHttpClient.GetPageTextAsync(
-                    project: _projectName,
+                Stream stream = await this._wikiHttpClient.GetPageTextAsync(
+                    project: this._projectName,
                     wikiIdentifier: wikiId,
                     path: path,
                     recursionLevel: VersionControlRecursionType.None,
@@ -325,11 +296,11 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 using StreamReader reader = new StreamReader(stream);
                 string content = await reader.ReadToEndAsync(cancellationToken);
-                return AzureDevOpsActionResult<string>.Success(content, _logger);
+                return AzureDevOpsActionResult<string>.Success(content, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<string>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<string>.Failure(ex, this._logger);
             }
         }
 
@@ -355,12 +326,12 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiPageResponse response = await _wikiHttpClient.DeletePageAsync(project: _projectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WikiPageResponse>.Success(response, _logger);
+                WikiPageResponse response = await this._wikiHttpClient.DeletePageAsync(project: this._projectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
+                return AzureDevOpsActionResult<WikiPageResponse>.Success(response, this._logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, this._logger);
             }
         }
     }

@@ -35,27 +35,27 @@ public class TestPlansTools(ITestPlansClient testPlansClient, ILogger<TestPlansT
     public async Task<bool> DeleteTestPlanAsync(int testPlanId) =>
         (await _testPlansClient.DeleteTestPlanAsync(testPlanId)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Creates a test suite.")]
+    [McpServerTool, Description("Creates a new test suite within a test plan for organizing and grouping test cases. Test suites help structure test execution by requirements, features, or test type. Supports static suites (manual test case selection) and query-based suites (dynamic based on work item queries). Returns the unique test suite ID.")]
     public async Task<int> CreateTestSuiteAsync(int testPlanId, TestSuiteCreateOptions options) =>
         (await _testPlansClient.CreateTestSuiteAsync(testPlanId, options)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Retrieves the root test suite for a plan.")]
+    [McpServerTool, Description("Retrieves the root test suite for a test plan, which is the top-level container that holds all other test suites in the hierarchy. Every test plan has exactly one root suite that serves as the parent for all test case organization. Returns the root test suite with its configuration and child suite information.")]
     public async Task<TestSuite> GetRootSuiteAsync(int planId) =>
         (await _testPlansClient.GetRootSuiteAsync(planId)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Lists test suites for a test plan.")]
+    [McpServerTool, Description("Lists all test suites within a specific test plan, including both static and query-based suites. Returns suite information such as names, types, parent-child relationships, and test case counts. Useful for understanding test organization structure and navigating the test plan hierarchy.")]
     public async Task<IReadOnlyList<TestSuite>> ListTestSuitesAsync(int testPlanId) =>
         (await _testPlansClient.ListTestSuitesAsync(testPlanId)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Creates a test case.")]
+    [McpServerTool, Description("Creates a new test case work item in Azure DevOps with test-specific fields like test steps, expected results, and automation status. Test cases define the specific conditions, actions, and expected outcomes for validating functionality. Returns the created test case as a work item with all fields populated.")]
     public async Task<WorkItem> CreateTestCaseAsync(TestCaseCreateOptions options) =>
         (await _testPlansClient.CreateTestCaseAsync(options)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Lists test cases in a suite.")]
+    [McpServerTool, Description("Lists all test cases associated with a specific test suite within a test plan. Returns test case information including work item IDs, titles, states, assigned testers, and test outcomes. This helps identify which test cases are included in a test suite for execution planning and progress tracking.")]
     public async Task<object> ListTestCasesAsync(int testPlanId, int testSuiteId) =>
         (await _testPlansClient.ListTestCasesAsync(testPlanId, testSuiteId)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Adds test cases to a test suite.")]
+    [McpServerTool, Description("Adds existing test case work items to a test suite, creating the association between test cases and the suite for execution. Test cases can be added to multiple suites and will appear in test execution for each suite they belong to. Returns true if all test cases were successfully added to the suite.")]
     public async Task<bool> AddTestCasesAsync(int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds) =>
         (await _testPlansClient.AddTestCasesAsync(testPlanId, testSuiteId, testCaseIds)).EnsureSuccess(_logger);
 

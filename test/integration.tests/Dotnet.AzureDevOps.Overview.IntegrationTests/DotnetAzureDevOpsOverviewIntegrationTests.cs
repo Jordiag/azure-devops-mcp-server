@@ -265,13 +265,22 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 pageResult = await _wikiClient.GetPageAsync(wikiId, wikiPath);
 
                 return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
-            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+            }, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1));
 
             Assert.True(pageResult?.Value?.Page?.Path == wikiPath);
 
-            AzureDevOpsActionResult<string> textResult = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
+            string needlessText = "Searchable";
+            AzureDevOpsActionResult<string>? textResult = null;
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                textResult = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
+                return pageResult.IsSuccessful && textResult!.Value.Contains(needlessText);
+
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+
+            textResult = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
             string? text = textResult.Value;
-            Assert.Contains("Searchable", text);
+            Assert.Contains(needlessText, text);
 
             var searchClient = new SearchClient(
                 _azureDevOpsConfiguration.SearchOrganisationUrl,

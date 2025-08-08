@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
@@ -8,10 +7,9 @@ using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.TeamFoundation.SourceControl.WebApi;
-using Microsoft.VisualStudio.Services.Common;
 
 namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 {
@@ -458,9 +456,9 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             Assert.True(attachmentResult.IsSuccessful);
             Guid attachmentId = attachmentResult.Value;
             Assert.True(Guid.TryParse(attachmentId.ToString(), out _));
-            
 
-            AzureDevOpsActionResult <Stream> streamResult = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId);
+
+            AzureDevOpsActionResult<Stream> streamResult = await _workItemsClient.GetAttachmentAsync(_azureDevOpsConfiguration.ProjectName, attachmentId);
             Assert.True(streamResult.IsSuccessful);
             using Stream stream = streamResult.Value;
             Assert.NotNull(stream);
@@ -760,7 +758,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         public async Task CreateCustomFieldIfDoesNotExist_SucceedsAsync()
         {
             WorkItemsClient client = _workItemsClient;
-            string fieldName = $"CustomField{UtcStamp()}".Replace(".","").Replace("-", "");
+            string fieldName = $"CustomField{UtcStamp()}".Replace(".", "").Replace("-", "");
             ;
             string referenceName = $"Custom.Reference.{UtcStamp()}".Replace(".", "").Replace("-", "");
             ;
@@ -896,7 +894,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
             };
 
             AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> responses = await _workItemsClient.ExecuteBatchAsync(new[] { request });
-           Assert.NotEmpty(responses.Value);
+            Assert.NotEmpty(responses.Value);
         }
 
         [Fact]

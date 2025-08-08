@@ -591,8 +591,15 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             GitRef? branch = branchResult2.Value;
             Assert.NotNull(branch);
 
-            AzureDevOpsActionResult<IReadOnlyList<GitRef>> myBranchesResult = await _reposClient.ListMyBranchesAsync(_repoName);
-            IReadOnlyList<GitRef> myBranches = myBranchesResult.Value ?? [];
+            AzureDevOpsActionResult<IReadOnlyList<GitRef>>? myBranchesResult = null;
+
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                myBranchesResult = await _reposClient.ListMyBranchesAsync(_repoName);
+                return myBranchesResult.IsSuccessful && myBranchesResult.Value?.Count > 0;
+            }, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
+
+            IReadOnlyList<GitRef> myBranches = myBranchesResult?.Value ?? [];
             Assert.NotEmpty(myBranches);
 
             var searchCriteria = new GitQueryCommitsCriteria
