@@ -296,7 +296,7 @@ public partial class PipelinesClient : IPipelinesClient
             {
                 fullLog.AppendLine($"--- {entry.FullName} ---");
                 using var reader = new StreamReader(entry.Open());
-                string content = await reader.ReadToEndAsync();
+                string content = await reader.ReadToEndAsync(cancellationToken);
                 fullLog.AppendLine(content);
                 fullLog.AppendLine(); // Add spacing between logs
             }

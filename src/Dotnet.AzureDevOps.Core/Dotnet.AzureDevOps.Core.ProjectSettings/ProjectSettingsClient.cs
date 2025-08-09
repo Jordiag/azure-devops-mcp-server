@@ -74,7 +74,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             try
             {
-                WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName);
+                WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName, cancellationToken);
                 bool success = createdTeam.Description == teamDescription && createdTeam.Name == teamName;
                 return success
                     ? AzureDevOpsActionResult<bool>.Success(true, _logger)
@@ -205,7 +205,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 if(!response.IsSuccessStatusCode)
                 {
-                    string error = await response.Content.ReadAsStringAsync();
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
                     return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
                 }
 
@@ -260,7 +260,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
                 if(!response.IsSuccessStatusCode)
                 {
-                    string error = await response.Content.ReadAsStringAsync();
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
                     return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
                 }
                 return AzureDevOpsActionResult<bool>.Success(true, _logger);
