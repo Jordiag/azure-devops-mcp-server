@@ -6,7 +6,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 {
     public partial class ReposClient
     {
-        public async Task<AzureDevOpsActionResult<GitAnnotatedTag>> CreateTagAsync(TagCreateOptions tagCreateOptions)
+        public async Task<AzureDevOpsActionResult<GitAnnotatedTag>> CreateTagAsync(TagCreateOptions tagCreateOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -30,7 +30,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 GitAnnotatedTag gitAnnotatedTag = await _gitHttpClient.CreateAnnotatedTagAsync(
                     tagObject: annotatedTag,
                     project: _projectName,
-                    repositoryId: tagCreateOptions.Repository
+                    repositoryId: tagCreateOptions.Repository,
+                    cancellationToken: cancellationToken
                 );
 
                 return AzureDevOpsActionResult<GitAnnotatedTag>.Success(gitAnnotatedTag, _logger);
@@ -42,14 +43,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<GitAnnotatedTag>> GetTagAsync(
-            string repositoryId, string objectId)
+            string repositoryId, string objectId, CancellationToken cancellationToken = default)
         {
             try
             {
                 GitAnnotatedTag result = await _gitHttpClient.GetAnnotatedTagAsync(
                     project: _projectName,
                     repositoryId: repositoryId,
-                    objectId: objectId);
+                    objectId: objectId,
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<GitAnnotatedTag>.Success(result, _logger);
             }
@@ -59,14 +61,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitRefUpdateResult>> DeleteTagAsync(string repositoryId, string tagName)
+        public async Task<AzureDevOpsActionResult<GitRefUpdateResult>> DeleteTagAsync(string repositoryId, string tagName, CancellationToken cancellationToken = default)
         {
             try
             {
                 List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
                     project: _projectName,
-                    filter: "tags/");
+                    filter: "tags/",
+                    cancellationToken: cancellationToken);
 
                 GitRef? tagRef = refs.FirstOrDefault(r => r.Name.EndsWith($"/{tagName}"));
 
@@ -83,7 +86,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 List<GitRefUpdateResult> gitRefUpdateResultList = await _gitHttpClient.UpdateRefsAsync(
                     refUpdates: new[] { refUpdate },
                     repositoryId: repositoryId,
-                    project: _projectName);
+                    project: _projectName,
+                    cancellationToken: cancellationToken);
 
                 if(gitRefUpdateResultList.Count == 0)
                     return AzureDevOpsActionResult<GitRefUpdateResult>.Failure("Failed to delete tag.", _logger);

@@ -10,7 +10,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 {
     public partial class ReposClient
     {
-        public async Task<AzureDevOpsActionResult<int>> CreatePullRequestAsync(PullRequestCreateOptions pullRequestCreateOptions)
+        public async Task<AzureDevOpsActionResult<int>> CreatePullRequestAsync(PullRequestCreateOptions pullRequestCreateOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -26,7 +26,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 GitPullRequest createdPR = await _gitHttpClient.CreatePullRequestAsync(
                     gitPullRequestToCreate: newPullRequest,
                     repositoryId: pullRequestCreateOptions.RepositoryIdOrName,
-                    project: _projectName
+                    project: _projectName,
+                    cancellationToken: cancellationToken
                 );
 
                 return AzureDevOpsActionResult<int>.Success(createdPR.PullRequestId, _logger);
@@ -37,7 +38,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitPullRequest>> AbandonPullRequestAsync(string repositoryIdOrName, int pullRequestId)
+        public async Task<AzureDevOpsActionResult<GitPullRequest>> AbandonPullRequestAsync(string repositoryIdOrName, int pullRequestId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -61,7 +62,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitPullRequest>> GetPullRequestAsync(string repositoryId, int pullRequestId)
+        public async Task<AzureDevOpsActionResult<GitPullRequest>> GetPullRequestAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -84,7 +85,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             bool squashMerge = false,
             bool deleteSourceBranch = false,
             GitCommitRef? lastMergeSourceCommit = null,
-            string? commitMessage = null)
+            string? commitMessage = null,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -118,7 +120,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
         public async Task<AzureDevOpsActionResult<GitPullRequest>> UpdatePullRequestAsync(
             string repositoryId,
             int pullRequestId,
-            PullRequestUpdateOptions pullRequestUpdateOptions)
+            PullRequestUpdateOptions pullRequestUpdateOptions,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -147,7 +150,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsAsync(
-            string repositoryId, PullRequestSearchOptions pullRequestSearchOptions)
+            string repositoryId, PullRequestSearchOptions pullRequestSearchOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -172,7 +175,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByProjectAsync(PullRequestSearchOptions pullRequestSearchOptions)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByProjectAsync(PullRequestSearchOptions pullRequestSearchOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -197,7 +200,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByLabelAsync(
-            string repositoryId, string labelName, PullRequestStatus pullRequestStatus)
+            string repositoryId, string labelName, PullRequestStatus pullRequestStatus, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -218,7 +221,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitPullRequestStatus>> SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions)
+        public async Task<AzureDevOpsActionResult<GitPullRequestStatus>> SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -249,7 +252,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             int pullRequestId,
             string displayName,
             string localId,
-            GitPullRequestCompletionOptions gitPullRequestCompletionOptions)
+            GitPullRequestCompletionOptions gitPullRequestCompletionOptions,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -274,7 +278,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>>> ListIterationsAsync(
-            string repositoryId, int pullRequestId)
+            string repositoryId, int pullRequestId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -292,7 +296,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<GitPullRequestIterationChanges>> GetIterationChangesAsync(
-            string repositoryId, int pullRequestId, int iteration)
+            string repositoryId, int pullRequestId, int iteration, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -310,7 +314,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<bool>> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer)
+        public async Task<AzureDevOpsActionResult<bool>> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer, CancellationToken cancellationToken = default)
         {
             if(string.IsNullOrEmpty(reviewer.localId))
                 return AzureDevOpsActionResult<bool>.Failure("Reviewer localId must be provided", _logger);
@@ -328,7 +332,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
             try
             {
-                using HttpResponseMessage response = await _httpClient.PutAsync(requestUrl, httpContent);
+                using HttpResponseMessage response = await _httpClient.PutAsync(requestUrl, httpContent, cancellationToken);
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync();
@@ -342,7 +346,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<bool>> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers)
+        public async Task<AzureDevOpsActionResult<bool>> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers, CancellationToken cancellationToken = default)
         {
             if(reviewers is null || reviewers.Length == 0)
                 return AzureDevOpsActionResult<bool>.Failure("No reviewers specified", _logger);
@@ -361,6 +365,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<IdentityRefWithVote>> SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote)
+        {
+            return await SetReviewerVoteAsync(repositoryId, pullRequestId, reviewerId, vote, CancellationToken.None);
+        }
+
+        public async Task<AzureDevOpsActionResult<IdentityRefWithVote>> SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote, CancellationToken cancellationToken)
         {
             try
             {
@@ -387,6 +396,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
         public async Task<AzureDevOpsActionResult<bool>> RemoveReviewersAsync(string repositoryId, int pullRequestId, params string[] reviewerIds)
         {
+            return await RemoveReviewersAsync(repositoryId, pullRequestId, CancellationToken.None, reviewerIds);
+        }
+
+        public async Task<AzureDevOpsActionResult<bool>> RemoveReviewersAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken, params string[] reviewerIds)
+        {
             try
             {
                 foreach(string id in reviewerIds)
@@ -403,7 +417,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<int>> CreateCommentThreadAsync(CommentThreadOptions commentThreadOptions)
+        public async Task<AzureDevOpsActionResult<int>> CreateCommentThreadAsync(CommentThreadOptions commentThreadOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -446,7 +460,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<int>> ReplyToCommentThreadAsync(CommentReplyOptions commentReplyOptions)
+        public async Task<AzureDevOpsActionResult<int>> ReplyToCommentThreadAsync(CommentReplyOptions commentReplyOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -498,7 +512,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<Comment>> EditCommentAsync(CommentEditOptions commentEditOptions)
+        public async Task<AzureDevOpsActionResult<Comment>> EditCommentAsync(CommentEditOptions commentEditOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -523,7 +537,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<bool>> DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteCommentAsync(string repositoryId, int pullRequestId, int threadId, int commentId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -541,7 +555,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>>> ListPullRequestThreadsAsync(string repositoryId, int pullRequestId)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>>> ListPullRequestThreadsAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -558,7 +572,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<Comment>>> ListPullRequestThreadCommentsAsync(string repositoryId, int pullRequestId, int threadId)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<Comment>>> ListPullRequestThreadCommentsAsync(string repositoryId, int pullRequestId, int threadId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -576,7 +590,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitPullRequestCommentThread>> ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId)
+        public async Task<AzureDevOpsActionResult<GitPullRequestCommentThread>> ResolveCommentThreadAsync(string repositoryId, int pullRequestId, int threadId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -601,6 +615,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
 
         public async Task<AzureDevOpsActionResult<IList<WebApiTagDefinition>>> AddLabelsAsync(string repository, int pullRequestId, params string[] labels)
+        {
+            return await AddLabelsAsync(repository, pullRequestId, CancellationToken.None, labels);
+        }
+
+        public async Task<AzureDevOpsActionResult<IList<WebApiTagDefinition>>> AddLabelsAsync(string repository, int pullRequestId, CancellationToken cancellationToken, params string[] labels)
         {
             try
             {
@@ -627,7 +646,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<bool>> RemoveLabelAsync(string repositoryId, int pullRequestId, string label)
+        public async Task<AzureDevOpsActionResult<bool>> RemoveLabelAsync(string repositoryId, int pullRequestId, string label, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -645,7 +664,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>> GetPullRequestLabelsAsync(string repository, int pullRequestId)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>> GetPullRequestLabelsAsync(string repository, int pullRequestId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -663,3 +682,4 @@ namespace Dotnet.AzureDevOps.Core.Repos
         }
     }
 }
+

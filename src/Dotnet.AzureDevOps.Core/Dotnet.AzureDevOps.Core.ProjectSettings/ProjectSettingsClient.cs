@@ -57,9 +57,9 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create teams.</exception>
         /// <exception cref="InvalidOperationException">Thrown when team creation fails due to project constraints or naming conflicts.</exception>
-        public async Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription)
+        public async Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription, CancellationToken cancellationToken = default)
         {
-            AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName);
+            AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName, cancellationToken);
 
             if(teamNameResult.IsSuccessful)
             {
@@ -101,11 +101,11 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to view teams.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the team doesn't exist in the project.</exception>
-        public async Task<AzureDevOpsActionResult<Guid>> GetTeamIdAsync(string teamName)
+        public async Task<AzureDevOpsActionResult<Guid>> GetTeamIdAsync(string teamName, CancellationToken cancellationToken = default)
         {
             try
             {
-                WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
+                WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName, cancellationToken: cancellationToken);
                 return AzureDevOpsActionResult<Guid>.Success(team.Id, _logger);
             }
             catch(Exception ex)
@@ -127,7 +127,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to view project teams.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the project doesn't exist or is inaccessible.</exception>
-        public async Task<AzureDevOpsActionResult<List<WebApiTeam>>> GetAllTeamsAsync()
+        public async Task<AzureDevOpsActionResult<List<WebApiTeam>>> GetAllTeamsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -156,18 +156,18 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to modify teams.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the team doesn't exist or cannot be modified.</exception>
-        public async Task<AzureDevOpsActionResult<bool>> UpdateTeamDescriptionAsync(string teamName, string newDescription)
+        public async Task<AzureDevOpsActionResult<bool>> UpdateTeamDescriptionAsync(string teamName, string newDescription, CancellationToken cancellationToken = default)
         {
             try
             {
-                WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName);
+                WebApiTeam team = await _teamClient.GetTeamAsync(_projectName, teamName, cancellationToken: cancellationToken);
 
                 var updatedTeam = new WebApiTeam
                 {
                     Description = newDescription
                 };
 
-                WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, _projectName, team.Id.ToString());
+                WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, _projectName, team.Id.ToString(), cancellationToken: cancellationToken);
 
                 bool success = webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
                 return success
@@ -195,13 +195,13 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to delete teams.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the team doesn't exist or cannot be deleted due to dependencies.</exception>
-        public async Task<AzureDevOpsActionResult<bool>> DeleteTeamAsync(Guid teamGuid)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteTeamAsync(Guid teamGuid, CancellationToken cancellationToken = default)
         {
             try
             {
                 string url = $"{_organizationUrl}/_apis/projects/{_projectName}/teams/{teamGuid}?api-version={GlobalConstants.ApiVersion}";
 
-                HttpResponseMessage response = await _httClient.DeleteAsync(url);
+                HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
 
                 if(!response.IsSuccessStatusCode)
                 {
@@ -234,7 +234,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create processes.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the base process doesn't exist or process name conflicts.</exception>
-        public async Task<AzureDevOpsActionResult<bool>> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName)
+        public async Task<AzureDevOpsActionResult<bool>> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName, CancellationToken cancellationToken = default)
         {
             string parentProcessId = baseProcessName.ToLower() switch
             {
@@ -257,7 +257,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             try
             {
-                HttpResponseMessage response = await _httClient.PostAsync(url, content);
+                HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync();
@@ -286,16 +286,16 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to delete processes.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the process doesn't exist or is in use by projects.</exception>
-        public async Task<AzureDevOpsActionResult<bool>> DeleteInheritedProcessAsync(string processId)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteInheritedProcessAsync(string processId, CancellationToken cancellationToken = default)
         {
             string url = $"{_organizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
 
             try
             {
-                HttpResponseMessage response = await _httClient.DeleteAsync(url);
+                HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
                 if(!response.IsSuccessStatusCode)
                 {
-                    string error = await response.Content.ReadAsStringAsync();
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
                     return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
                 }
 
@@ -322,13 +322,13 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to view processes.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the process doesn't exist in the organization.</exception>
-        public async Task<AzureDevOpsActionResult<string>> GetProcessIdAsync(string processName)
+        public async Task<AzureDevOpsActionResult<string>> GetProcessIdAsync(string processName, CancellationToken cancellationToken = default)
         {
             string url = $"{_organizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
 
             try
             {
-                JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url);
+                JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url, cancellationToken);
 
                 foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
                 {
@@ -368,7 +368,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create projects.</exception>
         /// <exception cref="InvalidOperationException">Thrown when project name conflicts or process ID is invalid.</exception>
-        public async Task<AzureDevOpsActionResult<Guid>> CreateProjectAsync(string projectName, string description, string processId)
+        public async Task<AzureDevOpsActionResult<Guid>> CreateProjectAsync(string projectName, string description, string processId, CancellationToken cancellationToken = default)
         {
             var teamProject = new TeamProject
             {
@@ -418,7 +418,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to view project details.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the project doesn't exist in the organization.</exception>
-        public async Task<AzureDevOpsActionResult<TeamProject>> GetProjectAsync(string projectName)
+        public async Task<AzureDevOpsActionResult<TeamProject>> GetProjectAsync(string projectName, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -450,7 +450,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to delete projects.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the project doesn't exist or cannot be deleted due to organization policies.</exception>
-        public async Task<AzureDevOpsActionResult<bool>> DeleteProjectAsync(Guid projectId)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
             try
             {

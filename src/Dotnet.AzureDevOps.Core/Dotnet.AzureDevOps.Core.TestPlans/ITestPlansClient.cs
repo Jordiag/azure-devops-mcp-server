@@ -13,7 +13,7 @@ public interface ITestPlansClient
     Task<AzureDevOpsActionResult<int>> CreateTestPlanAsync(TestPlanCreateOptions testPlanCreateOptions, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<int>> CreateTestSuiteAsync(int testPlanId, TestSuiteCreateOptions testSuiteCreateOptions, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<bool>> DeleteTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default);
-    Task<AzureDevOpsActionResult<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> GetRootSuiteAsync(int planId);
+    Task<AzureDevOpsActionResult<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite>> GetRootSuiteAsync(int planId, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan>> GetTestPlanAsync(int testPlanId, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<TestResultsDetails>> GetTestResultsForBuildAsync(string projectName, int buildId, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<PagedList<TestCase>>> ListTestCasesAsync(int testPlanId, int testSuiteId, CancellationToken cancellationToken = default);
