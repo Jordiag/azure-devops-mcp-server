@@ -268,13 +268,14 @@ public partial class PipelinesClient : IPipelinesClient
     /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access build logs.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the build doesn't exist or logs are not available.</exception>
-    public async Task<AzureDevOpsActionResult<string>> DownloadConsoleLogAsync(int buildId)
+    public async Task<AzureDevOpsActionResult<string>> DownloadConsoleLogAsync(int buildId, CancellationToken cancellationToken = default)
     {
         try
         {
             using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
                 project: _projectName,
-                buildId: buildId);
+                buildId: buildId,
+                cancellationToken: cancellationToken);
 
             using var zipArchive = new ZipArchive(buildLogsStream);
 

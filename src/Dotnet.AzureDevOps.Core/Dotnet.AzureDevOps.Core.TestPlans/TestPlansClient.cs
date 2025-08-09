@@ -453,11 +453,11 @@ public class TestPlansClient : ITestPlansClient
     /// <exception cref="VssServiceException">Thrown when the specified test plan ID does not exist or cannot be accessed for suite enumeration</exception>
     /// <exception cref="InvalidOperationException">Thrown when no root suite exists for the test plan or suite hierarchy is malformed</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when insufficient permissions exist to access test suites within the specified test plan</exception>
-    public async Task<AzureDevOpsActionResult<TestSuite>> GetRootSuiteAsync(int planId)
+    public async Task<AzureDevOpsActionResult<TestSuite>> GetRootSuiteAsync(int planId, CancellationToken cancellationToken = default)
     {
         try
         {
-            AzureDevOpsActionResult<IReadOnlyList<TestSuite>> suitesResult = await ListTestSuitesAsync(planId);
+            AzureDevOpsActionResult<IReadOnlyList<TestSuite>> suitesResult = await ListTestSuitesAsync(planId, cancellationToken);
             if(!suitesResult.IsSuccessful || suitesResult.Value == null)
                 return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.", _logger);
 

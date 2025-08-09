@@ -5,7 +5,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 {
     public partial class ReposClient
     {
-        public async Task<AzureDevOpsActionResult<Guid>> CreateRepositoryAsync(string newRepositoryName)
+        public async Task<AzureDevOpsActionResult<Guid>> CreateRepositoryAsync(string newRepositoryName, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -13,7 +13,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 GitRepository repo = await _gitHttpClient.CreateRepositoryAsync(
                     gitRepositoryToCreate: newRepositoryOptions,
-                    project: _projectName
+                    project: _projectName,
+                    cancellationToken: cancellationToken
                 );
 
                 return AzureDevOpsActionResult<Guid>.Success(repo.Id, _logger);
@@ -24,13 +25,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<bool>> DeleteRepositoryAsync(Guid repositoryId)
+        public async Task<AzureDevOpsActionResult<bool>> DeleteRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _gitHttpClient.DeleteRepositoryAsync(
                     repositoryId: repositoryId,
-                    project: _projectName
+                    project: _projectName,
+                    cancellationToken: cancellationToken
                 );
                 return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
@@ -40,13 +42,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitRepository>> GetRepositoryAsync(Guid repositoryId)
+        public async Task<AzureDevOpsActionResult<GitRepository>> GetRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken = default)
         {
             try
             {
                 GitRepository repo = await _gitHttpClient.GetRepositoryAsync(
                     repositoryId: repositoryId,
-                    project: _projectName
+                    project: _projectName,
+                    cancellationToken: cancellationToken
                 );
                 return AzureDevOpsActionResult<GitRepository>.Success(repo, _logger);
             }
@@ -56,13 +59,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitRepository>> GetRepositoryByNameAsync(string repositoryName)
+        public async Task<AzureDevOpsActionResult<GitRepository>> GetRepositoryByNameAsync(string repositoryName, CancellationToken cancellationToken = default)
         {
             try
             {
                 GitRepository repo = await _gitHttpClient.GetRepositoryAsync(
                     repositoryId: repositoryName,
-                    project: _projectName
+                    project: _projectName,
+                    cancellationToken: cancellationToken
                 );
                 return AzureDevOpsActionResult<GitRepository>.Success(repo, _logger);
             }
@@ -72,11 +76,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitRepository>>> ListRepositoriesAsync()
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitRepository>>> ListRepositoriesAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                IReadOnlyList<GitRepository> result = await _gitHttpClient.GetRepositoriesAsync(project: _projectName);
+                IReadOnlyList<GitRepository> result = await _gitHttpClient.GetRepositoriesAsync(project: _projectName, cancellationToken: cancellationToken);
                 return AzureDevOpsActionResult<IReadOnlyList<GitRepository>>.Success(result, _logger);
             }
             catch(Exception ex)

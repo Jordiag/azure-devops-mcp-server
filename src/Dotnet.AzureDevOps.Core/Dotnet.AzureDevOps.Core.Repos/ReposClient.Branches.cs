@@ -5,7 +5,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 {
     public partial class ReposClient
     {
-        public async Task<AzureDevOpsActionResult<List<GitRefUpdateResult>>> CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha)
+        public async Task<AzureDevOpsActionResult<List<GitRefUpdateResult>>> CreateBranchAsync(string repositoryId, string newRefName, string baseCommitSha, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -19,7 +19,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 List<GitRefUpdateResult> result = await _gitHttpClient.UpdateRefsAsync(
                     refUpdates: new[] { refUpdate },
                     repositoryId: repositoryId,
-                    project: _projectName);
+                    project: _projectName,
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<List<GitRefUpdateResult>>.Success(result, _logger);
             }
@@ -29,14 +30,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitRef>>> ListBranchesAsync(string repositoryId)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitRef>>> ListBranchesAsync(string repositoryId, CancellationToken cancellationToken = default)
         {
             try
             {
                 List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
                     project: _projectName,
-                    filter: "heads/");
+                    filter: "heads/",
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Success(refs, _logger);
             }
@@ -46,7 +48,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitRef>>> ListMyBranchesAsync(string repositoryId)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitRef>>> ListMyBranchesAsync(string repositoryId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -54,7 +56,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     project: _projectName,
                     includeMyBranches: true,
-                    latestStatusesOnly: true);
+                    latestStatusesOnly: true,
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Success(refs, _logger);
             }
@@ -64,14 +67,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitRef>> GetBranchAsync(string repositoryId, string branchName)
+        public async Task<AzureDevOpsActionResult<GitRef>> GetBranchAsync(string repositoryId, string branchName, CancellationToken cancellationToken = default)
         {
             try
             {
                 List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
                     project: _projectName,
-                    filter: $"heads/{branchName}");
+                    filter: $"heads/{branchName}",
+                    cancellationToken: cancellationToken);
 
                 if(refs.Count == 0)
                     return AzureDevOpsActionResult<GitRef>.Failure($"Branch '{branchName}' not found.", _logger);

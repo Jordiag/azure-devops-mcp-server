@@ -7,7 +7,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
     public partial class ReposClient
     {
         public async Task<AzureDevOpsActionResult<GitCommitDiffs>> GetCommitDiffAsync(
-            string repositoryId, string baseSha, string targetSha)
+            string repositoryId, string baseSha, string targetSha, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -28,7 +28,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     project: _projectName,
                     diffCommonCommit: true,
                     baseVersionDescriptor: baseDesc,
-                    targetVersionDescriptor: targetDesc);
+                    targetVersionDescriptor: targetDesc,
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<GitCommitDiffs>.Success(result, _logger);
             }
@@ -38,7 +39,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>> GetLatestCommitsAsync(string projectName, string repositoryName, string branchName, int top = 1)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>> GetLatestCommitsAsync(string projectName, string repositoryName, string branchName, int top = 1, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -56,7 +57,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 IReadOnlyList<GitCommitRef> result = await _gitHttpClient.GetCommitsAsync(
                     repositoryId: repositoryName,
                     searchCriteria: searchCriteria,
-                    project: projectName);
+                    project: projectName,
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, _logger);
             }
@@ -66,7 +68,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>> SearchCommitsAsync(string repositoryId, GitQueryCommitsCriteria searchCriteria, int top = 100)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>> SearchCommitsAsync(string repositoryId, GitQueryCommitsCriteria searchCriteria, int top = 100, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -75,7 +77,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 IReadOnlyList<GitCommitRef> result = await _gitHttpClient.GetCommitsAsync(
                     repositoryId: repositoryId,
                     searchCriteria: searchCriteria,
-                    project: _projectName);
+                    project: _projectName,
+                    cancellationToken: cancellationToken);
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, _logger);
             }
@@ -85,14 +88,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<string>> CommitAddFileAsync(FileCommitOptions fileCommitOptions)
+        public async Task<AzureDevOpsActionResult<string>> CommitAddFileAsync(FileCommitOptions fileCommitOptions, CancellationToken cancellationToken = default)
         {
             try
             {
                 GitRef branch = await _gitHttpClient.GetRefsAsync(
                     repositoryId: fileCommitOptions.RepositoryName,
                     project: _projectName,
-                    filter: $"heads/{fileCommitOptions.BranchName}")
+                    filter: $"heads/{fileCommitOptions.BranchName}",
+                    cancellationToken: cancellationToken)
                     .ContinueWith(task => task.Result.Single());
 
                 var change = new GitChange
@@ -128,7 +132,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     push,
                     project: _projectName,
                     repositoryId: fileCommitOptions.RepositoryName,
-                    userState: null
+                    userState: null,
+                    cancellationToken: cancellationToken
                 );
 
                 GitCommitRef pushedCommit = result.Commits.Last();
