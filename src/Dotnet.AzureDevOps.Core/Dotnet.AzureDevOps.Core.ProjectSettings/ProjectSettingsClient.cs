@@ -131,7 +131,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                List<WebApiTeam> teams = await _teamClient.GetAllTeamsAsync();
+                List<WebApiTeam> teams = await _teamClient.GetAllTeamsAsync(cancellationToken: cancellationToken);
                 return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams, _logger);
             }
             catch(Exception ex)
