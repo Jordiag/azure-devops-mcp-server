@@ -74,7 +74,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             try
             {
-                WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName, cancellationToken);
+                WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, _projectName, cancellationToken: cancellationToken);
                 bool success = createdTeam.Description == teamDescription && createdTeam.Name == teamName;
                 return success
                     ? AzureDevOpsActionResult<bool>.Success(true, _logger)
