@@ -11,22 +11,14 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines;
 
-public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisposable
+public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 {
-    private readonly string _projectName;
     private readonly BuildHttpClient _build;
-    private readonly VssConnection _connection;
-    private readonly ILogger _logger;
-    private bool _disposed;
 
     public PipelinesClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+        : base(organizationUrl, personalAccessToken, projectName, logger)
     {
-        _projectName = projectName;
-        _logger = logger ?? NullLogger.Instance;
-
-        _connection = new VssConnection(new Uri(organizationUrl),
-            new VssBasicCredential(string.Empty, personalAccessToken));
-        _build = _connection.GetClient<BuildHttpClient>();
+        _build = Connection.GetClient<BuildHttpClient>();
     }
 
     private static bool IsValidCommitSha(string? sha)
@@ -85,14 +77,14 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
 
             Build queued = await _build.QueueBuildAsync(
                 build: build,
-                project: _projectName,
+                project: ProjectName,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(queued.Id, _logger);
+            return AzureDevOpsActionResult<int>.Success(queued.Id, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
     }
 
@@ -117,17 +109,17 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             Build build = await _build.GetBuildAsync(
-                project: _projectName,
+                project: ProjectName,
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
             return build == null
-                ? AzureDevOpsActionResult<Build>.Failure("Build could not be found.", _logger)
-                : AzureDevOpsActionResult<Build>.Success(build, _logger);
+                ? AzureDevOpsActionResult<Build>.Failure("Build could not be found.", Logger)
+                : AzureDevOpsActionResult<Build>.Success(build, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<Build>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<Build>.Failure(ex, Logger);
         }
     }
 
@@ -152,7 +144,7 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             List<Build> builds = await _build.GetBuildsAsync(
-                project: _projectName,
+                project: ProjectName,
                 definitions: buildListOptions.DefinitionId is int d ? new[] { d } : null,
                 branchName: buildListOptions.Branch,
                 statusFilter: buildListOptions.Status,
@@ -160,11 +152,11 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
                 top: buildListOptions.Top,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<IReadOnlyList<Build>>.Success(builds, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<Build>>.Success(builds, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<Build>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<Build>>.Failure(ex, Logger);
         }
     }
 
@@ -201,11 +193,11 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
                 build: build,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+            return AzureDevOpsActionResult<bool>.Success(true, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -230,7 +222,7 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             Build original = await _build.GetBuildAsync(
-                project: _projectName,
+                project: ProjectName,
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
@@ -244,14 +236,14 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
 
             Build queued = await _build.QueueBuildAsync(
                 build: clone,
-                project: _projectName,
+                project: ProjectName,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(queued.Id, _logger);
+            return AzureDevOpsActionResult<int>.Success(queued.Id, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
     }
 
@@ -275,7 +267,7 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
-                project: _projectName,
+                project: ProjectName,
                 buildId: buildId,
                 cancellationToken: cancellationToken);
 
@@ -291,7 +283,7 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
                 .ToList();
 
             if(logEntries.Count == 0)
-                return AzureDevOpsActionResult<string>.Failure("No console logs were found in the build output.", _logger);
+                return AzureDevOpsActionResult<string>.Failure("No console logs were found in the build output.", Logger);
 
             var fullLog = new StringBuilder();
             foreach(ZipArchiveEntry? entry in logEntries)
@@ -306,12 +298,12 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
             string result = fullLog.ToString().Trim();
 
             return string.IsNullOrWhiteSpace(result)
-                ? AzureDevOpsActionResult<string>.Failure("Console logs were found but all are empty.", _logger)
-                : AzureDevOpsActionResult<string>.Success(result, _logger);
+                ? AzureDevOpsActionResult<string>.Failure("Console logs were found but all are empty.", Logger)
+                : AzureDevOpsActionResult<string>.Success(result, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<string>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }
     }
 
@@ -356,14 +348,14 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
 
             BuildDefinition created = await _build.CreateDefinitionAsync(
                 definition: definition,
-                project: _projectName,
+                project: ProjectName,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(created.Id, _logger);
+            return AzureDevOpsActionResult<int>.Success(created.Id, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
     }
 
@@ -388,17 +380,17 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             BuildDefinition definition = await _build.GetDefinitionAsync(
-                project: _projectName,
+                project: ProjectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
             return definition == null
-                ? AzureDevOpsActionResult<BuildDefinition>.Failure("Pipeline definition not found.", _logger)
-                : AzureDevOpsActionResult<BuildDefinition>.Success(definition, _logger);
+                ? AzureDevOpsActionResult<BuildDefinition>.Failure("Pipeline definition not found.", Logger)
+                : AzureDevOpsActionResult<BuildDefinition>.Success(definition, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<BuildDefinition>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<BuildDefinition>.Failure(ex, Logger);
         }
     }
 
@@ -421,14 +413,14 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             List<BuildDefinitionReference> definitions = await _build.GetDefinitionsAsync(
-                project: _projectName,
+                project: ProjectName,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Failure(ex, Logger);
         }
     }
 
@@ -453,7 +445,7 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             List<BuildDefinitionReference> definitions = await _build.GetDefinitionsAsync(
-                project: _projectName,
+                project: ProjectName,
                 name: options.Name,
                 repositoryId: options.RepositoryId,
                 repositoryType: options.RepositoryType,
@@ -471,11 +463,11 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
                 yamlFilename: options.YamlFilename,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Failure(ex, Logger);
         }
     }
 
@@ -499,12 +491,12 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
     {
         try
         {
-            List<BuildDefinitionRevision> revisions = await _build.GetDefinitionRevisionsAsync(_projectName, definitionId, cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Success(revisions, _logger);
+            List<BuildDefinitionRevision> revisions = await _build.GetDefinitionRevisionsAsync(ProjectName, definitionId, cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Success(revisions, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Failure(ex, Logger);
         }
     }
 
@@ -528,12 +520,12 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
     {
         try
         {
-            List<BuildLog> logs = await _build.GetBuildLogsAsync(_projectName, buildId, cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<List<BuildLog>>.Success(logs, _logger);
+            List<BuildLog> logs = await _build.GetBuildLogsAsync(ProjectName, buildId, cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<List<BuildLog>>.Success(logs, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<List<BuildLog>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<List<BuildLog>>.Failure(ex, Logger);
         }
     }
 
@@ -560,12 +552,12 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
     {
         try
         {
-            List<string> lines = await _build.GetBuildLogLinesAsync(_projectName, buildId, logId, startLine, endLine, cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<List<string>>.Success(lines, _logger);
+            List<string> lines = await _build.GetBuildLogLinesAsync(ProjectName, buildId, logId, startLine, endLine, cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<List<string>>.Success(lines, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<List<string>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<List<string>>.Failure(ex, Logger);
         }
     }
 
@@ -592,12 +584,12 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
     {
         try
         {
-            List<Change> changes = await _build.GetBuildChangesAsync(_projectName, buildId, continuationToken, top, includeSourceChange, cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<List<Change>>.Success(changes, _logger);
+            List<Change> changes = await _build.GetBuildChangesAsync(ProjectName, buildId, continuationToken, top, includeSourceChange, cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<List<Change>>.Success(changes, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<List<Change>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<List<Change>>.Failure(ex, Logger);
         }
     }
 
@@ -621,14 +613,14 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
     {
         try
         {
-            BuildReportMetadata report = await _build.GetBuildReportAsync(_projectName, buildId, cancellationToken: cancellationToken);
+            BuildReportMetadata report = await _build.GetBuildReportAsync(ProjectName, buildId, cancellationToken: cancellationToken);
             return report == null
-                ? AzureDevOpsActionResult<BuildReportMetadata>.Failure("Build report not found.", _logger)
-                : AzureDevOpsActionResult<BuildReportMetadata>.Success(report, _logger);
+                ? AzureDevOpsActionResult<BuildReportMetadata>.Failure("Build report not found.", Logger)
+                : AzureDevOpsActionResult<BuildReportMetadata>.Success(report, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<BuildReportMetadata>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<BuildReportMetadata>.Failure(ex, Logger);
         }
     }
 
@@ -656,12 +648,12 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             var parameters = new UpdateStageParameters { State = status, ForceRetryAllJobs = forceRetryAllJobs };
-            await _build.UpdateStageAsync(parameters, _projectName, buildId, stageName, cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+            await _build.UpdateStageAsync(parameters, ProjectName, buildId, stageName, cancellationToken: cancellationToken);
+            return AzureDevOpsActionResult<bool>.Success(true, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -688,7 +680,7 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             BuildDefinition buildDefinition = await _build.GetDefinitionAsync(
-                project: _projectName,
+                project: ProjectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
@@ -703,15 +695,15 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
 
             await _build.UpdateDefinitionAsync(
                 definition: buildDefinition,
-                project: _projectName,
+                project: ProjectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+            return AzureDevOpsActionResult<bool>.Success(true, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -736,46 +728,15 @@ public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisp
         try
         {
             await _build.DeleteDefinitionAsync(
-                project: _projectName,
+                project: ProjectName,
                 definitionId: definitionId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+            return AzureDevOpsActionResult<bool>.Success(true, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _connection?.Dispose();
-            }
-            _disposed = true;
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await DisposeAsyncCore().ConfigureAwait(false);
-        Dispose(false);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual ValueTask DisposeAsyncCore()
-    {
-        _connection?.Dispose();
-        return ValueTask.CompletedTask;
     }
 }
 

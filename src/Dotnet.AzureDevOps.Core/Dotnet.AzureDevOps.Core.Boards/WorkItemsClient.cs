@@ -10,32 +10,21 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
-    public partial class WorkItemsClient : IWorkItemsClient, IDisposable, IAsyncDisposable
+    public partial class WorkItemsClient : AzureDevOpsClientBase, IWorkItemsClient
     {
-        private readonly string _organizationUrl;
-        private readonly string _projectName;
-        private readonly ILogger _logger;
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
         private readonly HttpClient _httpClient;
-        private readonly VssConnection _connection;
-        private bool _disposed;
         private const string _patchMethod = Constants.PatchMethod;
         private const string ContentTypeHeader = Constants.ContentTypeHeader;
         private const string JsonPatchContentType = Constants.JsonPatchContentType;
 
         public WorkItemsClient(HttpClient httpClient, string organizationUrl, string projectName, string personalAccessToken, ILogger<WorkItemsClient>? logger = null)
+            : base(organizationUrl, personalAccessToken, projectName, logger)
         {
-            _organizationUrl = organizationUrl;
-            _projectName = projectName;
-            _logger = (ILogger?)logger ?? NullLogger.Instance;
-
             _httpClient = httpClient;
-
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            _connection = new VssConnection(new Uri(_organizationUrl), credentials);
-            _workItemClient = _connection.GetClient<WorkItemTrackingHttpClient>();
-            _workClient = _connection.GetClient<WorkHttpClient>();
+            _workItemClient = Connection.GetClient<WorkItemTrackingHttpClient>();
+            _workClient = Connection.GetClient<WorkHttpClient>();
         }
 
         /// <summary>
@@ -56,7 +45,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                string projectUrl = $"{_organizationUrl}/_apis/projects/{_projectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
+                string projectUrl = $"{OrganizationUrl}/_apis/projects/{ProjectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
                 JsonElement projectResponse = await _httpClient.GetFromJsonAsync<JsonElement>(projectUrl, cancellationToken);
 
                 string? processId = projectResponse
@@ -70,7 +59,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     return AzureDevOpsActionResult<bool>.Failure("Unable to determine the process ID for the project.");
                 }
 
-                string processUrl = $"{_organizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
+                string processUrl = $"{OrganizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
                 JsonElement processResponse = await _httpClient.GetFromJsonAsync<JsonElement>(processUrl, cancellationToken);
                 string? processType = processResponse.GetProperty("type").GetString();
 
@@ -80,44 +69,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 }
 
                 bool isSystem = processType.Equals("system", StringComparison.OrdinalIgnoreCase);
-                return AzureDevOpsActionResult<bool>.Success(isSystem, _logger);
+                return AzureDevOpsActionResult<bool>.Success(isSystem, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if(!_disposed)
-            {
-                if(disposing)
-                {
-                    _connection?.Dispose();
-                }
-                _disposed = true;
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await DisposeAsyncCore().ConfigureAwait(false);
-            Dispose(false);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual ValueTask DisposeAsyncCore()
-        {
-            _connection?.Dispose();
-            return ValueTask.CompletedTask;
         }
     }
 }
+
 

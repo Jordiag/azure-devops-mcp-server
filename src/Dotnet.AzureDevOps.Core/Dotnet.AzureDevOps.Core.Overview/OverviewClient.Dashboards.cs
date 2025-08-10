@@ -26,14 +26,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var teamContext = new TeamContext(this._projectName);
+                var teamContext = new TeamContext(this.ProjectName);
                 List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
                 IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? new List<Dashboard>();
-                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, this._logger);
+                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, this.Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Failure(ex, this._logger);
+                return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Failure(ex, this.Logger);
             }
         }
 
@@ -58,14 +58,15 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var teamContext = new TeamContext(this._projectName, teamName);
+                var teamContext = new TeamContext(this.ProjectName, teamName);
                 Dashboard dashboard = await this._dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Dashboard>.Success(dashboard, this._logger);
+                return AzureDevOpsActionResult<Dashboard>.Success(dashboard, this.Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Dashboard>.Failure(ex, this._logger);
+                return AzureDevOpsActionResult<Dashboard>.Failure(ex, this.Logger);
             }
         }
     }
 }
+

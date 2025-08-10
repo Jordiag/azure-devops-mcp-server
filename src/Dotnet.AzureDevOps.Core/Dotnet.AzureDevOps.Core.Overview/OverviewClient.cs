@@ -1,5 +1,5 @@
+using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
@@ -8,15 +8,11 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public partial class OverviewClient : IOverviewClient
+    public partial class OverviewClient : AzureDevOpsClientBase, IOverviewClient
     {
-        private readonly string _projectName;
-        private readonly ILogger _logger;
         private readonly DashboardHttpClient _dashboardHttpClient;
         private readonly ProjectHttpClient _projectHttpClient;
         private readonly WikiHttpClient _wikiHttpClient;
-        private readonly VssConnection _connection;
-        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the OverviewClient with comprehensive Azure DevOps integration for project overview, dashboard management, and wiki operations.
@@ -33,45 +29,11 @@ namespace Dotnet.AzureDevOps.Core.Overview
         /// <exception cref="UnauthorizedAccessException">Thrown when the personal access token lacks required permissions for overview operations or organization access</exception>
         /// <exception cref="VssServiceException">Thrown when connection to Azure DevOps services fails or organization/project cannot be validated</exception>
         public OverviewClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+            : base(organizationUrl, personalAccessToken, projectName, logger)
         {
-            _projectName = projectName;
-            _logger = logger ?? NullLogger.Instance;
-            var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            _connection = new VssConnection(new Uri(organizationUrl), credentials);
-            _dashboardHttpClient = _connection.GetClient<DashboardHttpClient>();
-            _projectHttpClient = _connection.GetClient<ProjectHttpClient>();
-            _wikiHttpClient = _connection.GetClient<WikiHttpClient>();
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    _connection?.Dispose();
-                }
-                _disposed = true;
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await DisposeAsyncCore().ConfigureAwait(false);
-            Dispose(false);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual ValueTask DisposeAsyncCore()
-        {
-            _connection?.Dispose();
-            return ValueTask.CompletedTask;
+            _dashboardHttpClient = Connection.GetClient<DashboardHttpClient>();
+            _projectHttpClient = Connection.GetClient<ProjectHttpClient>();
+            _wikiHttpClient = Connection.GetClient<WikiHttpClient>();
         }
     }
 }

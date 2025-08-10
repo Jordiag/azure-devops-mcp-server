@@ -35,15 +35,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     cancellationToken: cancellationToken
                 );
 
-                return AzureDevOpsActionResult<WorkItem>.Success(item, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Success(item, Logger);
             }
             catch(VssServiceException ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
         }
 
@@ -67,7 +67,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 var query = new Wiql { Query = wiql };
-                WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: _projectName, cancellationToken: cancellationToken);
+                WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: ProjectName, cancellationToken: cancellationToken);
 
                 if(result.WorkItems?.Any() == true)
                 {
@@ -82,15 +82,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         allItems.AddRange(batchItems);
                     }
 
-                    return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(allItems, _logger);
+                    return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(allItems, Logger);
                 }
 
                 IReadOnlyList<WorkItem> empty = Array.Empty<WorkItem>();
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(empty, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(empty, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Failure(ex, Logger);
             }
         }
 
@@ -114,11 +114,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AzureDevOpsActionResult<IReadOnlyList<WorkItem>> itemsResult = await QueryWorkItemsAsync(wiql, cancellationToken);
             if(!itemsResult.IsSuccessful)
             {
-                return AzureDevOpsActionResult<int>.Failure(itemsResult.ErrorMessage!, _logger);
+                return AzureDevOpsActionResult<int>.Failure(itemsResult.ErrorMessage!, Logger);
             }
 
             int count = itemsResult.Value.Count;
-            return AzureDevOpsActionResult<int>.Success(count, _logger);
+            return AzureDevOpsActionResult<int>.Success(count, Logger);
         }
 
         /// <summary>
@@ -142,11 +142,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 WorkItemType type = await _workItemClient.GetWorkItemTypeAsync(projectName, workItemTypeName, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WorkItemType>.Success(type, _logger);
+                return AzureDevOpsActionResult<WorkItemType>.Success(type, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItemType>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItemType>.Failure(ex, Logger);
             }
         }
 
@@ -175,11 +175,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 QueryHierarchyItem result = await _workItemClient.GetQueryAsync(projectName, queryIdOrPath, expand, depth, includeDeleted, useIsoDateFormat, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<QueryHierarchyItem>.Success(result, _logger);
+                return AzureDevOpsActionResult<QueryHierarchyItem>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<QueryHierarchyItem>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<QueryHierarchyItem>.Failure(ex, Logger);
             }
         }
 
@@ -206,11 +206,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 WorkItemQueryResult result = await _workItemClient.QueryByIdAsync(teamContext, queryId, timePrecision, top, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WorkItemQueryResult>.Success(result, _logger);
+                return AzureDevOpsActionResult<WorkItemQueryResult>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItemQueryResult>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItemQueryResult>.Failure(ex, Logger);
             }
         }
 
@@ -245,7 +245,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-                string requestUrl = $"{_organizationUrl}/{projectName}/_apis/wit/queries/Shared%20Queries?api-version={GlobalConstants.ApiVersion}";
+                string requestUrl = $"{OrganizationUrl}/{projectName}/_apis/wit/queries/Shared%20Queries?api-version={GlobalConstants.ApiVersion}";
 
                 using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
                 {
@@ -257,14 +257,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 if(!response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure($"Failed to create query: {response.StatusCode} - {responseBody}", _logger);
+                    return AzureDevOpsActionResult<bool>.Failure($"Failed to create query: {response.StatusCode} - {responseBody}", Logger);
                 }
 
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -291,7 +291,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 string encodedPath = Uri.EscapeDataString($"Shared Queries/{queryName}");
-                string requestUrl = $"{_organizationUrl}/{projectName}/_apis/wit/queries/{encodedPath}?api-version={GlobalConstants.ApiVersion}";
+                string requestUrl = $"{OrganizationUrl}/{projectName}/_apis/wit/queries/{encodedPath}?api-version={GlobalConstants.ApiVersion}";
 
                 using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
                 using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
@@ -299,14 +299,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 if(!response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure($"Failed to delete query: {response.StatusCode} - {responseBody}", _logger);
+                    return AzureDevOpsActionResult<bool>.Failure($"Failed to delete query: {response.StatusCode} - {responseBody}", Logger);
                 }
 
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
     }

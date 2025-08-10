@@ -25,17 +25,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 GitCommitDiffs result = await _gitHttpClient.GetCommitDiffsAsync(
                     repositoryId: repositoryId,
-                    project: _projectName,
+                    project: ProjectName,
                     diffCommonCommit: true,
                     baseVersionDescriptor: baseDesc,
                     targetVersionDescriptor: targetDesc,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitCommitDiffs>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitCommitDiffs>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitCommitDiffs>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitCommitDiffs>.Failure(ex, Logger);
             }
         }
 
@@ -60,11 +60,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     project: projectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Failure(ex, Logger);
             }
         }
 
@@ -77,14 +77,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 IReadOnlyList<GitCommitRef> result = await _gitHttpClient.GetCommitsAsync(
                     repositoryId: repositoryId,
                     searchCriteria: searchCriteria,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Failure(ex, Logger);
             }
         }
 
@@ -94,7 +94,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             {
                 GitRef branch = await _gitHttpClient.GetRefsAsync(
                     repositoryId: fileCommitOptions.RepositoryName,
-                    project: _projectName,
+                    project: ProjectName,
                     filter: $"heads/{fileCommitOptions.BranchName}",
                     cancellationToken: cancellationToken)
                     .ContinueWith(task => task.Result.Single());
@@ -130,19 +130,20 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 GitPush result = await _gitHttpClient.CreatePushAsync(
                     push,
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: fileCommitOptions.RepositoryName,
                     userState: null,
                     cancellationToken: cancellationToken
                 );
 
                 GitCommitRef pushedCommit = result.Commits.Last();
-                return AzureDevOpsActionResult<string>.Success(pushedCommit.CommitId, _logger);
+                return AzureDevOpsActionResult<string>.Success(pushedCommit.CommitId, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<string>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<string>.Failure(ex, Logger);
             }
         }
     }
 }
+

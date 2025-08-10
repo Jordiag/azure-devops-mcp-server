@@ -1,7 +1,6 @@
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -16,22 +15,14 @@ using WorkItem = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.Web
 
 namespace Dotnet.AzureDevOps.Core.TestPlans;
 
-public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
+public class TestPlansClient : AzureDevOpsClientBase, ITestPlansClient
 {
-    private readonly string _projectName;
     private readonly TestPlanHttpClient _testPlanClient;
-    private readonly VssConnection _connection;
-    private readonly ILogger? _logger;
-    private bool _disposed;
 
     public TestPlansClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+        : base(organizationUrl, personalAccessToken, projectName, logger)
     {
-        _projectName = projectName;
-
-        var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-        _connection = new VssConnection(new Uri(organizationUrl), credentials);
-        _testPlanClient = _connection.GetClient<TestPlanHttpClient>();
-        _logger = logger ?? NullLogger.Instance;
+        _testPlanClient = Connection.GetClient<TestPlanHttpClient>();
     }
 
     /// <summary>
@@ -66,14 +57,14 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
 
             TestPlan plan = await _testPlanClient.CreateTestPlanAsync(
                 testPlanCreateParams: createParameters,
-                project: _projectName,
+                project: ProjectName,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(plan.Id, _logger);
+            return AzureDevOpsActionResult<int>.Success(plan.Id, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
     }
 
@@ -98,18 +89,18 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
         try
         {
             TestPlan plan = await _testPlanClient.GetTestPlanByIdAsync(
-                project: _projectName,
+                project: ProjectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<TestPlan>.Success(plan, _logger);
+            return AzureDevOpsActionResult<TestPlan>.Success(plan, Logger);
         }
         catch(VssServiceException)
         {
-            return AzureDevOpsActionResult<TestPlan>.Failure("Test plan is not found", _logger);
+            return AzureDevOpsActionResult<TestPlan>.Failure("Test plan is not found", Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestPlan>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<TestPlan>.Failure(ex, Logger);
         }
     }
 
@@ -133,13 +124,13 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
         try
         {
             PagedList<TestPlan> plans = await _testPlanClient.GetTestPlansAsync(
-                project: _projectName,
+                project: ProjectName,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Success(plans, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Success(plans, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<TestPlan>>.Failure(ex, Logger);
         }
     }
 
@@ -164,14 +155,14 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
         try
         {
             await _testPlanClient.DeleteTestPlanAsync(
-                project: _projectName,
+                project: ProjectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+            return AzureDevOpsActionResult<bool>.Success(true, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -205,15 +196,15 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
 
             TestSuite suite = await _testPlanClient.CreateTestSuiteAsync(
                 testSuiteCreateParams: createParameters,
-                project: _projectName,
+                project: ProjectName,
                 planId: testPlanId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<int>.Success(suite.Id, _logger);
+            return AzureDevOpsActionResult<int>.Success(suite.Id, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
     }
 
@@ -238,15 +229,15 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
         try
         {
             PagedList<TestSuite> suites = await _testPlanClient.GetTestSuitesForPlanAsync(
-                project: _projectName,
+                project: ProjectName,
                 planId: testPlanId,
                 asTreeView: false,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Success(suites, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Success(suites, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<TestSuite>>.Failure(ex, Logger);
         }
     }
 
@@ -287,16 +278,16 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
 
             await _testPlanClient.AddTestCasesToSuiteAsync(
                 suiteTestCaseCreateUpdateParameters: existingTestCases,
-                project: _projectName,
+                project: ProjectName,
                 planId: testPlanId,
                 suiteId: testSuiteId,
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+            return AzureDevOpsActionResult<bool>.Success(true, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -320,7 +311,7 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
     {
         try
         {
-            using var workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
+            using var workItemTracking = new WorkItemTrackingHttpClient(Connection.Uri, Connection.Credentials);
 
             var patch = new JsonPatchDocument
             {
@@ -363,11 +354,11 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
                 "Test Case",
                 cancellationToken: cancellationToken);
 
-            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Success(result, _logger);
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Success(result, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>.Failure(ex, Logger);
         }
     }
 
@@ -393,15 +384,15 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
         try
         {
             PagedList<TestCase> testCases = await _testPlanClient.GetTestCaseListAsync(
-                _projectName,
+                ProjectName,
                 testPlanId,
                 testSuiteId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<PagedList<TestCase>>.Success(testCases, _logger);
+            return AzureDevOpsActionResult<PagedList<TestCase>>.Success(testCases, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<PagedList<TestCase>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<PagedList<TestCase>>.Failure(ex, Logger);
         }
     }
 
@@ -426,16 +417,16 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
     {
         try
         {
-            TestResultsHttpClient testResultsClient = await _connection.GetClientAsync<TestResultsHttpClient>(cancellationToken);
+            TestResultsHttpClient testResultsClient = await Connection.GetClientAsync<TestResultsHttpClient>(cancellationToken);
             TestResultsDetails details = await testResultsClient.GetTestResultDetailsForBuildAsync(
                 projectName,
                 buildId,
                 cancellationToken: cancellationToken);
-            return AzureDevOpsActionResult<TestResultsDetails>.Success(details, _logger);
+            return AzureDevOpsActionResult<TestResultsDetails>.Success(details, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestResultsDetails>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<TestResultsDetails>.Failure(ex, Logger);
         }
     }
 
@@ -460,48 +451,19 @@ public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
         {
             AzureDevOpsActionResult<IReadOnlyList<TestSuite>> suitesResult = await ListTestSuitesAsync(planId, cancellationToken);
             if(!suitesResult.IsSuccessful || suitesResult.Value == null)
-                return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.", _logger);
+                return AzureDevOpsActionResult<TestSuite>.Failure(suitesResult.ErrorMessage ?? $"Unable to list suites for plan {planId}.", Logger);
 
             IReadOnlyList<TestSuite> suites = suitesResult.Value;
             TestSuite? root = suites.FirstOrDefault(suite => suite.ParentSuite == null || suite.ParentSuite.Id != -1);
             return root is null
-                ? AzureDevOpsActionResult<TestSuite>.Failure($"No root suite found for test plan {planId}.", _logger)
-                : AzureDevOpsActionResult<TestSuite>.Success(root, _logger);
+                ? AzureDevOpsActionResult<TestSuite>.Failure($"No root suite found for test plan {planId}.", Logger)
+                : AzureDevOpsActionResult<TestSuite>.Success(root, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<TestSuite>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<TestSuite>.Failure(ex, Logger);
         }
     }
 
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _connection?.Dispose();
-            }
-            _disposed = true;
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await DisposeAsyncCore().ConfigureAwait(false);
-        Dispose(false);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual ValueTask DisposeAsyncCore()
-    {
-        _connection?.Dispose();
-        return ValueTask.CompletedTask;
-    }
 }
