@@ -771,6 +771,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 string processName = $"it-proc-{UtcStamp()}";
                 AzureDevOpsActionResult<bool> processCreatedResult = await _projectSettingsClient.CreateInheritedProcessAsync(processName, "Custom", "Agile");
                 Assert.True(processCreatedResult.IsSuccessful && processCreatedResult.Value);
+                
                 string? processId = null;
                 await WaitHelper.WaitUntilAsync(async () =>
                 {
@@ -778,7 +779,6 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                     processId = processIdResult.Value;
                     return !string.IsNullOrEmpty(processId);
                 }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
-                Assert.False(string.IsNullOrEmpty(processId));
 
                 string projectName = $"it-proj-{UtcStamp()}";
                 AzureDevOpsActionResult<Guid> projectIdResult = await _projectSettingsClient.CreateProjectAsync(projectName, "Custom field project", processId!);

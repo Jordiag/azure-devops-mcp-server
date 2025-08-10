@@ -104,25 +104,11 @@ public static class CoreClientsServiceCollectionExtensions
             return new TestPlansClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
-        services.AddScoped<IWikiClient>(provider =>
+        services.AddScoped<IOverviewClient>(provider =>
         {
-            ILogger<WikiClient>? logger = provider.GetService<ILogger<WikiClient>>();
+            ILogger<OverviewClient>? logger = provider.GetService<ILogger<OverviewClient>>();
             AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
-            return new WikiClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
-        });
-
-        services.AddScoped<IDashboardClient>(provider =>
-        {
-            ILogger<DashboardClient>? logger = provider.GetService<ILogger<DashboardClient>>();
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
-            return new DashboardClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
-        });
-
-        services.AddScoped<ISummaryClient>(provider =>
-        {
-            ILogger<SummaryClient>? logger = provider.GetService<ILogger<SummaryClient>>();
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
-            return new SummaryClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
+            return new OverviewClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
         services.AddScoped<IIdentityClient>(provider =>

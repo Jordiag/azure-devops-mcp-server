@@ -23,7 +23,7 @@ public class IntegrationTestFixture : IAsyncLifetime
     public ProjectSettingsClient ProjectSettingsClient { get; private set; } = null!;
     public PipelinesClient PipelinesClient { get; private set; } = null!;
     public ArtifactsClient ArtifactsClient { get; private set; } = null!;
-    public WikiClient WikiClient { get; private set; } = null!;
+    public OverviewClient OverviewClient { get; private set; } = null!;
     public SearchClient SearchClient { get; private set; } = null!;
     public IdentityClient IdentityClient { get; private set; } = null!;
     public TestPlansClient TestPlansClient { get; private set; } = null!;
@@ -92,7 +92,7 @@ public class IntegrationTestFixture : IAsyncLifetime
             Configuration.ProjectName,
             Configuration.PersonalAccessToken);
             
-        WikiClient = new WikiClient(
+        OverviewClient = new OverviewClient(
             Configuration.OrganisationUrl,
             Configuration.ProjectName,
             Configuration.PersonalAccessToken);

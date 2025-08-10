@@ -1,7 +1,5 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
@@ -12,22 +10,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.Artifacts;
 
-public class ArtifactsClient : IArtifactsClient
+public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<ArtifactsClient>? logger = null) : IArtifactsClient
 {
     private const string ApiVersion = GlobalConstants.ApiVersion;
 
-    private readonly string _projectName;
-    private readonly HttpClient _httpClient;
-    private readonly string _organizationUrl;
-    private readonly ILogger _logger;
-
-    public ArtifactsClient(HttpClient httpClient, string projectName, ILogger<ArtifactsClient>? logger = null)
-    {
-        _projectName = projectName.TrimEnd('/');
-        _logger = (ILogger?)logger ?? NullLogger.Instance;
-        _organizationUrl = httpClient.BaseAddress?.ToString()?.Replace("https://dev.azure.com", "https://feeds.dev.azure.com") ?? "";
-        _httpClient = httpClient;
-    }
+    private readonly string _projectName = projectName.TrimEnd('/');
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly string _organizationUrl = httpClient.BaseAddress?.ToString()?.Replace("https://dev.azure.com", "https://feeds.dev.azure.com") ?? "";
+    private readonly ILogger _logger = (ILogger?)logger ?? NullLogger.Instance;
 
     /// <summary>
     /// Creates a new package feed within the Azure DevOps project.
