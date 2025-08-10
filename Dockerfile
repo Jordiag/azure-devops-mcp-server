@@ -1,5 +1,10 @@
 # Use the official .NET 9 runtime as the base image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
+# Create a non-root user for security
+RUN adduser --disabled-password --gecos "" --home /app --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
 WORKDIR /app
 EXPOSE 5050
 
@@ -16,8 +21,8 @@ COPY ["Directory.Packages.props", "."]
 # Restore dependencies
 RUN dotnet restore "src/Dotnet.AzureDevOps.Mcp.Server/Dotnet.AzureDevOps.Mcp.Server.csproj"
 
-# Copy the rest of the source code
-COPY . .
+# Copy only the source code needed for build (excluding sensitive files)
+COPY ["src/", "src/"]
 
 # Build the application
 WORKDIR "/src/src/Dotnet.AzureDevOps.Mcp.Server"
@@ -32,8 +37,15 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+# Change ownership of the app files to the non-root user
+USER root
+RUN chown -R appuser:appuser /app
+
 # Set environment variables for container
 ENV ASPNETCORE_URLS=http://+:5050
 ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Switch to non-root user for security
+USER appuser
 
 ENTRYPOINT ["dotnet", "Dotnet.AzureDevOps.Mcp.Server.dll"]

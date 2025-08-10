@@ -249,7 +249,8 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 Version = _azureDevOpsConfiguration.MainBranchName
             };
 
-            _ = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+            AzureDevOpsActionResult<int> pageIdActionResult = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+            Assert.True(pageIdActionResult.IsSuccessful, "Expected page creation to be successful.");
 
             AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
