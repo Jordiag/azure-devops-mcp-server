@@ -1,6 +1,4 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Microsoft.Extensions.Logging;
@@ -98,9 +96,9 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if(!_disposed)
             {
-                if (disposing)
+                if(disposing)
                 {
                     _connection?.Dispose();
                 }

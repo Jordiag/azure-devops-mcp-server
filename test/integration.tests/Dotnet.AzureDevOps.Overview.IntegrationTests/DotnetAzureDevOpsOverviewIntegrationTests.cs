@@ -17,7 +17,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
     public class DotnetAzureDevOpsOverviewIntegrationTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
     {
         private readonly AzureDevOpsConfiguration _azureDevOpsConfiguration;
-        private readonly WikiClient _wikiClient;
+        private readonly IOverviewClient _overviewClient;
         private readonly List<Guid> _createdWikis = [];
         private readonly ProjectSettingsClient _projectSettingsClient;
         private readonly IntegrationTestFixture _fixture;
@@ -26,7 +26,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         {
             _fixture = fixture;
             _azureDevOpsConfiguration = fixture.Configuration;
-            _wikiClient = fixture.WikiClient;
+            _overviewClient = fixture.OverviewClient;
             _projectSettingsClient = fixture.ProjectSettingsClient;
         }
 
@@ -51,7 +51,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Guid id = Guid.Empty;
             await WaitHelper.WaitUntilAsync(async () =>
             {
-                AzureDevOpsActionResult<Guid> createResult = await _wikiClient.CreateWikiAsync(create);
+                AzureDevOpsActionResult<Guid> createResult = await _overviewClient.CreateWikiAsync(create);
                 if(!createResult.IsSuccessful)
                     return false;
                 id = createResult.Value;
@@ -64,22 +64,22 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             }
             _createdWikis.Add(id);
 
-            AzureDevOpsActionResult<WikiV2> wikiResult = await _wikiClient.GetWikiAsync(id);
+            AzureDevOpsActionResult<WikiV2> wikiResult = await _overviewClient.GetWikiAsync(id);
             WikiV2? wiki = wikiResult.Value;
 
             Assert.NotNull(wiki);
             Assert.Equal(create.Name, wiki!.Name);
 
-            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> listResult = await _wikiClient.ListWikisAsync();
+            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> listResult = await _overviewClient.ListWikisAsync();
             IReadOnlyList<WikiV2> list = listResult.Value;
             Assert.Contains(list, w => w.Id == id);
 
-            _ = await _wikiClient.DeleteWikiAsync(id);
+            _ = await _overviewClient.DeleteWikiAsync(id);
             _createdWikis.Remove(id);
             WikiV2? afterDelete = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
-                AzureDevOpsActionResult<WikiV2> afterDeleteResult = await _wikiClient.GetWikiAsync(id);
+                AzureDevOpsActionResult<WikiV2> afterDeleteResult = await _overviewClient.GetWikiAsync(id);
                 afterDelete = afterDeleteResult.Value;
                 return !afterDeleteResult.IsSuccessful || afterDelete is null;
             }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
@@ -108,7 +108,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Guid id = Guid.Empty;
             await WaitHelper.WaitUntilAsync(async () =>
             {
-                AzureDevOpsActionResult<Guid> createResult = await _wikiClient.CreateWikiAsync(create);
+                AzureDevOpsActionResult<Guid> createResult = await _overviewClient.CreateWikiAsync(create);
                 if(!createResult.IsSuccessful)
                     return false;
                 id = createResult.Value;
@@ -118,7 +118,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             _createdWikis.Add(id);
 
             const string path = "/Home.md";
-            AzureDevOpsActionResult<WikiPageResponse> responseResult = await _wikiClient.GetPageAsync(id, path);
+            AzureDevOpsActionResult<WikiPageResponse> responseResult = await _overviewClient.GetPageAsync(id, path);
             WikiPageResponse? response = responseResult.Value;
 
             var wikiPageUpdateOptions = new WikiPageUpdateOptions
@@ -134,14 +134,14 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 Version = _azureDevOpsConfiguration.MainBranchName
             };
 
-            AzureDevOpsActionResult<int> pageIdResult = await _wikiClient.CreateOrUpdatePageAsync(id, wikiPageUpdateOptions, gitVersionDescriptor);
+            AzureDevOpsActionResult<int> pageIdResult = await _overviewClient.CreateOrUpdatePageAsync(id, wikiPageUpdateOptions, gitVersionDescriptor);
             Assert.True(pageIdResult.IsSuccessful);
             int? pageId = pageIdResult.IsSuccessful ? pageIdResult.Value : (int?)null;
             Assert.True(pageId.HasValue);
 
             // update page
             // Ensure we get the *fresh* version of the page
-            AzureDevOpsActionResult<WikiPageResponse> getResponseResult = await _wikiClient.GetPageAsync(id, path);
+            AzureDevOpsActionResult<WikiPageResponse> getResponseResult = await _overviewClient.GetPageAsync(id, path);
             WikiPageResponse? getResponse = getResponseResult.Value;
             string? etag = getResponse?.ETag?.FirstOrDefault();
 
@@ -150,7 +150,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 throw new InvalidOperationException("ETag required for update, but not found.");
             }
 
-            _ = await _wikiClient.CreateOrUpdatePageAsync(id, new WikiPageUpdateOptions
+            _ = await _overviewClient.CreateOrUpdatePageAsync(id, new WikiPageUpdateOptions
             {
                 Path = path,
                 Content = "# Updated",
@@ -158,23 +158,18 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             }, gitVersionDescriptor);
 
             // Optional: Confirm update
-            AzureDevOpsActionResult<WikiPageResponse> pageResult = await _wikiClient.GetPageAsync(id, path);
+            AzureDevOpsActionResult<WikiPageResponse> pageResult = await _overviewClient.GetPageAsync(id, path);
             WikiPageResponse? page = pageResult.Value;
             Assert.NotNull(page);
             Assert.Contains("Updated", page!.Page.Content); // confirm update
 
-            AzureDevOpsActionResult<WikiPageResponse> deletePageResult = await _wikiClient.DeletePageAsync(id, path, gitVersionDescriptor);
+            AzureDevOpsActionResult<WikiPageResponse> deletePageResult = await _overviewClient.DeletePageAsync(id, path, gitVersionDescriptor);
         }
 
         [Fact]
         public async Task DashboardSummaryAndWikiHelpers_SucceedAsync()
         {
-            var dashboardClient = new DashboardClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-
-            AzureDevOpsActionResult<IReadOnlyList<Dashboard>> dashboardsResult = await dashboardClient.ListDashboardsAsync();
+            AzureDevOpsActionResult<IReadOnlyList<Dashboard>> dashboardsResult = await _overviewClient.ListDashboardsAsync();
             IReadOnlyList<Dashboard> dashboards = dashboardsResult.Value;
             Assert.NotEmpty(dashboards);
             string teamName = "Dotnet.McpIntegrationTest Team";
@@ -188,20 +183,15 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 throw new InvalidOperationException("No dashboard found for the specified team or project.");
             }
 
-            AzureDevOpsActionResult<Dashboard> dashboardResult = await dashboardClient.GetDashboardAsync(dashboardId, teamName);
+            AzureDevOpsActionResult<Dashboard> dashboardResult = await _overviewClient.GetDashboardAsync(dashboardId, teamName);
             dashboard = dashboardResult.Value;
             Assert.NotNull(dashboard);
 
-            var summaryClient = new SummaryClient(
-                _azureDevOpsConfiguration.OrganisationUrl,
-                _azureDevOpsConfiguration.ProjectName,
-                _azureDevOpsConfiguration.PersonalAccessToken);
-
-            AzureDevOpsActionResult<TeamProject> projectSummaryResult = await summaryClient.GetProjectSummaryAsync();
+            AzureDevOpsActionResult<TeamProject> projectSummaryResult = await _overviewClient.GetProjectSummaryAsync();
             TeamProject? projectSummary = projectSummaryResult.Value;
             Assert.NotNull(projectSummary);
 
-            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> wikisResult = await _wikiClient.ListWikisAsync();
+            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> wikisResult = await _overviewClient.ListWikisAsync();
             IReadOnlyList<WikiV2> wikis = wikisResult.Value;
             Guid wikiId = Guid.Empty;
             string wikiName;
@@ -226,7 +216,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 {
                     try
                     {
-                        AzureDevOpsActionResult<Guid> createWikiResult = await _wikiClient.CreateWikiAsync(wikiOptions);
+                        AzureDevOpsActionResult<Guid> createWikiResult = await _overviewClient.CreateWikiAsync(wikiOptions);
                         if(!createWikiResult.IsSuccessful)
                             return false;
                         wikiId = createWikiResult.Value;
@@ -259,15 +249,15 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 Version = _azureDevOpsConfiguration.MainBranchName
             };
 
-            _ = await _wikiClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+            _ = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
 
             AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
-                pageResult = await _wikiClient.GetPageAsync(wikiId, wikiPath);
+                pageResult = await _overviewClient.GetPageAsync(wikiId, wikiPath);
 
                 return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
-            }, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1));
+            }, TimeSpan.FromSeconds(90), TimeSpan.FromSeconds(1));
 
             Assert.True(pageResult?.Value?.Page?.Path == wikiPath);
 
@@ -275,12 +265,12 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             AzureDevOpsActionResult<string>? textResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
-                textResult = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
+                textResult = await _overviewClient.GetPageTextAsync(wikiId, wikiPath);
                 return pageResult.IsSuccessful && textResult!.Value.Contains(needlessText);
 
             }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
-            textResult = await _wikiClient.GetPageTextAsync(wikiId, wikiPath);
+            textResult = await _overviewClient.GetPageTextAsync(wikiId, wikiPath);
             string? text = textResult.Value;
             Assert.Contains(needlessText, text);
 
@@ -304,7 +294,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             Assert.False(string.IsNullOrEmpty(result.Value));
             Assert.True(result.Value.Length > 0, "Expected result to contain at least one item, but it was empty.");
 
-            AzureDevOpsActionResult<WikiPageResponse> wikiPageResponseResult = await _wikiClient.DeletePageAsync(wikiId, wikiPath, versionDescriptor);
+            AzureDevOpsActionResult<WikiPageResponse> wikiPageResponseResult = await _overviewClient.DeletePageAsync(wikiId, wikiPath, versionDescriptor);
 
             Assert.True(wikiPageResponseResult.Value != null, "Expected wiki page response to be non-null after deletion.");
         }
@@ -315,7 +305,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         {
             foreach(Guid id in _createdWikis.AsEnumerable().Reverse())
             {
-                _ = await _wikiClient.DeleteWikiAsync(id);
+                _ = await _overviewClient.DeleteWikiAsync(id);
             }
         }
 

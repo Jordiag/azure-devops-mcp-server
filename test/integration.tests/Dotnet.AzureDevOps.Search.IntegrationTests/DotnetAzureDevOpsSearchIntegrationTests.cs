@@ -17,13 +17,13 @@ namespace Dotnet.AzureDevOps.Search.IntegrationTests;
 [Component(Component.Search)]
 public class DotnetAzureDevOpsSearchIntegrationTests : BaseIntegrationTestFixture, IClassFixture<IntegrationTestFixture>
 {
-    private readonly WikiClient _wikiClient;
+    private readonly IOverviewClient _overviewClient;
     private readonly WorkItemsClient _workItemsClient;
     private readonly SearchClient _searchClient;
 
     public DotnetAzureDevOpsSearchIntegrationTests(IntegrationTestFixture fixture) : base(fixture)
     {
-        _wikiClient = fixture.WikiClient;
+        _overviewClient = fixture.OverviewClient;
         _workItemsClient = fixture.WorkItemsClient;
         _searchClient = fixture.SearchClient;
     }
@@ -46,14 +46,14 @@ public class DotnetAzureDevOpsSearchIntegrationTests : BaseIntegrationTestFixtur
         };
         await WaitHelper.WaitUntilAsync(async () =>
         {
-            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> listResult = await _wikiClient.ListWikisAsync();
+            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> listResult = await _overviewClient.ListWikisAsync();
             return listResult.IsSuccessful;
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
         Guid wikiId = Guid.Empty;
         await WaitHelper.WaitUntilAsync(async () =>
         {
-            AzureDevOpsActionResult<Guid> createResult = await _wikiClient.CreateWikiAsync(wikiCreateOptions);
+            AzureDevOpsActionResult<Guid> createResult = await _overviewClient.CreateWikiAsync(wikiCreateOptions);
             if(!createResult.IsSuccessful)
                 return false;
             wikiId = createResult.Value;
@@ -78,7 +78,7 @@ public class DotnetAzureDevOpsSearchIntegrationTests : BaseIntegrationTestFixtur
 
         await WaitHelper.WaitUntilAsync(async () =>
         {
-            AzureDevOpsActionResult<int> createPageResult = await _wikiClient.CreateOrUpdatePageAsync(wikiId, pageOptions, versionDescriptor);
+            AzureDevOpsActionResult<int> createPageResult = await _overviewClient.CreateOrUpdatePageAsync(wikiId, pageOptions, versionDescriptor);
             return createPageResult.IsSuccessful;
         }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 

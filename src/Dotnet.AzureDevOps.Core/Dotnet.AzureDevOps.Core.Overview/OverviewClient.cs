@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public partial class OverviewClient : IDisposable, IAsyncDisposable
+    public partial class OverviewClient : IOverviewClient
     {
         private readonly string _projectName;
         private readonly ILogger _logger;

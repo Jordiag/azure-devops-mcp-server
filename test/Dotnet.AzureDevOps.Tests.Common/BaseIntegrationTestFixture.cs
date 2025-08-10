@@ -191,7 +191,7 @@ public abstract class BaseIntegrationTestFixture(IntegrationTestFixture fixture)
         {
             try
             {
-                await Fixture.WikiClient.DeleteWikiAsync(id);
+                await Fixture.OverviewClient.DeleteWikiAsync(id);
             }
             catch(Exception)
             {
