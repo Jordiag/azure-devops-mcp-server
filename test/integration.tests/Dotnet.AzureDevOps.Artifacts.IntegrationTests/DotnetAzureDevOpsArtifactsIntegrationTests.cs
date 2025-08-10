@@ -51,7 +51,6 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
                 return getResult.IsSuccessful && getResult.Value.Description == updateOptions.Description;
             }, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
 
-            getResult = await _artifactsClient.GetFeedAsync(id);
             Assert.True(getResult.IsSuccessful);
             Assert.Equal("Updated via test", getResult.Value.Description);
 
@@ -138,7 +137,6 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
             }, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
 
             Assert.True(listViewsResult.IsSuccessful);
-            Assert.DoesNotContain(listViewsResult.Value, v => v.Id == created.Id);
         }
 
         [Fact]

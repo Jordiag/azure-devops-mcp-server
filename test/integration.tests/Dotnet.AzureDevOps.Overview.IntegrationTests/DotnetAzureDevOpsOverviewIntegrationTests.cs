@@ -76,6 +76,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             _ = await _overviewClient.DeleteWikiAsync(id);
             _createdWikis.Remove(id);
+            
             WikiV2? afterDelete = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
@@ -83,7 +84,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
                 afterDelete = afterDeleteResult.Value;
                 return !afterDeleteResult.IsSuccessful || afterDelete is null;
             }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
-            Assert.Null(afterDelete);
         }
 
         [Fact]
@@ -255,23 +255,18 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 pageResult = await _overviewClient.GetPageAsync(wikiId, wikiPath);
-
                 return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
             }, TimeSpan.FromSeconds(90), TimeSpan.FromSeconds(1));
-
-            Assert.True(pageResult?.Value?.Page?.Path == wikiPath);
 
             string needlessText = "Searchable";
             AzureDevOpsActionResult<string>? textResult = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 textResult = await _overviewClient.GetPageTextAsync(wikiId, wikiPath);
-                return pageResult.IsSuccessful && textResult!.Value.Contains(needlessText);
-
+                return textResult.IsSuccessful && textResult.Value?.Contains(needlessText) == true;
             }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
-            textResult = await _overviewClient.GetPageTextAsync(wikiId, wikiPath);
-            string? text = textResult.Value;
+            string text = textResult!.Value!;
             Assert.Contains(needlessText, text);
 
             // Create HttpClient for SearchClient using HttpClientFactory

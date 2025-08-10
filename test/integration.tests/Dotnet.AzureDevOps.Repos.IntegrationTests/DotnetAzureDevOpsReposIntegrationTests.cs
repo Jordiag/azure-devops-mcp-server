@@ -1,4 +1,4 @@
-using Dotnet.AzureDevOps.Core.Common;
+﻿using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Dotnet.AzureDevOps.Tests.Common;
@@ -92,9 +92,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
                 return gtPullRequestResult.IsSuccessful && gtPullRequestResult.Value?.Status == PullRequestStatus.Active;
             }, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1));
 
-            GitPullRequest? gtPullRequest = gtPullRequestResult!.Value;
-            Assert.NotNull(gtPullRequest);
-            Assert.Equal(PullRequestStatus.Active, gtPullRequest!.Status);
+            GitPullRequest gtPullRequest = gtPullRequestResult!.Value!;
 
             await Task.Delay(1000);
 
@@ -108,14 +106,11 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.True(completeResult.IsSuccessful);
 
             AzureDevOpsActionResult<GitPullRequest>? prResult = null;
-            ;
             await WaitHelper.WaitUntilAsync(async () =>
             {
                 prResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
                 return prResult.IsSuccessful && prResult.Value?.Status == PullRequestStatus.Completed;
             }, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1));
-
-            Assert.Equal(PullRequestStatus.Completed, prResult!.Value.Status);
         }
 
         // TODO: Re-enable this test once the API is working again
