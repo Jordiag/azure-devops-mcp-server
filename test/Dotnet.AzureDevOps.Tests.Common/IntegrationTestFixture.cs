@@ -13,8 +13,9 @@ using Xunit;
 
 namespace Dotnet.AzureDevOps.Tests.Common;
 
-public class IntegrationTestFixture : IAsyncLifetime
+public partial class IntegrationTestFixture : IAsyncLifetime
 {
+    private const string BasicAuthenticationScheme = "Basic";
     private IServiceProvider? _serviceProvider;
     
     public AzureDevOpsConfiguration Configuration { get; private set; } = null!;
@@ -112,7 +113,7 @@ public class IntegrationTestFixture : IAsyncLifetime
     private static void ConfigureAuthentication(HttpClient client, string personalAccessToken)
     {
         string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         client.DefaultRequestHeaders.Add("User-Agent", "azure-devops-mcp-server");
     }
 

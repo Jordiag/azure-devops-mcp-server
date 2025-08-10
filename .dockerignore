@@ -46,3 +46,20 @@ logs/
 # Ignore temporary files
 *.tmp
 *.temp
+
+# Ignore sensitive scripts and configuration
+Set-Local-Test-Dev-Env-Vars.ps1
+run-local.*
+run-docker.*
+scripts/
+*.key
+*.pem
+*.p12
+*.pfx
+appsettings.Development.json
+appsettings.Local.json
+
+# Ignore Docker files to avoid recursion
+Dockerfile*
+docker-compose*
+.dockerignore

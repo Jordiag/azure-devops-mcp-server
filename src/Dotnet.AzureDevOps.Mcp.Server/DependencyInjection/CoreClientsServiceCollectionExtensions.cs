@@ -15,6 +15,8 @@ namespace Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
 
 public static class CoreClientsServiceCollectionExtensions
 {
+    private const string BasicAuthenticationScheme = "Basic";
+
     public static IServiceCollection AddAzureDevOpsClients(this IServiceCollection services)
     {
         // Configure HttpClient for Azure DevOps API calls
@@ -23,7 +25,7 @@ public static class CoreClientsServiceCollectionExtensions
             AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
             client.BaseAddress = new Uri(config.OrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IWorkItemsClient>((httpClient, provider) =>
         {
@@ -37,7 +39,7 @@ public static class CoreClientsServiceCollectionExtensions
             AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
             client.BaseAddress = new Uri(config.OrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IReposClient>((httpClient, provider) =>
         {
@@ -52,7 +54,7 @@ public static class CoreClientsServiceCollectionExtensions
             string orgUrl = config.OrganizationUrl.Replace("https://dev.azure.com", "https://feeds.dev.azure.com");
             client.BaseAddress = new Uri(orgUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IArtifactsClient>((httpClient, provider) =>
         {
@@ -66,7 +68,7 @@ public static class CoreClientsServiceCollectionExtensions
             AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
             client.BaseAddress = new Uri(config.SearchOrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
         .AddTypedClient<ISearchClient>((httpClient, provider) =>
@@ -80,7 +82,7 @@ public static class CoreClientsServiceCollectionExtensions
             AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
             client.BaseAddress = new Uri(config.OrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IProjectSettingsClient>((httpClient, provider) =>
         {
