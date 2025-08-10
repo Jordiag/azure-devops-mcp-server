@@ -29,11 +29,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 var commentCreate = new CommentCreate { Text = comment };
                 _ = await _workItemClient.AddCommentAsync(commentCreate, projectName, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -59,11 +59,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 WorkItemComments commentsResult = await _workItemClient.GetCommentsAsync(workItemId, cancellationToken: cancellationToken);
                 IEnumerable<WorkItemComment> comments = commentsResult.Comments ?? Array.Empty<WorkItemComment>();
-                return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Success(comments, _logger);
+                return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Success(comments, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Failure(ex, Logger);
             }
         }
 
@@ -88,11 +88,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 List<WorkItemUpdate> updates = await _workItemClient.GetUpdatesAsync(workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Success(updates, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Success(updates, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Failure(ex, Logger);
             }
         }
     }

@@ -29,16 +29,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 GitAnnotatedTag gitAnnotatedTag = await _gitHttpClient.CreateAnnotatedTagAsync(
                     tagObject: annotatedTag,
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: tagCreateOptions.Repository,
                     cancellationToken: cancellationToken
                 );
 
-                return AzureDevOpsActionResult<GitAnnotatedTag>.Success(gitAnnotatedTag, _logger);
+                return AzureDevOpsActionResult<GitAnnotatedTag>.Success(gitAnnotatedTag, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitAnnotatedTag>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitAnnotatedTag>.Failure(ex, Logger);
             }
         }
 
@@ -48,16 +48,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
             try
             {
                 GitAnnotatedTag result = await _gitHttpClient.GetAnnotatedTagAsync(
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: repositoryId,
                     objectId: objectId,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitAnnotatedTag>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitAnnotatedTag>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitAnnotatedTag>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitAnnotatedTag>.Failure(ex, Logger);
             }
         }
 
@@ -67,14 +67,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
             {
                 List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
-                    project: _projectName,
+                    project: ProjectName,
                     filter: "tags/",
                     cancellationToken: cancellationToken);
 
                 GitRef? tagRef = refs.FirstOrDefault(r => r.Name.EndsWith($"/{tagName}"));
 
                 if(tagRef == null)
-                    return AzureDevOpsActionResult<GitRefUpdateResult>.Failure($"Tag '{tagName}' not found.", _logger);
+                    return AzureDevOpsActionResult<GitRefUpdateResult>.Failure($"Tag '{tagName}' not found.", Logger);
 
                 var refUpdate = new GitRefUpdate
                 {
@@ -86,18 +86,19 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 List<GitRefUpdateResult> gitRefUpdateResultList = await _gitHttpClient.UpdateRefsAsync(
                     refUpdates: new[] { refUpdate },
                     repositoryId: repositoryId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
                 if(gitRefUpdateResultList.Count == 0)
-                    return AzureDevOpsActionResult<GitRefUpdateResult>.Failure("Failed to delete tag.", _logger);
+                    return AzureDevOpsActionResult<GitRefUpdateResult>.Failure("Failed to delete tag.", Logger);
 
-                return AzureDevOpsActionResult<GitRefUpdateResult>.Success(gitRefUpdateResultList[0], _logger);
+                return AzureDevOpsActionResult<GitRefUpdateResult>.Success(gitRefUpdateResultList[0], Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitRefUpdateResult>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitRefUpdateResult>.Failure(ex, Logger);
             }
         }
     }
 }
+

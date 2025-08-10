@@ -26,15 +26,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 GitPullRequest createdPR = await _gitHttpClient.CreatePullRequestAsync(
                     gitPullRequestToCreate: newPullRequest,
                     repositoryId: pullRequestCreateOptions.RepositoryIdOrName,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken
                 );
 
-                return AzureDevOpsActionResult<int>.Success(createdPR.PullRequestId, _logger);
+                return AzureDevOpsActionResult<int>.Success(createdPR.PullRequestId, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
         }
 
@@ -51,15 +51,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     gitPullRequestToUpdate: pullRequestUpdate,
                     repositoryId: repositoryIdOrName,
                     pullRequestId: pullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken
                 );
 
-                return AzureDevOpsActionResult<GitPullRequest>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, Logger);
             }
         }
 
@@ -68,16 +68,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
             try
             {
                 GitPullRequest pr = await _gitHttpClient.GetPullRequestAsync(
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     cancellationToken: cancellationToken
                 );
-                return AzureDevOpsActionResult<GitPullRequest>.Success(pr, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Success(pr, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, Logger);
             }
         }
 
@@ -106,17 +106,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 GitPullRequest result = await _gitHttpClient.UpdatePullRequestAsync(
                     gitPullRequestToUpdate: pullRequestUpdate,
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     cancellationToken: cancellationToken
                 );
 
-                return AzureDevOpsActionResult<GitPullRequest>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, Logger);
             }
         }
 
@@ -142,14 +142,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     gitPullRequestToUpdate: pullRequestUpdate,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitPullRequest>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, Logger);
             }
         }
 
@@ -169,14 +169,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     searchCriteria: criteria,
                     top: 1000,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Success(pullRequests, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Success(pullRequests, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(ex, Logger);
             }
         }
 
@@ -192,16 +192,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 };
 
                 List<GitPullRequest> pullRequests = await _gitHttpClient.GetPullRequestsByProjectAsync(
-                    project: _projectName,
+                    project: ProjectName,
                     searchCriteria: searchCriteria,
                     top: 1000,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Success(pullRequests, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Success(pullRequests, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(ex, Logger);
             }
         }
 
@@ -214,16 +214,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId, new PullRequestSearchOptions { Status = pullRequestStatus }, cancellationToken);
 
                 if(!allPullRequestsResult.IsSuccessful || allPullRequestsResult.Value == null)
-                    return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(allPullRequestsResult.ErrorMessage ?? "Failed to list pull requests.", _logger);
+                    return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(allPullRequestsResult.ErrorMessage ?? "Failed to list pull requests.", Logger);
 
                 List<GitPullRequest> filtered = allPullRequestsResult.Value.Where(pullRequest => pullRequest.Labels.Any(label =>
                     string.Equals(label.Name, labelName, StringComparison.OrdinalIgnoreCase))).ToList();
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Success(filtered, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Success(filtered, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(ex, Logger);
             }
         }
 
@@ -243,14 +243,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     status: status,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitPullRequestStatus>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequestStatus>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequestStatus>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequestStatus>.Failure(ex, Logger);
             }
         }
 
@@ -274,14 +274,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     gitPullRequestToUpdate: pullRequestUpdate,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitPullRequest>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequest>.Failure(ex, Logger);
             }
         }
 
@@ -291,16 +291,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
             try
             {
                 IReadOnlyList<GitPullRequestIteration> result = await _gitHttpClient.GetPullRequestIterationsAsync(
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>>.Failure(ex, Logger);
             }
         }
 
@@ -313,21 +313,21 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     iterationId: iteration,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitPullRequestIterationChanges>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequestIterationChanges>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequestIterationChanges>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequestIterationChanges>.Failure(ex, Logger);
             }
         }
 
         public async Task<AzureDevOpsActionResult<bool>> AddReviewerAsync(string repositoryId, int pullRequestId, (string localId, string name) reviewer, CancellationToken cancellationToken = default)
         {
             if(string.IsNullOrEmpty(reviewer.localId))
-                return AzureDevOpsActionResult<bool>.Failure("Reviewer localId must be provided", _logger);
+                return AzureDevOpsActionResult<bool>.Failure("Reviewer localId must be provided", Logger);
 
             var reviewerPayload = new
             {
@@ -335,7 +335,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 DisplayName = reviewer.name ?? string.Empty
             };
 
-            string requestUrl = $"{_organizationUrl}/{_projectName}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewer.localId}?api-version={GlobalConstants.ApiVersion}";
+            string requestUrl = $"{OrganizationUrl}/{ProjectName}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewer.localId}?api-version={GlobalConstants.ApiVersion}";
 
             string content = JsonSerializer.Serialize(reviewerPayload);
             var httpContent = new StringContent(content, Encoding.UTF8, "application/json");
@@ -346,20 +346,20 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
+                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, Logger);
                 }
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
         public async Task<AzureDevOpsActionResult<bool>> AddReviewersAsync(string repositoryId, int pullRequestId, (string localId, string name)[] reviewers, CancellationToken cancellationToken = default)
         {
             if(reviewers is null || reviewers.Length == 0)
-                return AzureDevOpsActionResult<bool>.Failure("No reviewers specified", _logger);
+                return AzureDevOpsActionResult<bool>.Failure("No reviewers specified", Logger);
 
             bool allAdded = true;
             foreach((string localId, string name) reviewer in reviewers)
@@ -370,8 +370,8 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
 
             return allAdded
-                ? AzureDevOpsActionResult<bool>.Success(true, _logger)
-                : AzureDevOpsActionResult<bool>.Failure("One or more reviewers could not be added", _logger);
+                ? AzureDevOpsActionResult<bool>.Success(true, Logger)
+                : AzureDevOpsActionResult<bool>.Failure("One or more reviewers could not be added", Logger);
         }
 
         public async Task<AzureDevOpsActionResult<IdentityRefWithVote>> SetReviewerVoteAsync(string repositoryId, int pullRequestId, string reviewerId, short vote)
@@ -394,14 +394,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     reviewerId: reviewerId,
                     pullRequestId: pullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IdentityRefWithVote>.Success(result, _logger);
+                return AzureDevOpsActionResult<IdentityRefWithVote>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IdentityRefWithVote>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IdentityRefWithVote>.Failure(ex, Logger);
             }
         }
 
@@ -419,12 +419,12 @@ namespace Dotnet.AzureDevOps.Core.Repos
                         repositoryId: repositoryId,
                         reviewerId: id,
                         pullRequestId: pullRequestId,
-                        project: _projectName);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                        project: ProjectName);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -461,14 +461,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     commentThread: commentThread,
                     repositoryId: commentThreadOptions.RepositoryId,
                     pullRequestId: commentThreadOptions.PullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<int>.Success(created.Id, _logger);
+                return AzureDevOpsActionResult<int>.Success(created.Id, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
         }
 
@@ -498,7 +498,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                         repositoryId: commentReplyOptions.Repository,
                         pullRequestId: commentReplyOptions.PullRequestId,
                         threadId: commentReplyOptions.ThreadId,
-                        project: _projectName,
+                        project: ProjectName,
                         cancellationToken: cancellationToken);
                 }
                 else
@@ -508,22 +508,22 @@ namespace Dotnet.AzureDevOps.Core.Repos
                         repositoryId: commentReplyOptions.Repository,
                         pullRequestId: commentReplyOptions.PullRequestId,
                         threadId: commentReplyOptions.ThreadId,
-                        project: _projectName,
+                        project: ProjectName,
                         cancellationToken: cancellationToken);
 
                     gitPullRequestCommentThread = await _gitHttpClient.GetPullRequestThreadAsync(
                         repositoryId: commentReplyOptions.Repository,
                         pullRequestId: commentReplyOptions.PullRequestId,
                         threadId: commentReplyOptions.ThreadId,
-                        project: _projectName,
+                        project: ProjectName,
                         cancellationToken: cancellationToken);
                 }
 
-                return AzureDevOpsActionResult<int>.Success(gitPullRequestCommentThread.Id, _logger);
+                return AzureDevOpsActionResult<int>.Success(gitPullRequestCommentThread.Id, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
         }
 
@@ -542,14 +542,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     pullRequestId: commentEditOptions.PullRequest,
                     threadId: commentEditOptions.ThreadId,
                     commentId: commentEditOptions.CommentId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<Comment>.Success(result, _logger);
+                return AzureDevOpsActionResult<Comment>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Comment>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<Comment>.Failure(ex, Logger);
             }
         }
 
@@ -562,13 +562,13 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     pullRequestId: pullRequestId,
                     threadId: threadId,
                     commentId: commentId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -579,14 +579,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 IReadOnlyList<GitPullRequestCommentThread> result = await _gitHttpClient.GetThreadsAsync(
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>>.Failure(ex, Logger);
             }
         }
 
@@ -598,14 +598,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     threadId: threadId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<Comment>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<Comment>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<Comment>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<Comment>>.Failure(ex, Logger);
             }
         }
 
@@ -623,14 +623,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     threadId: threadId,
-                    project: _projectName,
+                    project: ProjectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<GitPullRequestCommentThread>.Success(result, _logger);
+                return AzureDevOpsActionResult<GitPullRequestCommentThread>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<GitPullRequestCommentThread>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<GitPullRequestCommentThread>.Failure(ex, Logger);
             }
         }
 
@@ -650,7 +650,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                     WebApiTagDefinition webApiTagDefinition = await _gitHttpClient.CreatePullRequestLabelAsync(
                         label: tagRequestData,
-                        project: _projectName,
+                        project: ProjectName,
                         repositoryId: repository,
                         pullRequestId: pullRequestId,
                         cancellationToken: cancellationToken
@@ -659,11 +659,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     webApiTagDefinitions.Add(webApiTagDefinition);
                 }
 
-                return AzureDevOpsActionResult<IList<WebApiTagDefinition>>.Success(webApiTagDefinitions, _logger);
+                return AzureDevOpsActionResult<IList<WebApiTagDefinition>>.Success(webApiTagDefinitions, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IList<WebApiTagDefinition>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IList<WebApiTagDefinition>>.Failure(ex, Logger);
             }
         }
 
@@ -672,17 +672,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
             try
             {
                 await _gitHttpClient.DeletePullRequestLabelsAsync(
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: repositoryId,
                     pullRequestId: pullRequestId,
                     labelIdOrName: label,
                     cancellationToken: cancellationToken
                 );
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -691,18 +691,19 @@ namespace Dotnet.AzureDevOps.Core.Repos
             try
             {
                 IReadOnlyList<WebApiTagDefinition> result = await _gitHttpClient.GetPullRequestLabelsAsync(
-                    project: _projectName,
+                    project: ProjectName,
                     repositoryId: repository,
                     pullRequestId: pullRequestId,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>.Failure(ex, Logger);
             }
         }
     }
 }
+
 

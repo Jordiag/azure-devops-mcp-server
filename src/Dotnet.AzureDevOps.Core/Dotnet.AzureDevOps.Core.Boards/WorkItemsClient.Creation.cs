@@ -204,11 +204,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -221,7 +221,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 WorkItem newWorkItem = await _workItemClient.CreateWorkItemAsync(
                     document: patchDocument,
-                    project: _projectName,
+                    project: ProjectName,
                     type: workItemType,
                     validateOnly: validateOnly,
                     bypassRules: bypassRules,
@@ -231,12 +231,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 );
 
                 return newWorkItem.Id.HasValue
-                    ? AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value, _logger)
-                    : AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.", _logger);
+                    ? AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value, Logger)
+                    : AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.", Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
         }
 
@@ -254,14 +254,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 if(updatedWorkItem.Id.HasValue)
                 {
-                    return AzureDevOpsActionResult<int>.Success(updatedWorkItem.Id.Value, _logger);
+                    return AzureDevOpsActionResult<int>.Success(updatedWorkItem.Id.Value, Logger);
                 }
 
-                return AzureDevOpsActionResult<int>.Failure("Work item update returned null identifier.", _logger);
+                return AzureDevOpsActionResult<int>.Failure("Work item update returned null identifier.", Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<int>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
         }
 
@@ -341,7 +341,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     Value = new
                     {
                         rel = "System.LinkTypes.Hierarchy-Reverse",
-                        url = $"{_organizationUrl}/{_projectName}/_apis/wit/workItems/{workItemCreateOptions.ParentId}",
+                        url = $"{OrganizationUrl}/{ProjectName}/_apis/wit/workItems/{workItemCreateOptions.ParentId}",
                         attributes = new { comment = "Linking to parent" }
                     }
                 });
@@ -398,15 +398,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 WorkItem workItem = await _workItemClient.CreateWorkItemAsync(
                     document: patchDocument,
-                    project: _projectName,
+                    project: ProjectName,
                     type: workItemType,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<WorkItem>.Success(workItem, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Success(workItem, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
         }
 
@@ -462,11 +462,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     id: workItemId,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<WorkItem>.Success(result, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
         }
 
@@ -492,13 +492,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
             if(!itemResult.IsSuccessful)
             {
-                return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!, _logger);
+                return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!, Logger);
             }
 
             WorkItem item = itemResult.Value;
             return item.Fields.TryGetValue(fieldName, out object? value)
-                ? AzureDevOpsActionResult<object>.Success(value, _logger)
-                : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.", _logger);
+                ? AzureDevOpsActionResult<object>.Success(value, Logger)
+                : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.", Logger);
         }
 
         /// <summary>
@@ -524,11 +524,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 };
 
                 WorkItem result = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WorkItem>.Success(result, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItem>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
         }
 
@@ -565,20 +565,20 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 WorkItemField2 created = await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<WorkItemField2>.Success(created, _logger);
+                return AzureDevOpsActionResult<WorkItemField2>.Success(created, Logger);
             }
             catch(VssServiceException ex)
             {
                 if(ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
                 {
-                    return AzureDevOpsActionResult<WorkItemField2>.Success(field, _logger);
+                    return AzureDevOpsActionResult<WorkItemField2>.Success(field, Logger);
                 }
 
-                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, Logger);
             }
         }
     }

@@ -256,7 +256,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             {
                 pageResult = await _overviewClient.GetPageAsync(wikiId, wikiPath);
                 return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
-            }, TimeSpan.FromSeconds(90), TimeSpan.FromSeconds(1));
+            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
             string needlessText = "Searchable";
             AzureDevOpsActionResult<string>? textResult = null;

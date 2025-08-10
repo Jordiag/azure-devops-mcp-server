@@ -39,17 +39,17 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         Value = new
                         {
                             rel = linkType,
-                            url = $"{_organizationUrl}/{_projectName}/_apis/wit/workItems/{targetWorkItemId}"
+                            url = $"{OrganizationUrl}/{ProjectName}/_apis/wit/workItems/{targetWorkItemId}"
                         }
                     }
                 };
 
                 _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -75,25 +75,25 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
             if(!itemResult.IsSuccessful)
             {
-                return AzureDevOpsActionResult<bool>.Failure(itemResult.ErrorMessage!, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(itemResult.ErrorMessage!, Logger);
             }
 
             WorkItem item = itemResult.Value;
             if(item.Relations == null)
             {
-                return AzureDevOpsActionResult<bool>.Failure("Work item has no relations to remove.", _logger);
+                return AzureDevOpsActionResult<bool>.Failure("Work item has no relations to remove.", Logger);
             }
 
             WorkItemRelation? relation = item.Relations.FirstOrDefault(r => r.Url == linkUrl);
             if(relation == null)
             {
-                return AzureDevOpsActionResult<bool>.Failure("Link not found in work item relations.", _logger);
+                return AzureDevOpsActionResult<bool>.Failure("Link not found in work item relations.", Logger);
             }
 
             int index = item.Relations.IndexOf(relation);
             if(index < 0)
             {
-                return AzureDevOpsActionResult<bool>.Failure("Invalid relation index.", _logger);
+                return AzureDevOpsActionResult<bool>.Failure("Invalid relation index.", Logger);
             }
 
             try
@@ -108,11 +108,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 };
 
                 _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -137,12 +137,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
             if(!itemResult.IsSuccessful)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Failure(itemResult.ErrorMessage!, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Failure(itemResult.ErrorMessage!, Logger);
             }
 
             WorkItem item = itemResult.Value;
             IReadOnlyList<WorkItemRelation> relations = (IReadOnlyList<WorkItemRelation>)(item.Relations ?? []);
-            return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Success(relations, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Success(relations, Logger);
         }
 
         public async Task<AzureDevOpsActionResult<bool>> LinkWorkItemToPullRequestAsync(string projectId, string repositoryId, int pullRequestId, int workItemId, CancellationToken cancellationToken = default)
@@ -169,11 +169,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 };
 
                 _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
     }

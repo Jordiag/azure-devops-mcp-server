@@ -41,11 +41,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     }
                 }
 
-                return AzureDevOpsActionResult<IReadOnlyList<int>>.Success(createdIds, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<int>>.Success(createdIds, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<int>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<int>>.Failure(ex, Logger);
             }
         }
 
@@ -74,11 +74,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     await UpdateWorkItemAsync(id, options, cancellationToken);
                 }
 
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                return AzureDevOpsActionResult<bool>.Success(true, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
@@ -109,11 +109,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(result, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(result, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
         }
 
@@ -169,7 +169,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
         }
 
@@ -244,7 +244,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
         }
 
@@ -322,7 +322,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
         }
 
@@ -403,7 +403,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
         }
 
@@ -443,11 +443,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 };
 
                 List<WorkItem> workItems = await _workItemClient.GetWorkItemsBatchAsync(request, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(workItems, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(workItems, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Failure(ex, Logger);
             }
         }
 
@@ -519,7 +519,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
         }
 

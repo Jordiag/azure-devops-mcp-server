@@ -30,11 +30,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 List<BoardReference> boards = await _workClient.GetBoardsAsync(teamContext, userState, cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Success(boards, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Success(boards, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Failure(ex, Logger);
             }
         }
 
@@ -62,11 +62,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 TeamSettingsIteration iteration = await _workClient.GetTeamIterationAsync(teamContext, iterationId, userState, cancellationToken);
-                return AzureDevOpsActionResult<TeamSettingsIteration>.Success(iteration, _logger);
+                return AzureDevOpsActionResult<TeamSettingsIteration>.Success(iteration, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<TeamSettingsIteration>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<TeamSettingsIteration>.Failure(ex, Logger);
             }
         }
 
@@ -94,11 +94,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 List<TeamSettingsIteration> iterations = await _workClient.GetTeamIterationsAsync(teamContext, timeframe, userState, cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, Logger);
             }
         }
 
@@ -126,11 +126,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 List<BoardColumn> columns = await _workClient.GetBoardColumnsAsync(teamContext, board.ToString(), userState, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Success(columns, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Success(columns, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Failure(ex, Logger);
             }
         }
 
@@ -156,11 +156,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 List<BacklogLevelConfiguration> backlogs = await _workClient.GetBacklogsAsync(teamContext, userState, cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Success(backlogs, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Success(backlogs, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Failure(ex, Logger);
             }
         }
 
@@ -188,11 +188,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 BacklogLevelWorkItems items = await _workClient.GetBacklogLevelWorkItemsAsync(teamContext, backlogId, userState, cancellationToken);
-                return AzureDevOpsActionResult<BacklogLevelWorkItems>.Success(items, _logger);
+                return AzureDevOpsActionResult<BacklogLevelWorkItems>.Success(items, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<BacklogLevelWorkItems>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<BacklogLevelWorkItems>.Failure(ex, Logger);
             }
         }
 
@@ -220,12 +220,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                PredefinedQuery query = await _workClient.GetPredefinedQueryResultsAsync(_projectName, queryType, top, includeCompleted, userState, cancellationToken);
-                return AzureDevOpsActionResult<PredefinedQuery>.Success(query, _logger);
+                PredefinedQuery query = await _workClient.GetPredefinedQueryResultsAsync(ProjectName, queryType, top, includeCompleted, userState, cancellationToken);
+                return AzureDevOpsActionResult<PredefinedQuery>.Success(query, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<PredefinedQuery>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<PredefinedQuery>.Failure(ex, Logger);
             }
         }
 
@@ -253,11 +253,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 IterationWorkItems workItems = await _workClient.GetIterationWorkItemsAsync(teamContext, iterationId, userState, cancellationToken);
-                return AzureDevOpsActionResult<IterationWorkItems>.Success(workItems, _logger);
+                return AzureDevOpsActionResult<IterationWorkItems>.Success(workItems, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IterationWorkItems>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IterationWorkItems>.Failure(ex, Logger);
             }
         }
 
@@ -284,11 +284,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 List<TeamSettingsIteration> iterations = await _workClient.GetTeamIterationsAsync(teamContext, timeFrame, userState, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, Logger);
             }
         }
 
@@ -347,11 +347,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     created.Add(result);
                 }
 
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Success(created, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Success(created, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Failure(ex, Logger);
             }
         }
 
@@ -391,11 +391,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     assigned.Add(result);
                 }
 
-                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(assigned, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(assigned, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, Logger);
             }
         }
 
@@ -420,11 +420,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 TeamFieldValues values = await _workClient.GetTeamFieldValuesAsync(teamContext, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<TeamFieldValues>.Success(values, _logger);
+                return AzureDevOpsActionResult<TeamFieldValues>.Success(values, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<TeamFieldValues>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<TeamFieldValues>.Failure(ex, Logger);
             }
         }
 
@@ -451,11 +451,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
             try
             {
                 Board board = await _workClient.GetBoardAsync(teamContext, boardId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Board>.Success(board, _logger);
+                return AzureDevOpsActionResult<Board>.Success(board, Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<Board>.Failure(ex, _logger);
+                return AzureDevOpsActionResult<Board>.Failure(ex, Logger);
             }
         }
     }

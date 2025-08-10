@@ -25,13 +25,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                TeamProject project = await this._projectHttpClient.GetProject(this._projectName, includeCapabilities: true, includeHistory: false, userState: null);
-                return AzureDevOpsActionResult<TeamProject>.Success(project, this._logger);
+                TeamProject project = await this._projectHttpClient.GetProject(this.ProjectName, includeCapabilities: true, includeHistory: false, userState: null);
+                return AzureDevOpsActionResult<TeamProject>.Success(project, this.Logger);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<TeamProject>.Failure(ex, this._logger);
+                return AzureDevOpsActionResult<TeamProject>.Failure(ex, this.Logger);
             }
         }
     }
 }
+
