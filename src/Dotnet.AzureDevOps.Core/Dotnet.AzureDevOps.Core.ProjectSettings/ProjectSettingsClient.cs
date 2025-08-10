@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
-    public class ProjectSettingsClient : IProjectSettingsClient
+    public class ProjectSettingsClient : IProjectSettingsClient, IDisposable, IAsyncDisposable
     {
         private readonly string _organizationUrl;
         private readonly string _projectName;
@@ -20,25 +20,24 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         private readonly TeamHttpClient _teamClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly OperationsHttpClient _operationsClient;
+        private readonly VssConnection _connection;
         private readonly ILogger? _logger;
+        private bool _disposed;
 
-        public ProjectSettingsClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+        public ProjectSettingsClient(HttpClient httpClient, string organizationUrl, string projectName, string personalAccessToken, ILogger<ProjectSettingsClient>? logger = null)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(_organizationUrl), credentials);
-            _teamClient = connection.GetClient<TeamHttpClient>();
-            _projectClient = connection.GetClient<ProjectHttpClient>();
-            _operationsClient = connection.GetClient<OperationsHttpClient>();
+            _connection = new VssConnection(new Uri(_organizationUrl), credentials);
+            _teamClient = _connection.GetClient<TeamHttpClient>();
+            _projectClient = _connection.GetClient<ProjectHttpClient>();
+            _operationsClient = _connection.GetClient<OperationsHttpClient>();
 
-            _httClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
+            _httClient = httpClient;
 
-            string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
-            _httClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
-
-            _logger = logger ?? NullLogger.Instance;
+            _logger = (ILogger?)logger ?? NullLogger.Instance;
         }
 
         /// <summary>
@@ -201,7 +200,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             {
                 string url = $"{_organizationUrl}/_apis/projects/{_projectName}/teams/{teamGuid}?api-version={GlobalConstants.ApiVersion}";
 
-                HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
+                using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
 
                 if(!response.IsSuccessStatusCode)
                 {
@@ -257,7 +256,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             try
             {
-                HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
+                using HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -292,7 +291,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
             try
             {
-                HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
+                using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
                 if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -478,6 +477,37 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             while(operation.Status == OperationStatus.InProgress || operation.Status == OperationStatus.Queued);
 
             return operation;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual ValueTask DisposeAsyncCore()
+        {
+            _connection?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

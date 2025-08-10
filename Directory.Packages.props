@@ -8,9 +8,11 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0-preview.6.25358.103" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0-preview.6.25358.103" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0-preview.6.25358.103" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.6.25358.103" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0-preview.6.25358.103" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.0-preview.6.25358.103" />
     <PackageVersion Include="Microsoft.Extensions.Logging.ApplicationInsights" Version="2.23.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0-preview.6.25358.103" />
     <PackageVersion Include="Microsoft.TeamFoundationServer.Client" Version="19.225.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
     <PackageVersion Include="OpenTelemetry" Version="1.12.0" />

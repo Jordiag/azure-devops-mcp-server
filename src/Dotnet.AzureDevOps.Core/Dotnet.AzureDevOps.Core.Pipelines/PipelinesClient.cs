@@ -11,20 +11,22 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines;
 
-public partial class PipelinesClient : IPipelinesClient
+public partial class PipelinesClient : IPipelinesClient, IDisposable, IAsyncDisposable
 {
     private readonly string _projectName;
     private readonly BuildHttpClient _build;
+    private readonly VssConnection _connection;
     private readonly ILogger _logger;
+    private bool _disposed;
 
     public PipelinesClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
     {
         _projectName = projectName;
         _logger = logger ?? NullLogger.Instance;
 
-        var connection = new VssConnection(new Uri(organizationUrl),
+        _connection = new VssConnection(new Uri(organizationUrl),
             new VssBasicCredential(string.Empty, personalAccessToken));
-        _build = connection.GetClient<BuildHttpClient>();
+        _build = _connection.GetClient<BuildHttpClient>();
     }
 
     private static bool IsValidCommitSha(string? sha)
@@ -743,6 +745,37 @@ public partial class PipelinesClient : IPipelinesClient
         {
             return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
         }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _connection?.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore().ConfigureAwait(false);
+        Dispose(false);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual ValueTask DisposeAsyncCore()
+    {
+        _connection?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }
 

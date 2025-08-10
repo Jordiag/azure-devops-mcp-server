@@ -5,7 +5,7 @@ using Microsoft.TeamFoundation.Core.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Pipelines;
 
-public interface IPipelinesClient
+public interface IPipelinesClient : IDisposable, IAsyncDisposable
 {
     Task<AzureDevOpsActionResult<bool>> CancelRunAsync(int buildId, TeamProjectReference project, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<int>> CreatePipelineAsync(PipelineCreateOptions pipelineCreateOptions, CancellationToken cancellationToken = default);

@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.TestPlans;
 
-public interface ITestPlansClient
+public interface ITestPlansClient : IDisposable, IAsyncDisposable
 {
     Task<AzureDevOpsActionResult<bool>> AddTestCasesAsync(int testPlanId, int testSuiteId, IReadOnlyList<int> testCaseIds, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem>> CreateTestCaseAsync(TestCaseCreateOptions options, CancellationToken cancellationToken = default);

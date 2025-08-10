@@ -9,11 +9,13 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public class WikiClient : IWikiClient
+    public class WikiClient : IWikiClient, IDisposable, IAsyncDisposable
     {
         private readonly string _projectName;
         private readonly WikiHttpClient _wikiHttpClient;
+        private readonly VssConnection _connection;
         private readonly ILogger? _logger;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the WikiClient with authenticated Azure DevOps connection for comprehensive wiki and content management operations.
@@ -35,8 +37,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
             _logger = logger;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
-            _wikiHttpClient = connection.GetClient<WikiHttpClient>();
+            _connection = new VssConnection(new Uri(organizationUrl), credentials);
+            _wikiHttpClient = _connection.GetClient<WikiHttpClient>();
         }
 
         /// <summary>
@@ -362,6 +364,37 @@ namespace Dotnet.AzureDevOps.Core.Overview
             {
                 return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, _logger);
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual ValueTask DisposeAsyncCore()
+        {
+            _connection?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Boards
 {
-    public partial class WorkItemsClient : IWorkItemsClient
+    public partial class WorkItemsClient : IWorkItemsClient, IDisposable, IAsyncDisposable
     {
         private readonly string _organizationUrl;
         private readonly string _projectName;
@@ -20,25 +20,24 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
         private readonly HttpClient _httpClient;
+        private readonly VssConnection _connection;
+        private bool _disposed;
         private const string _patchMethod = Constants.PatchMethod;
         private const string ContentTypeHeader = Constants.ContentTypeHeader;
         private const string JsonPatchContentType = Constants.JsonPatchContentType;
 
-        public WorkItemsClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+        public WorkItemsClient(HttpClient httpClient, string organizationUrl, string projectName, string personalAccessToken, ILogger<WorkItemsClient>? logger = null)
         {
             _organizationUrl = organizationUrl;
             _projectName = projectName;
-            _logger = logger ?? NullLogger.Instance;
+            _logger = (ILogger?)logger ?? NullLogger.Instance;
 
-            _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
-
-            string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
+            _httpClient = httpClient;
 
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(_organizationUrl), credentials);
-            _workItemClient = connection.GetClient<WorkItemTrackingHttpClient>();
-            _workClient = connection.GetClient<WorkHttpClient>();
+            _connection = new VssConnection(new Uri(_organizationUrl), credentials);
+            _workItemClient = _connection.GetClient<WorkItemTrackingHttpClient>();
+            _workClient = _connection.GetClient<WorkHttpClient>();
         }
 
         /// <summary>
@@ -89,6 +88,37 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual ValueTask DisposeAsyncCore()
+        {
+            _connection?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

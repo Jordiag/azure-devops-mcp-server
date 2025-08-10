@@ -21,6 +21,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         private readonly WorkItemsClient _workItemsClient;
         private readonly ReposClient _reposClient;
         private readonly ProjectSettingsClient _projectSettingsClient;
+        private readonly IntegrationTestFixture _fixture;
         private readonly List<int> _createdWorkItemIds = [];
         private readonly List<int> _createdPullRequestIds = [];
         private readonly List<Guid> _createdProjectIds = [];
@@ -30,6 +31,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
         public DotnetAzureDevOpsBoardsIntegrationTests(IntegrationTestFixture fixture)
         {
+            _fixture = fixture;
             _azureDevOpsConfiguration = fixture.Configuration;
             _workItemsClient = fixture.WorkItemsClient;
             _reposClient = fixture.ReposClient;
@@ -784,7 +786,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Guid projectId = projectIdResult.Value;
                 _createdProjectIds.Add(projectId);
 
+                HttpClient httpClient = _fixture.CreateHttpClient(_azureDevOpsConfiguration.OrganisationUrl);
+                
                 client = new WorkItemsClient(
+                    httpClient,
                     _azureDevOpsConfiguration.OrganisationUrl,
                     projectName,
                     _azureDevOpsConfiguration.PersonalAccessToken);
@@ -840,7 +845,10 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
                 Guid projectId = projectIdResult.Value;
                 _createdProjectIds.Add(projectId);
 
+                HttpClient httpClient = _fixture.CreateHttpClient(_azureDevOpsConfiguration.OrganisationUrl);
+                
                 client = new WorkItemsClient(
+                    httpClient,
                     _azureDevOpsConfiguration.OrganisationUrl,
                     projectName,
                     _azureDevOpsConfiguration.PersonalAccessToken);

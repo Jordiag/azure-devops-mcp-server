@@ -8,13 +8,15 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public partial class OverviewClient
+    public partial class OverviewClient : IDisposable, IAsyncDisposable
     {
         private readonly string _projectName;
         private readonly ILogger _logger;
         private readonly DashboardHttpClient _dashboardHttpClient;
         private readonly ProjectHttpClient _projectHttpClient;
         private readonly WikiHttpClient _wikiHttpClient;
+        private readonly VssConnection _connection;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the OverviewClient with comprehensive Azure DevOps integration for project overview, dashboard management, and wiki operations.
@@ -35,10 +37,41 @@ namespace Dotnet.AzureDevOps.Core.Overview
             _projectName = projectName;
             _logger = logger ?? NullLogger.Instance;
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
-            _dashboardHttpClient = connection.GetClient<DashboardHttpClient>();
-            _projectHttpClient = connection.GetClient<ProjectHttpClient>();
-            _wikiHttpClient = connection.GetClient<WikiHttpClient>();
+            _connection = new VssConnection(new Uri(organizationUrl), credentials);
+            _dashboardHttpClient = _connection.GetClient<DashboardHttpClient>();
+            _projectHttpClient = _connection.GetClient<ProjectHttpClient>();
+            _wikiHttpClient = _connection.GetClient<WikiHttpClient>();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual ValueTask DisposeAsyncCore()
+        {
+            _connection?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

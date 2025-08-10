@@ -21,14 +21,12 @@ public class ArtifactsClient : IArtifactsClient
     private readonly string _organizationUrl;
     private readonly ILogger _logger;
 
-    public ArtifactsClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
+    public ArtifactsClient(HttpClient httpClient, string projectName, ILogger<ArtifactsClient>? logger = null)
     {
         _projectName = projectName.TrimEnd('/');
-        _logger = logger ?? NullLogger.Instance;
-        _organizationUrl = organizationUrl.Replace("https://dev.azure.com", "https://feeds.dev.azure.com");
-        _httpClient = new HttpClient { BaseAddress = new Uri(organizationUrl) };
-        string encodedPersonalAccessToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedPersonalAccessToken);
+        _logger = (ILogger?)logger ?? NullLogger.Instance;
+        _organizationUrl = httpClient.BaseAddress?.ToString()?.Replace("https://dev.azure.com", "https://feeds.dev.azure.com") ?? "";
+        _httpClient = httpClient;
     }
 
     /// <summary>
@@ -50,7 +48,7 @@ public class ArtifactsClient : IArtifactsClient
         {
             string feedsUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}";
             object payload = new { name = feedCreateOptions.Name, description = feedCreateOptions.Description };
-            HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, feedsUrl, payload, cancellationToken);
+            using HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, feedsUrl, payload, cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -97,11 +95,11 @@ public class ArtifactsClient : IArtifactsClient
                 return AzureDevOpsActionResult<bool>.Success(true, _logger);
             }
 
-            var requestMessage = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}")
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}")
             {
                 Content = JsonContent.Create(fields)
             };
-            HttpResponseMessage response = await _httpClient.SendAsync(requestMessage, cancellationToken);
+            using HttpResponseMessage response = await _httpClient.SendAsync(requestMessage, cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -132,7 +130,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -162,7 +160,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -196,7 +194,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -228,7 +226,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -264,7 +262,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -303,7 +301,7 @@ public class ArtifactsClient : IArtifactsClient
                 WriteIndented = true
             };
             options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -342,7 +340,7 @@ public class ArtifactsClient : IArtifactsClient
             {
                 PropertyNameCaseInsensitive = true
             };
-            HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", feedView, cancellationToken);
+            using HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", feedView, cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -375,7 +373,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -410,7 +408,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views/{viewId}?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views/{viewId}?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -445,7 +443,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", behavior, cancellationToken);
+            using HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", behavior, cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -478,7 +476,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -514,7 +512,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -554,7 +552,7 @@ public class ArtifactsClient : IArtifactsClient
             {
                 Content = JsonContent.Create(details)
             };
-            HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+            using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -589,7 +587,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}/content?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}/content?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -623,7 +621,7 @@ public class ArtifactsClient : IArtifactsClient
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -666,7 +664,7 @@ public class ArtifactsClient : IArtifactsClient
                 WriteIndented = true,
                 Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
             };
-            HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", policy, cancellationToken);
+            using HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", policy, cancellationToken);
             if(!response.IsSuccessStatusCode)
             {
                 string error = await response.Content.ReadAsStringAsync(cancellationToken);

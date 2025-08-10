@@ -2,7 +2,7 @@
 
 namespace Dotnet.AzureDevOps.Core.Repos;
 
-public interface IIdentityClient
+public interface IIdentityClient : IDisposable, IAsyncDisposable
 {
     Task<AzureDevOpsActionResult<(string localId, string displayName)>> GetUserLocalIdFromEmailAsync(
         string email,

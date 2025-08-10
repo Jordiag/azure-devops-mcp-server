@@ -7,11 +7,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public class SummaryClient : ISummaryClient
+    public class SummaryClient : ISummaryClient, IDisposable, IAsyncDisposable
     {
         private readonly string _projectName;
         private readonly ProjectHttpClient _projectHttpClient;
+        private readonly VssConnection _connection;
         private readonly ILogger? _logger;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the SummaryClient with authenticated Azure DevOps connection for project summary and metadata operations.
@@ -31,8 +33,8 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             _projectName = projectName;
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
-            _projectHttpClient = connection.GetClient<ProjectHttpClient>();
+            _connection = new VssConnection(new Uri(organizationUrl), credentials);
+            _projectHttpClient = _connection.GetClient<ProjectHttpClient>();
             _logger = logger ?? NullLogger.Instance;
         }
 
@@ -62,6 +64,37 @@ namespace Dotnet.AzureDevOps.Core.Overview
             {
                 return AzureDevOpsActionResult<TeamProject>.Failure(ex, _logger);
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual ValueTask DisposeAsyncCore()
+        {
+            _connection?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }
