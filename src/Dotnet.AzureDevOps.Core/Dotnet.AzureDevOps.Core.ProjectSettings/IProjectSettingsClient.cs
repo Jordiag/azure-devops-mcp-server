@@ -3,7 +3,7 @@ using Microsoft.TeamFoundation.Core.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings;
 
-public interface IProjectSettingsClient
+public interface IProjectSettingsClient : IDisposable, IAsyncDisposable
 {
     Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<Guid>> GetTeamIdAsync(string teamName, CancellationToken cancellationToken = default);

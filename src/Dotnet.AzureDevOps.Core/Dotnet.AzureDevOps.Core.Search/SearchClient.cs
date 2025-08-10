@@ -11,15 +11,12 @@ namespace Dotnet.AzureDevOps.Core.Search;
 public class SearchClient : ISearchClient
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger? _logger;
+    private readonly ILogger _logger;
 
-    public SearchClient(string searchOrganizationUrl, string personalAccessToken, ILogger? logger = null)
+    public SearchClient(HttpClient httpClient, ILogger<SearchClient>? logger = null)
     {
-        _httpClient = new HttpClient { BaseAddress = new Uri(searchOrganizationUrl) };
-        string token = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{personalAccessToken}"));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
-        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-        _logger = logger ?? NullLogger.Instance;
+        _httpClient = httpClient;
+        _logger = (ILogger?)logger ?? NullLogger.Instance;
     }
 
     /// <summary>

@@ -20,9 +20,11 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         private readonly WikiClient _wikiClient;
         private readonly List<Guid> _createdWikis = [];
         private readonly ProjectSettingsClient _projectSettingsClient;
+        private readonly IntegrationTestFixture _fixture;
 
         public DotnetAzureDevOpsOverviewIntegrationTests(IntegrationTestFixture fixture)
         {
+            _fixture = fixture;
             _azureDevOpsConfiguration = fixture.Configuration;
             _wikiClient = fixture.WikiClient;
             _projectSettingsClient = fixture.ProjectSettingsClient;
@@ -282,9 +284,11 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             string? text = textResult.Value;
             Assert.Contains(needlessText, text);
 
-            var searchClient = new SearchClient(
-                _azureDevOpsConfiguration.SearchOrganisationUrl,
-                _azureDevOpsConfiguration.PersonalAccessToken);
+            // Create HttpClient for SearchClient using HttpClientFactory
+            HttpClient searchHttpClient = _fixture.CreateHttpClient(_azureDevOpsConfiguration.SearchOrganisationUrl);
+            searchHttpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            SearchClient searchClient = new(searchHttpClient);
 
             var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
             {

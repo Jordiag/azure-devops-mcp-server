@@ -8,7 +8,7 @@ using WorkItemFieldUpdate = Dotnet.AzureDevOps.Core.Boards.Options.WorkItemField
 
 namespace Dotnet.AzureDevOps.Core.Boards;
 
-public interface IWorkItemsClient
+public interface IWorkItemsClient : IDisposable, IAsyncDisposable
 {
     Task<AzureDevOpsActionResult<Guid>> AddAttachmentAsync(int workItemId, string filePath, CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<bool>> AddCommentAsync(int workItemId, string projectName, string comment, CancellationToken cancellationToken = default);

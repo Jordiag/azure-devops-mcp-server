@@ -252,7 +252,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     Content = content
                 };
 
-                HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+                using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
                 if(!response.IsSuccessStatusCode)
                 {
@@ -294,7 +294,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 string requestUrl = $"{_organizationUrl}/{projectName}/_apis/wit/queries/{encodedPath}?api-version={GlobalConstants.ApiVersion}";
 
                 using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
-                HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+                using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
                 if(!response.IsSuccessStatusCode)
                 {

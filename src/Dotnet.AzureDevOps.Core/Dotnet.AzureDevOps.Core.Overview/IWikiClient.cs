@@ -5,7 +5,7 @@ using Microsoft.TeamFoundation.Wiki.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview
 {
-    public interface IWikiClient
+    public interface IWikiClient : IDisposable, IAsyncDisposable
     {
         Task<AzureDevOpsActionResult<int>> CreateOrUpdatePageAsync(Guid wikiId, WikiPageUpdateOptions wikiPageUpdateOptions, GitVersionDescriptor gitVersionDescriptor, CancellationToken cancellationToken = default);
 

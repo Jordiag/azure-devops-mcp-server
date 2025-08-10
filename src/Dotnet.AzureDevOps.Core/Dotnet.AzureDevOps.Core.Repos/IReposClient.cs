@@ -5,7 +5,7 @@ using Microsoft.TeamFoundation.SourceControl.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos
 {
-    public interface IReposClient
+    public interface IReposClient : IDisposable, IAsyncDisposable
     {
         Task<AzureDevOpsActionResult<GitPullRequest>> AbandonPullRequestAsync(string repositoryIdOrName, int pullRequestId, CancellationToken cancellationToken = default);
         Task<AzureDevOpsActionResult<IList<WebApiTagDefinition>>> AddLabelsAsync(string repository, int pullRequestId, CancellationToken cancellationToken = default, params string[] labels);

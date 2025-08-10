@@ -16,12 +16,13 @@ using WorkItem = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.Web
 
 namespace Dotnet.AzureDevOps.Core.TestPlans;
 
-public class TestPlansClient : ITestPlansClient
+public class TestPlansClient : ITestPlansClient, IDisposable, IAsyncDisposable
 {
     private readonly string _projectName;
     private readonly TestPlanHttpClient _testPlanClient;
     private readonly VssConnection _connection;
     private readonly ILogger? _logger;
+    private bool _disposed;
 
     public TestPlansClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null)
     {
@@ -319,7 +320,7 @@ public class TestPlansClient : ITestPlansClient
     {
         try
         {
-            var workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
+            using var workItemTracking = new WorkItemTrackingHttpClient(_connection.Uri, _connection.Credentials);
 
             var patch = new JsonPatchDocument
             {
@@ -471,5 +472,36 @@ public class TestPlansClient : ITestPlansClient
         {
             return AzureDevOpsActionResult<TestSuite>.Failure(ex, _logger);
         }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _connection?.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore().ConfigureAwait(false);
+        Dispose(false);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual ValueTask DisposeAsyncCore()
+    {
+        _connection?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }

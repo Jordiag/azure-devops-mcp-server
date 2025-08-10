@@ -3,7 +3,7 @@ using Microsoft.TeamFoundation.Dashboards.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Overview;
 
-public interface IDashboardClient
+public interface IDashboardClient : IDisposable, IAsyncDisposable
 {
     Task<AzureDevOpsActionResult<IReadOnlyList<Dashboard>>> ListDashboardsAsync(CancellationToken cancellationToken = default);
     Task<AzureDevOpsActionResult<Dashboard>> GetDashboardAsync(Guid dashboardId, string teamName, CancellationToken cancellationToken = default);

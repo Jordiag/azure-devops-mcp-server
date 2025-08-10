@@ -9,17 +9,19 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos
 {
-    public class IdentityClient : IIdentityClient
+    public class IdentityClient : IIdentityClient, IDisposable, IAsyncDisposable
     {
         private readonly IdentityHttpClient _identityHttpClient;
+        private readonly VssConnection _connection;
         private readonly ILogger? _logger;
+        private bool _disposed;
 
         public IdentityClient(string organizationUrl, string personalAccessToken, ILogger? logger = null)
         {
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
-            var connection = new VssConnection(new Uri(organizationUrl), credentials);
+            _connection = new VssConnection(new Uri(organizationUrl), credentials);
             _logger = logger ?? NullLogger.Instance;
-            _identityHttpClient = connection.GetClient<IdentityHttpClient>();
+            _identityHttpClient = _connection.GetClient<IdentityHttpClient>();
 
             _ = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{personalAccessToken}"));
 
@@ -54,6 +56,37 @@ namespace Dotnet.AzureDevOps.Core.Repos
             {
                 return AzureDevOpsActionResult<(string localId, string displayName)>.Failure(ex, _logger);
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual ValueTask DisposeAsyncCore()
+        {
+            _connection?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }
