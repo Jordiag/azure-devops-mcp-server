@@ -9,7 +9,7 @@ namespace Dotnet.AzureDevOps.Pipeline.IntegrationTests;
 
 [TestType(TestType.Integration)]
 [Component(Component.Pipelines)]
-public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixture, IClassFixture<IntegrationTestFixture>
+public partial class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixture, IClassFixture<IntegrationTestFixture>
 {
     private readonly PipelinesClient _pipelines;
     private readonly int _definitionId;
@@ -22,75 +22,6 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixt
         _branch = Configuration.BuildBranch;
         _commitSha = Configuration.CommitSha;
         _pipelines = fixture.PipelinesClient;
-    }
-
-    [Fact]
-    public async Task QueueAndCancelBuild_SucceedsAsync()
-    {
-        var buildQueueOptions = new BuildQueueOptions
-        {
-            DefinitionId = _definitionId,
-            Branch = _branch,
-            CommitSha = _commitSha
-        };
-
-        AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(buildQueueOptions);
-        Assert.True(queueResult.IsSuccessful);
-        int buildId = queueResult.Value;
-        RegisterCreatedBuild(buildId);
-
-        AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
-        Assert.True(runResult.IsSuccessful);
-        Build run = runResult.Value!;
-        Assert.NotNull(run);
-
-        AzureDevOpsActionResult<bool> cancelResult = await _pipelines.CancelRunAsync(buildId, run.Project);
-        Assert.True(cancelResult.IsSuccessful);
-
-        runResult = await _pipelines.GetRunAsync(buildId);
-        Assert.True(runResult.IsSuccessful);
-        run = runResult.Value!;
-        Assert.Equal(BuildStatus.Cancelling, run.Status);
-    }
-
-    [Fact]
-    public async Task RetryBuild_SucceedsAsync()
-    {
-        AzureDevOpsActionResult<int> queuedResult = await _pipelines.QueueRunAsync(new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
-        Assert.True(queuedResult.IsSuccessful);
-        int queuedBuild = queuedResult.Value;
-        RegisterCreatedBuild(queuedBuild);
-
-        AzureDevOpsActionResult<int> retryResult = await _pipelines.RetryRunAsync(queuedBuild);
-        Assert.True(retryResult.IsSuccessful);
-        int retryQueuedBuild = retryResult.Value;
-        RegisterCreatedBuild(retryQueuedBuild);
-        Assert.NotEqual(queuedBuild, retryQueuedBuild);
-
-        AzureDevOpsActionResult<Build> retriedResult = await _pipelines.GetRunAsync(retryQueuedBuild);
-        Assert.True(retriedResult.IsSuccessful);
-        Build retried = retriedResult.Value!;
-        Assert.Equal(_branch, retried.SourceBranch);
-    }
-
-    [Fact]
-    public async Task ListBuilds_Filter_WorksAsync()
-    {
-        AzureDevOpsActionResult<int> queueResult = await _pipelines.QueueRunAsync(new BuildQueueOptions { DefinitionId = _definitionId, Branch = _branch });
-        Assert.True(queueResult.IsSuccessful);
-        int buildId = queueResult.Value;
-        RegisterCreatedBuild(buildId);
-
-        AzureDevOpsActionResult<IReadOnlyList<Build>> listResult = await _pipelines.ListRunsAsync(new BuildListOptions
-        {
-            DefinitionId = _definitionId,
-            Branch = _branch,
-            Status = BuildStatus.NotStarted,
-            Top = 100
-        });
-        Assert.True(listResult.IsSuccessful);
-        IReadOnlyList<Build> list = listResult.Value!;
-        Assert.Contains(list, b => b.Id == buildId);
     }
 
     [Fact]
@@ -113,12 +44,12 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixt
         Assert.True(queuedBuildIdCompleted!.Result!.Value == BuildResult.Succeeded, "Build did not complete in time.");
 
         // Download and validate the console log
-        AzureDevOpsActionResult<string> consoleLogResult = await _pipelines.DownloadConsoleLogAsync(queuedBuildId);
+        AzureDevOpsActionResult<string> consoleLogResult = await _pipelines.DownloadConsoleLogAsync(queuedBuildId, ["Run a one-line script"]);
         Assert.NotNull(consoleLogResult);
         Assert.True(consoleLogResult.IsSuccessful);
 
         string? consoleLog = consoleLogResult.Value;
-        Assert.True(string.IsNullOrEmpty(consoleLog) || consoleLog.Length > 0);
+        Assert.Contains(consoleLog, "Hello, world!");
     }
 
     [Fact]
@@ -160,20 +91,6 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixt
     }
 
     [Fact]
-    public async Task ListDefinitions_FiltersByIdAsync()
-    {
-        var options = new BuildDefinitionListOptions
-        {
-            DefinitionIds = new List<int> { _definitionId }
-        };
-
-        AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>> listResult = await _pipelines.ListDefinitionsAsync(options);
-        Assert.True(listResult.IsSuccessful);
-        IReadOnlyList<BuildDefinitionReference> list = listResult.Value!;
-        Assert.Contains(list, d => d.Id == _definitionId);
-    }
-
-    [Fact]
     public async Task UpdateBuildStage_ValidStage_CancelsStageAsync()
     {
         var queueOptions = new BuildQueueOptions
@@ -196,48 +113,6 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixt
         build = await WaitForBuildToCompleteAsync(buildId, 300, 1000, BuildResult.Canceled);
         Assert.NotNull(build);
         Assert.Equal(BuildResult.Canceled, build!.Result);
-    }
-
-    private async Task<Build?> WaitForBuildStatusAsync(int buildId, BuildStatus targetStatus, int maxAttempts, int delayMs)
-    {
-        Build? build = null;
-        try
-        {
-            await WaitHelper.WaitUntilAsync(async () =>
-            {
-                AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
-                if(!runResult.IsSuccessful)
-                    return false;
-                build = runResult.Value;
-                return build?.Status == targetStatus;
-            }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
-        }
-        catch(TimeoutException)
-        {
-            return null;
-        }
-        return build;
-    }
-
-    private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs, BuildResult buildResult)
-    {
-        Build? build = null;
-        try
-        {
-            await WaitHelper.WaitUntilAsync(async () =>
-            {
-                AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
-                if(!runResult.IsSuccessful)
-                    return false;
-                build = runResult.Value;
-                return build?.Result == buildResult;
-            }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
-        }
-        catch(TimeoutException)
-        {
-            return null;
-        }
-        return build;
     }
 
     [Fact]
@@ -308,5 +183,48 @@ public class DotnetAzureDevOpsPipelineIntegrationTests : BaseIntegrationTestFixt
         AzureDevOpsActionResult<BuildDefinition> afterDelete = await _pipelines.GetPipelineAsync(pipelineId);
         Assert.False(afterDelete.IsSuccessful);
     }
+
+    private async Task<Build?> WaitForBuildStatusAsync(int buildId, BuildStatus targetStatus, int maxAttempts, int delayMs)
+    {
+        Build? build = null;
+        try
+        {
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
+                if(!runResult.IsSuccessful)
+                    return false;
+                build = runResult.Value;
+                return build?.Status == targetStatus;
+            }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
+        }
+        catch(TimeoutException)
+        {
+            return null;
+        }
+        return build;
+    }
+
+    private async Task<Build?> WaitForBuildToCompleteAsync(int buildId, int maxAttempts, int delayMs, BuildResult buildResult)
+    {
+        Build? build = null;
+        try
+        {
+            await WaitHelper.WaitUntilAsync(async () =>
+            {
+                AzureDevOpsActionResult<Build> runResult = await _pipelines.GetRunAsync(buildId);
+                if(!runResult.IsSuccessful)
+                    return false;
+                build = runResult.Value;
+                return build?.Result == buildResult;
+            }, TimeSpan.FromMilliseconds(maxAttempts * delayMs), TimeSpan.FromMilliseconds(delayMs));
+        }
+        catch(TimeoutException)
+        {
+            return null;
+        }
+        return build;
+    }
+
 }
 

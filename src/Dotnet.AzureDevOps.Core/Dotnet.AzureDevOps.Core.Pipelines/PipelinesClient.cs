@@ -73,7 +73,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                 build.SourceVersion = buildQueueOptions.CommitSha!;
 
             if(buildQueueOptions.Parameters is { Count: > 0 })
-                build.Parameters = System.Text.Json.JsonSerializer.Serialize(buildQueueOptions.Parameters);
+                build.TemplateParameters = buildQueueOptions.Parameters;
 
             Build queued = await _build.QueueBuildAsync(
                 build: build,
@@ -248,12 +248,13 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
     }
 
     /// <summary>
-    /// Downloads and aggregates the complete console log output from a build run.
-    /// This method retrieves all log entries from the build execution and combines them
-    /// into a single comprehensive log string. Essential for build analysis, debugging
-    /// build failures, and generating build reports with complete execution details.
+    /// Downloads and aggregates the console log output of specific build steps from a build run.
+    /// This method retrieves all log entries from the build execution for the given step names
+    /// and combines them into a single comprehensive log string. Essential for build analysis, 
+    /// debugging build failures, and generating build reports with complete execution details.
     /// </summary>
     /// <param name="buildId">The unique identifier of the build whose logs to download.</param>
+    /// <param name="stepNames">The step names for which logs should be downloaded</param>
     /// <returns>
     /// An <see cref="AzureDevOpsActionResult{T}"/> containing the complete console log as a string,
     /// or error details if the download fails or logs are not available.
@@ -262,11 +263,11 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
     /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access build logs.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the build doesn't exist or logs are not available.</exception>
-    public async Task<AzureDevOpsActionResult<string>> DownloadConsoleLogAsync(int buildId, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<string>> DownloadConsoleLogAsync(int buildId, List<string> stepNames, CancellationToken cancellationToken = default)
     {
         try
         {
-            using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
+            await using Stream buildLogsStream = await _build.GetBuildLogsZipAsync(
                 project: ProjectName,
                 buildId: buildId,
                 cancellationToken: cancellationToken);
@@ -274,11 +275,10 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
             using var zipArchive = new ZipArchive(buildLogsStream);
 
             // Find all script-related log entries in the correct order
-            List<ZipArchiveEntry> logEntries = zipArchive.Entries
+            var logEntries = zipArchive.Entries
                 .Where(e =>
                     e.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) &&
-                    (e.FullName.Contains("Run a one-line script", StringComparison.OrdinalIgnoreCase) ||
-                     e.FullName.Contains("Run a multi-line script", StringComparison.OrdinalIgnoreCase)))
+                    stepNames.Any(step => e.FullName.Contains(step, StringComparison.OrdinalIgnoreCase)))
                 .OrderBy(e => e.FullName) // Ensure correct order
                 .ToList();
 
