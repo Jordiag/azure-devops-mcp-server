@@ -59,7 +59,9 @@ The solution is organized as a multi‑project workspace targeting **.NET 9**. E
   - Search wiki pages
   - Search work items
 
-The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server is implemented as a console application that hosts an ASP.NET Core web server using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. You can run it directly or adapt it to your preferred hosting environment—such as a container image, Azure Functions, or a Windows service. AI assistants can discover available tools at runtime and invoke them using structured function calls.
+The `Dotnet.AzureDevOps.Mcp.Server` project brings these libraries together and exposes them as MCP tools. The server is implemented as a console application that hosts an ASP.NET Core web server using the [`ModelContextProtocol`](https://github.com/modelcontextprotocol) package. You can run it directly or adapt it to your preferred hosting environment—such as a container image, Azure Functions, or a Windows service.
+
+The MCP server follows the Model Context Protocol specification by serving MCP tools at the `/mcp` endpoint using Server-Sent Events (SSE) over HTTP. AI assistants can discover available tools at runtime by connecting to this endpoint and invoke them using structured function calls.
 
 Integration tests exercise each client against a real Azure DevOps organization. Another test suite validates end‑to‑end agent interactions using [Semantic Kernel](https://github.com/microsoft/semantic-kernel), demonstrating that an LLM can automatically invoke the published tools.
 
@@ -111,6 +113,7 @@ For development and testing:
    ```
 
 The server listens on [http://localhost:5050](http://localhost:5050) by default.
+The MCP endpoint is available at `/mcp` ([http://localhost:5050/mcp](http://localhost:5050/mcp)).
 Visit `/health` to check that it is running.
 
 ## Example: Using the MCP server with Semantic Kernel
@@ -150,6 +153,9 @@ using ModelContextProtocol.SemanticKernel.Extensions;
 var serverUrl = Environment.GetEnvironmentVariable("MCP_SERVER_URL")!;
 var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!;
 var model = Environment.GetEnvironmentVariable("OPENAI_MODEL")!;
+
+// Note: MCP_SERVER_URL should include the /mcp endpoint path
+// Example: "http://localhost:5050/mcp"
 
 IKernelBuilder builder = Kernel.CreateBuilder();
 builder.Services.AddOpenAIChatCompletion("openai", model, openAiKey);
@@ -198,6 +204,7 @@ run-local.cmd     # Windows
 ```
 
 The server listens on [http://localhost:5050](http://localhost:5050) by default.
+The MCP endpoint is available at `/mcp` ([http://localhost:5050/mcp](http://localhost:5050/mcp)).
 Visit `/health` to check that it is running.
 
 ### Option 2: Docker Container
@@ -221,6 +228,7 @@ run-docker.cmd     # Windows
 ```
 
 The containerized server is available at [http://localhost:5050](http://localhost:5050).
+The MCP endpoint is accessible at `/mcp` ([http://localhost:5050/mcp](http://localhost:5050/mcp)).
 
 #### Docker Benefits
 
