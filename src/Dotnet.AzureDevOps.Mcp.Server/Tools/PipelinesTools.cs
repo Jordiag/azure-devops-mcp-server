@@ -69,9 +69,9 @@ public class PipelinesTools(IPipelinesClient pipelinesClient, ILogger<PipelinesT
     public async Task<List<string>> GetLogLinesAsync(int buildId, int logId, int? startLine = null, int? endLine = null, CancellationToken cancellationToken = default) =>
         (await _pipelinesClient.GetLogLinesAsync(buildId, logId, startLine, endLine, cancellationToken)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Downloads the complete console log output from a build run as a single text string. This provides the full build output including all steps, tasks, and error messages. Useful for comprehensive build analysis or debugging build failures.")]
-    public async Task<string> DownloadConsoleLogAsync(int buildId, CancellationToken cancellationToken = default) =>
-        (await _pipelinesClient.DownloadConsoleLogAsync(buildId, cancellationToken)).EnsureSuccess(_logger);
+    [McpServerTool, Description("Downloads the complete console log output of specific step names from a build run as a single text string. This provides the full build log output of specific steps, useful for comprehensive build analysis or debugging build failures.")]
+    public async Task<string> DownloadConsoleLogAsync(int buildId, List<string> stepNames, CancellationToken cancellationToken = default) =>
+        (await _pipelinesClient.DownloadConsoleLogAsync(buildId, stepNames, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves build report metadata containing summary information about test results, code coverage, and other build artifacts. May return null if no report data is available for the build. Useful for getting build quality metrics and test result summaries.")]
     public async Task<BuildReportMetadata> GetBuildReportAsync(int buildId, CancellationToken cancellationToken = default) =>
