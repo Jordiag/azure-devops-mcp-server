@@ -8,6 +8,7 @@ using Dotnet.AzureDevOps.Core.Search;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -22,35 +23,35 @@ public static class CoreClientsServiceCollectionExtensions
         // Configure HttpClient for Azure DevOps API calls
         services.AddHttpClient<IWorkItemsClient, WorkItemsClient>((provider, client) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             client.BaseAddress = new Uri(config.OrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IWorkItemsClient>((httpClient, provider) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             ILogger<WorkItemsClient>? logger = provider.GetService<ILogger<WorkItemsClient>>();
             return new WorkItemsClient(httpClient, config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
         services.AddHttpClient<IReposClient, ReposClient>((provider, client) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             client.BaseAddress = new Uri(config.OrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IReposClient>((httpClient, provider) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             ILogger<ReposClient>? logger = provider.GetService<ILogger<ReposClient>>();
             return new ReposClient(httpClient, config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
         services.AddHttpClient<IArtifactsClient, ArtifactsClient>((provider, client) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             string orgUrl = config.OrganizationUrl.Replace("https://dev.azure.com", "https://feeds.dev.azure.com");
             client.BaseAddress = new Uri(orgUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
@@ -58,14 +59,14 @@ public static class CoreClientsServiceCollectionExtensions
         })
         .AddTypedClient<IArtifactsClient>((httpClient, provider) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             ILogger<ArtifactsClient>? logger = provider.GetService<ILogger<ArtifactsClient>>();
             return new ArtifactsClient(httpClient, config.ProjectName, logger);
         });
 
         services.AddHttpClient<ISearchClient, SearchClient>((provider, client) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             client.BaseAddress = new Uri(config.SearchOrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
@@ -79,14 +80,14 @@ public static class CoreClientsServiceCollectionExtensions
 
         services.AddHttpClient<IProjectSettingsClient, ProjectSettingsClient>((provider, client) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             client.BaseAddress = new Uri(config.OrganizationUrl);
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{config.PersonalAccessToken}"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BasicAuthenticationScheme, token);
         })
         .AddTypedClient<IProjectSettingsClient>((httpClient, provider) =>
         {
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             ILogger<ProjectSettingsClient>? logger = provider.GetService<ILogger<ProjectSettingsClient>>();
             return new ProjectSettingsClient(httpClient, config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
@@ -95,28 +96,28 @@ public static class CoreClientsServiceCollectionExtensions
         services.AddScoped<IPipelinesClient>(provider =>
         {
             ILogger<PipelinesClient>? logger = provider.GetService<ILogger<PipelinesClient>>();
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             return new PipelinesClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
         services.AddScoped<ITestPlansClient>(provider =>
         {
             ILogger<TestPlansClient>? logger = provider.GetService<ILogger<TestPlansClient>>();
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             return new TestPlansClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
         services.AddScoped<IOverviewClient>(provider =>
         {
             ILogger<OverviewClient>? logger = provider.GetService<ILogger<OverviewClient>>();
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             return new OverviewClient(config.OrganizationUrl, config.ProjectName, config.PersonalAccessToken, logger);
         });
 
         services.AddScoped<IIdentityClient>(provider =>
         {
             ILogger<IdentityClient>? logger = provider.GetService<ILogger<IdentityClient>>();
-            AzureDevOpsConfiguration config = provider.GetRequiredService<AzureDevOpsConfiguration>();
+            AzureDevOpsConfiguration config = provider.GetRequiredService<IOptions<AzureDevOpsConfiguration>>().Value;
             return new IdentityClient(config.OrganizationUrl, config.PersonalAccessToken, logger);
         });
 
