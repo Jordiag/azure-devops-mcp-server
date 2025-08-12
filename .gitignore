@@ -339,3 +339,5 @@ ASALocalRun/
 /azure-pipelines.yml
 /bicep/acr.bicep
 /bicep/aks.bicep
+/bicep/app-insights.bicep
+/bicep/app-insights.json
