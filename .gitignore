@@ -337,5 +337,4 @@ ASALocalRun/
 /pipelines
 /Discarded.cs
 /azure-pipelines.yml
-/bicep/acr.bicep
-/bicep/aks.bicep
+/bicep/*
