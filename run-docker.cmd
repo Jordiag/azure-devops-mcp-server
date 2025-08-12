@@ -25,9 +25,14 @@ if %ERRORLEVEL% equ 0 (
     echo Container started. Server available at http://localhost:5050
     echo Health check: http://localhost:5050/health
     
-    REM Show container logs
-    echo Container logs:
-    docker logs -f azure-devops-mcp-server
+    REM Show initial container logs (without follow)
+    echo Initial container logs:
+    docker logs azure-devops-mcp-server
+    
+    echo.
+    echo Container is running in the background.
+    echo To view live logs, run: docker logs -f azure-devops-mcp-server
+    echo To stop the container, run: docker stop azure-devops-mcp-server
 ) else (
     echo Docker build failed!
     exit /b 1

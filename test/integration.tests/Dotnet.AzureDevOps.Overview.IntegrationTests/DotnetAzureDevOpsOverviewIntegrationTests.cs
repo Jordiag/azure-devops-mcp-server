@@ -270,7 +270,6 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             string text = textResult!.Value!;
             Assert.Contains(needlessText, text);
 
-            // Create HttpClient for SearchClient using HttpClientFactory
             HttpClient searchHttpClient = _fixture.CreateHttpClient(_azureDevOpsConfiguration.SearchOrganisationUrl);
             searchHttpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
