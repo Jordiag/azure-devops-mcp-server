@@ -35,6 +35,19 @@ public static class HealthCheckExtensions
             };
         });
 
+        // Readiness endpoint for Kubernetes readiness probes
+        app.MapGet("/ready", async (HealthCheckService hc) =>
+        {
+            HealthReport report = await hc.CheckHealthAsync();
+
+            return report.Status switch
+            {
+                HealthStatus.Healthy => Results.Ok("Ready"),
+                HealthStatus.Degraded => Results.Ok("Ready"),
+                _ => Results.StatusCode(503)
+            };
+        });
+
         return app;
     }
 }

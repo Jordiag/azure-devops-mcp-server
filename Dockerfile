@@ -1,8 +1,8 @@
 # Use the official .NET 9 runtime as the base image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
-# Create a non-root user for security
-RUN adduser --disabled-password --gecos "" --home /app --shell /bin/bash appuser && \
+# Create a non-root user for security with consistent UID/GID for Kubernetes
+RUN adduser --disabled-password --gecos "" --home /app --shell /bin/bash --uid 1001 appuser && \
     chown -R appuser:appuser /app
 
 WORKDIR /app
@@ -37,15 +37,17 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Change ownership of the app files to the non-root user
+# Ensure all files have proper ownership and permissions for the non-root user
 USER root
-RUN chown -R appuser:appuser /app
+RUN chown -R 1001:1001 /app && \
+    chmod -R 755 /app && \
+    chmod +x /app/Dotnet.AzureDevOps.Mcp.Server.dll
 
 # Set environment variables for container
 ENV ASPNETCORE_URLS=http://+:5050
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Switch to non-root user for security
-USER appuser
+USER 1001
 
 ENTRYPOINT ["dotnet", "Dotnet.AzureDevOps.Mcp.Server.dll"]
