@@ -338,3 +338,4 @@ ASALocalRun/
 /Discarded.cs
 /azure-pipelines.yml
 /bicep/*
+/azuredevopspipelineaks.yml
