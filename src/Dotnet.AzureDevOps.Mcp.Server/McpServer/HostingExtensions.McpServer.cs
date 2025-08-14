@@ -20,6 +20,9 @@ internal static class HostingExtensionsMcpServer
         services.Configure<AzureDevOpsConfiguration>(options =>
         ConfigureAzureDevOpsOptions(builder.Configuration, options));
 
+        services.AddSecurityServices();
+        services.AddSecurityMiddleware();
+
         services.AddAzureDevOpsClients();
 
         IMcpServerBuilder mcpServerBuilder = services.AddMcpServer();

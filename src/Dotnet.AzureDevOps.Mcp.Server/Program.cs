@@ -1,5 +1,6 @@
 ﻿using Dotnet.AzureDevOps.Mcp.Server;
 using Dotnet.AzureDevOps.Mcp.Server.McpServer;
+using Dotnet.AzureDevOps.Mcp.Server.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,13 @@ builder.ConfigureMcpServer();
 builder.Services.AddMcpHealthChecks();
 
 WebApplication app = builder.Build();
+
+// Add security middleware early in the pipeline
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<RequestSanitizationMiddleware>();
+
+// Add HTTPS redirection for security
+app.UseHttpsRedirection();
 
 app.MapMcp("/mcp");
 app.MapMcpHealthEndpoint();
@@ -62,6 +70,13 @@ public partial class Program
         {
             logger.LogCritical("AZURE_DEVOPS_ORGANIZATION_URL must be a valid URL format.");
             Environment.Exit(1);
+        }
+
+        // Log masked PAT for security audit
+        IEncryptionService? encryptionService = builder.Services.BuildServiceProvider().GetService<IEncryptionService>();
+        if (encryptionService != null)
+        {
+            logger.LogInformation("Using PAT: {MaskedPat}", encryptionService.MaskPersonalAccessToken(pat));
         }
     }
 };
