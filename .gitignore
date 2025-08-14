@@ -339,3 +339,4 @@ ASALocalRun/
 /azure-pipelines.yml
 /bicep/*
 /azuredevopspipelineaks.yml
+/SECURITY_IMPLEMENTATION.md
