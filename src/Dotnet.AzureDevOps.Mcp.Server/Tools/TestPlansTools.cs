@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.TestPlans;
 using Dotnet.AzureDevOps.Core.TestPlans.Options;
-using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using ModelContextProtocol.Server;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;

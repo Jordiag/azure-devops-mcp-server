@@ -1,9 +1,6 @@
 ﻿using Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
 using Dotnet.AzureDevOps.Mcp.Server.Tools;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
@@ -19,6 +16,9 @@ internal static class HostingExtensionsMcpServer
 
         services.Configure<AzureDevOpsConfiguration>(options =>
         ConfigureAzureDevOpsOptions(builder.Configuration, options));
+
+        services.AddSecurityServices();
+        services.AddSecurityMiddleware();
 
         services.AddAzureDevOpsClients();
 

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
+﻿namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
 public sealed record McpServerSettings
 {

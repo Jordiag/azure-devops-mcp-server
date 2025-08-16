@@ -6,7 +6,6 @@ using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
 using ModelContextProtocol.Server;
-using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 
@@ -48,7 +47,7 @@ public class OverviewTools(IOverviewClient overviewClient, ILogger<OverviewTools
         (await _overviewClient.DeletePageAsync(wikiId, path, gitVersionDescriptor, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Lists all pages within a wiki, including their paths, titles, and hierarchy structure. Supports filtering and pagination options to manage large wikis efficiently. Returns page metadata without content, useful for navigation, indexing, or bulk operations on wiki pages.")]
-    public async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(Guid wikiId, WikiPagesBatchOptions options, GitVersionDescriptor? versionDescriptor = null, CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<WikiPageDetail>> ListPagesAsync(Guid wikiId, WikiPagesBatchOptions options, GitVersionDescriptor? versionDescriptor = null, CancellationToken cancellationToken = default) =>
         (await _overviewClient.ListPagesAsync(wikiId, options, versionDescriptor, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves the raw text content of a wiki page without metadata or formatting. Returns the Markdown source content that can be used for editing, parsing, or content analysis. The page path should include the .md extension for proper identification.")]
@@ -64,6 +63,6 @@ public class OverviewTools(IOverviewClient overviewClient, ILogger<OverviewTools
         (await _overviewClient.GetDashboardAsync(dashboardId, teamName, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Lists all dashboards available in the Azure DevOps project, including team dashboards and project-level dashboards. Returns dashboard metadata such as names, owners, and basic configuration. Useful for discovering available project overview screens.")]
-    public async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default) 
+    public async Task<IReadOnlyList<Dashboard>> ListDashboardsAsync(CancellationToken cancellationToken = default)
         => (await _overviewClient.ListDashboardsAsync(cancellationToken)).EnsureSuccess(_logger);
 }
