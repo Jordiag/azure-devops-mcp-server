@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.Search;
 using Dotnet.AzureDevOps.Core.Search.Options;
 using ModelContextProtocol.Server;
-using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 

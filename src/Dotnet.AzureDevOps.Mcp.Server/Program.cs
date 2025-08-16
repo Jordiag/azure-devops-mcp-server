@@ -1,9 +1,6 @@
 ﻿using Dotnet.AzureDevOps.Mcp.Server;
 using Dotnet.AzureDevOps.Mcp.Server.McpServer;
 using Dotnet.AzureDevOps.Mcp.Server.Security;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -29,44 +26,44 @@ app.MapMcpHealthEndpoint();
 
 await app.RunAsync();
 
-public partial class Program 
+public partial class Program
 {
     protected Program() { }
 
     private static void ValidateEnvironmentVariables(WebApplicationBuilder builder)
     {
         ILogger<Program> logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
-        
+
         logger.LogInformation("Validating environment variables...");
 
         string? organizationUrl = builder.Configuration["AZURE_DEVOPS_ORGANIZATION_URL"];
-        if (string.IsNullOrWhiteSpace(organizationUrl))
+        if(string.IsNullOrWhiteSpace(organizationUrl))
         {
             logger.LogCritical("AZURE_DEVOPS_ORGANIZATION_URL environment variable is required and cannot be null or empty.");
             Environment.Exit(1);
         }
 
         string? projectName = builder.Configuration["AZURE_DEVOPS_PROJECT_NAME"];
-        if (string.IsNullOrWhiteSpace(projectName))
+        if(string.IsNullOrWhiteSpace(projectName))
         {
             logger.LogCritical("AZURE_DEVOPS_PROJECT_NAME environment variable is required and cannot be null or empty.");
             Environment.Exit(1);
         }
 
         string? pat = builder.Configuration["AZURE_DEVOPS_PAT"];
-        if (string.IsNullOrWhiteSpace(pat))
+        if(string.IsNullOrWhiteSpace(pat))
         {
             logger.LogCritical("AZURE_DEVOPS_PAT environment variable is required and cannot be null or empty.");
             Environment.Exit(1);
         }
 
-        if (pat.Length < 20)
+        if(pat.Length < 20)
         {
             logger.LogCritical("AZURE_DEVOPS_PAT appears to be too short to be a valid Personal Access Token.");
             Environment.Exit(1);
         }
 
-        if (!Uri.TryCreate(organizationUrl, UriKind.Absolute, out _))
+        if(!Uri.TryCreate(organizationUrl, UriKind.Absolute, out _))
         {
             logger.LogCritical("AZURE_DEVOPS_ORGANIZATION_URL must be a valid URL format.");
             Environment.Exit(1);
@@ -74,7 +71,7 @@ public partial class Program
 
         // Log masked PAT for security audit
         IEncryptionService? encryptionService = builder.Services.BuildServiceProvider().GetService<IEncryptionService>();
-        if (encryptionService != null)
+        if(encryptionService != null)
         {
             logger.LogInformation("Using PAT: {MaskedPat}", encryptionService.MaskPersonalAccessToken(pat));
         }

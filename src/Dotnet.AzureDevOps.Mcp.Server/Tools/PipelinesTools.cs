@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.Pipelines;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
-using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using ModelContextProtocol.Server;

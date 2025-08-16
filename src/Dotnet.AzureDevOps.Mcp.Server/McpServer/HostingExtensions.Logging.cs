@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-
 namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
 internal static class HostingExtensionsLogging
@@ -15,7 +11,7 @@ internal static class HostingExtensionsLogging
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
 
-        if (settings.EnableApplicationInsights &&
+        if(settings.EnableApplicationInsights &&
             !string.IsNullOrWhiteSpace(settings.ApplicationInsightsConnectionString))
         {
             builder.Logging.AddApplicationInsights(configuration =>

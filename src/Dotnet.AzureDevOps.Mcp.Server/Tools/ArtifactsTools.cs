@@ -3,7 +3,6 @@ using Dotnet.AzureDevOps.Core.Artifacts;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using ModelContextProtocol.Server;
-using Microsoft.Extensions.Logging;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 
@@ -29,7 +28,7 @@ public class ArtifactsTools(IArtifactsClient artifactsClient, ILogger<ArtifactsT
         (await _artifactsClient.GetFeedAsync(feedId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Lists all package feeds in the Azure DevOps project that the current user has access to. Returns basic information about each feed including name, ID, description, and capabilities. Useful for discovering available package repositories.")]
-    public async Task<IReadOnlyList<Feed>> ListFeedsAsync(CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<Feed>> ListFeedsAsync(CancellationToken cancellationToken = default) =>
         (await _artifactsClient.ListFeedsAsync(cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Permanently deletes a package feed and all its packages from Azure DevOps Artifacts. This action cannot be undone and will break any builds or applications depending on packages in this feed. Returns true if deletion was successful.")]
@@ -37,7 +36,7 @@ public class ArtifactsTools(IArtifactsClient artifactsClient, ILogger<ArtifactsT
         (await _artifactsClient.DeleteFeedAsync(feedId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Lists all packages stored in a specific feed. Returns package metadata including names, versions, download counts, and publish dates. An empty list is returned for new feeds with no packages. Useful for inventory management and package discovery.")]
-    public async Task<IReadOnlyList<Package>> ListPackagesAsync(Guid feedId, CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<Package>> ListPackagesAsync(Guid feedId, CancellationToken cancellationToken = default) =>
         (await _artifactsClient.ListPackagesAsync(feedId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves detailed information about a specific version of a package in a feed. Returns package metadata, dependencies, size, and version-specific details. The package and version must exist in the specified feed.")]
@@ -57,7 +56,7 @@ public class ArtifactsTools(IArtifactsClient artifactsClient, ILogger<ArtifactsT
         (await _artifactsClient.DownloadPackageAsync(feedId, packageName, version, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves the access permissions for a feed, showing which users, groups, or service principals have read, contribute, or administrator rights. Returns permission entries with identity and role information.")]
-    public async Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(Guid feedId, CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<FeedPermission>> GetFeedPermissionsAsync(Guid feedId, CancellationToken cancellationToken = default) =>
         (await _artifactsClient.GetFeedPermissionsAsync(feedId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Creates a new view for a package feed. Feed views are filtered subsets of packages (e.g., 'Release' view showing only stable versions, 'Prerelease' showing all versions). Views help organize packages by quality or lifecycle stage. Returns the created view.")]
@@ -65,7 +64,7 @@ public class ArtifactsTools(IArtifactsClient artifactsClient, ILogger<ArtifactsT
         (await _artifactsClient.CreateFeedViewAsync(feedId, feedView, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Lists all views configured for a specific feed. Views provide filtered perspectives of feed packages (e.g., 'Release', 'Prerelease'). Returns view metadata including names, visibility, and filtering criteria.")]
-    public async Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(Guid feedId, CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<FeedView>> ListFeedViewsAsync(Guid feedId, CancellationToken cancellationToken = default) =>
         (await _artifactsClient.ListFeedViewsAsync(feedId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Permanently deletes a view from a feed. This removes the filtered perspective but does not affect the underlying packages. Applications using the view URL will no longer be able to access packages through this view. Returns true if deletion was successful.")]

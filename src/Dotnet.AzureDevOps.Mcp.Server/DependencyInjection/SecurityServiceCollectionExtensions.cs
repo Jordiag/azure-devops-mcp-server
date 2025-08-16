@@ -1,5 +1,4 @@
 using Dotnet.AzureDevOps.Mcp.Server.Security;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
 

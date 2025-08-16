@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Security;
@@ -11,7 +10,7 @@ namespace Dotnet.AzureDevOps.Mcp.Server.Security;
 public class EncryptionOptions
 {
     public const string SectionName = "Encryption";
-    
+
     /// <summary>
     /// Base64 encoded encryption key. If not provided, a key will be generated.
     /// WARNING: In production, this should be stored securely (Azure Key Vault, etc.)
@@ -34,18 +33,18 @@ public class EncryptionService : IEncryptionService, IDisposable
         EncryptionOptions config = options?.Value ?? new EncryptionOptions();
 
         // Initialize encryption key
-        if (!string.IsNullOrEmpty(config.EncryptionKey))
+        if(!string.IsNullOrEmpty(config.EncryptionKey))
         {
             try
             {
                 _encryptionKey = Convert.FromBase64String(config.EncryptionKey);
-                if (_encryptionKey.Length != 32) // 256-bit key
+                if(_encryptionKey.Length != 32) // 256-bit key
                 {
                     throw new ArgumentException("Encryption key must be 256 bits (32 bytes)");
                 }
                 _logger.LogInformation("Using provided encryption key");
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogError(ex, "Invalid encryption key provided, generating new key");
                 _encryptionKey = GenerateKey();
@@ -69,8 +68,8 @@ public class EncryptionService : IEncryptionService, IDisposable
     public string Encrypt(string plainText)
     {
         ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(plainText))
+
+        if(string.IsNullOrEmpty(plainText))
             return string.Empty;
 
         try
@@ -83,12 +82,12 @@ public class EncryptionService : IEncryptionService, IDisposable
 
             using ICryptoTransform encryptor = aes.CreateEncryptor();
             using MemoryStream memoryStream = new MemoryStream();
-            
+
             // Write IV to the beginning of the stream
             memoryStream.Write(aes.IV, 0, aes.IV.Length);
-            
-            using (CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
-            using (StreamWriter writer = new StreamWriter(cryptoStream))
+
+            using(CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+            using(StreamWriter writer = new StreamWriter(cryptoStream))
             {
                 writer.Write(plainText);
             }
@@ -96,7 +95,7 @@ public class EncryptionService : IEncryptionService, IDisposable
             byte[] encrypted = memoryStream.ToArray();
             return Convert.ToBase64String(encrypted);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Error encrypting data");
             throw new InvalidOperationException("Failed to encrypt data", ex);
@@ -106,14 +105,14 @@ public class EncryptionService : IEncryptionService, IDisposable
     public string Decrypt(string encryptedData)
     {
         ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(encryptedData))
+
+        if(string.IsNullOrEmpty(encryptedData))
             return string.Empty;
 
         try
         {
             byte[] encrypted = Convert.FromBase64String(encryptedData);
-            
+
             using Aes aes = Aes.Create();
             aes.Key = _encryptionKey;
             aes.Mode = CipherMode.CBC;
@@ -128,10 +127,10 @@ public class EncryptionService : IEncryptionService, IDisposable
             using MemoryStream memoryStream = new MemoryStream(encrypted, iv.Length, encrypted.Length - iv.Length);
             using CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read);
             using StreamReader reader = new StreamReader(cryptoStream);
-            
+
             return reader.ReadToEnd();
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Error decrypting data");
             throw new InvalidOperationException("Failed to decrypt data", ex);
@@ -141,8 +140,8 @@ public class EncryptionService : IEncryptionService, IDisposable
     public string CreateHash(string input)
     {
         ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(input))
+
+        if(string.IsNullOrEmpty(input))
             return string.Empty;
 
         try
@@ -151,7 +150,7 @@ public class EncryptionService : IEncryptionService, IDisposable
             byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
             return Convert.ToBase64String(hashBytes);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Error creating hash");
             throw new InvalidOperationException("Failed to create hash", ex);
@@ -161,8 +160,8 @@ public class EncryptionService : IEncryptionService, IDisposable
     public bool VerifyHash(string input, string hash)
     {
         ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(input) || string.IsNullOrEmpty(hash))
+
+        if(string.IsNullOrEmpty(input) || string.IsNullOrEmpty(hash))
             return false;
 
         try
@@ -170,7 +169,7 @@ public class EncryptionService : IEncryptionService, IDisposable
             string inputHash = CreateHash(input);
             return string.Equals(inputHash, hash, StringComparison.Ordinal);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Error verifying hash");
             return false;
@@ -180,11 +179,11 @@ public class EncryptionService : IEncryptionService, IDisposable
     public string MaskPersonalAccessToken(string pat)
     {
         ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(pat))
+
+        if(string.IsNullOrEmpty(pat))
             return "[EMPTY]";
 
-        if (pat.Length < 8)
+        if(pat.Length < 8)
             return "[INVALID]";
 
         // Show first 4 and last 4 characters, mask the rest
@@ -205,7 +204,7 @@ public class EncryptionService : IEncryptionService, IDisposable
     /// </summary>
     private void ThrowIfDisposed()
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(EncryptionService));
         }
@@ -217,16 +216,16 @@ public class EncryptionService : IEncryptionService, IDisposable
     /// <param name="disposing">True if disposing managed resources; false if called from finalizer</param>
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if(!_disposed)
         {
-            if (disposing)
+            if(disposing)
             {
                 // Dispose managed resources here if any
                 // None in this case as all cryptographic objects are used with 'using' statements
             }
 
             // Clear sensitive data from memory (unmanaged-like cleanup)
-            if (_encryptionKey != null)
+            if(_encryptionKey != null)
             {
                 Array.Clear(_encryptionKey, 0, _encryptionKey.Length);
             }
