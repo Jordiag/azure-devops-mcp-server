@@ -138,11 +138,7 @@ jobs:
             /d:sonar.dotnet.excludeTestProjects=true
       
       - name: Build with Dotnet
-        run: dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" --no-restore \
-          /p:Version='${{ steps.ver.outputs.base }}' \
-          /p:AssemblyVersion='${{ steps.ver.outputs.full }}' \
-          /p:FileVersion='${{ steps.ver.outputs.full }}' \
-          /p:InformationalVersion='${{ steps.ver.outputs.Informational }}' \
+        run: dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" --no-restore /p:Version='${{ steps.ver.outputs.base }}' /p:AssemblyVersion='${{ steps.ver.outputs.full }}' /p:FileVersion='${{ steps.ver.outputs.full }}' /p:InformationalVersion='${{ steps.ver.outputs.Informational }}'
 
       - name: Run Tests with Coverage
         run: |
