@@ -57,28 +57,17 @@ jobs:
         with:
           fetch-depth: 0  # Required for SonarCloud analysis
 
-      - name: Determine version from latest tag + run number
+      - name: Determine version (reachable from HEAD)
         id: ver
         shell: bash
         run: |
-          # get latest tag (e.g., v0.2.0 or 0.2.0)
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-
-          # strip leading 'v' if present
           TAG=${TAG#v}
-
-          # basic validation: keep only MAJOR.MINOR.PATCH digits
-          if [[ ! $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag '$TAG' isn't plain MAJOR.MINOR.PATCH. Falling back to 0.0.0."
-            TAG="0.0.0"
-          fi
-
+          [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || TAG="0.0.0"
           BUILD=${GITHUB_RUN_NUMBER}
-          FOUR_PART="$TAG.$BUILD"
-
           echo "base=$TAG" >> $GITHUB_OUTPUT
-          echo "full=$FOUR_PART" >> $GITHUB_OUTPUT
-          echo "Informational=$FOUR_PART+${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "full=$TAG.$BUILD" >> $GITHUB_OUTPUT
+          echo "Informational=$TAG.$BUILD+${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
