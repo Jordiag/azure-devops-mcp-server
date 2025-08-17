@@ -56,6 +56,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for SonarCloud analysis
+          fetch-tags: true
+
+      - name: Ensure tags
+        shell: bash
+        run: git fetch --force --tags --prune
 
       - name: Determine version (reachable from HEAD)
         id: ver
