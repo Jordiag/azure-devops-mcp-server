@@ -8,11 +8,9 @@ public sealed record McpServerSettings
 
     public bool EnableOpenTelemetry { get; init; } = true;
 
-    public bool EnableApplicationInsights { get; init; }
-        = false;
-
-    public string? ApplicationInsightsConnectionString { get; init; }
-        = null;
+    public bool EnableApplicationInsights { get; init; } = false;
 
     public int Port { get; init; } = 5050;
+
+    public string? Environment { get; init; } = null;
 }

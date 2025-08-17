@@ -1,9 +1,7 @@
-﻿using Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
+﻿using Dotnet.AzureDevOps.Core.Common.Exceptions;
+using Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
 using Dotnet.AzureDevOps.Mcp.Server.Tools;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
@@ -51,9 +49,15 @@ internal static class HostingExtensionsMcpServer
     {
         string? orgUrl = configuration["AZURE_DEVOPS_ORGANIZATION_URL"];
         if(string.IsNullOrWhiteSpace(orgUrl))
-            throw new InvalidOperationException("AZURE_DEVOPS_ORGANIZATION_URL environment variable is required and cannot be null or empty.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_ORGANIZATION_URL environment variable is required and cannot be null or empty.",
+                "Configuration",
+                "StartupValidation");
         if(!Uri.TryCreate(orgUrl, UriKind.Absolute, out Uri? orgUri) || orgUri.Scheme != "https")
-            throw new InvalidOperationException("AZURE_DEVOPS_ORGANIZATION_URL must be a valid HTTPS URL.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_ORGANIZATION_URL must be a valid HTTPS URL.",
+                "Configuration", 
+                "StartupValidation");
         options.OrganizationUrl = orgUrl;
     }
 
@@ -61,9 +65,15 @@ internal static class HostingExtensionsMcpServer
     {
         string? searchOrgUrl = configuration["AZURE_DEVOPS_SEARCH_ORGANIZATION_URL"];
         if(string.IsNullOrWhiteSpace(searchOrgUrl))
-            throw new InvalidOperationException("AZURE_DEVOPS_SEARCH_ORGANIZATION_URL environment variable is required and cannot be null or empty.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL environment variable is required and cannot be null or empty.",
+                "Configuration",
+                "StartupValidation");
         if(!Uri.TryCreate(searchOrgUrl, UriKind.Absolute, out Uri? searchUri) || searchUri.Scheme != "https")
-            throw new InvalidOperationException("AZURE_DEVOPS_SEARCH_ORGANIZATION_URL must be a valid HTTPS URL.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL must be a valid HTTPS URL.",
+                "Configuration",
+                "StartupValidation");
         options.SearchOrganizationUrl = searchOrgUrl;
     }
 
@@ -71,7 +81,10 @@ internal static class HostingExtensionsMcpServer
     {
         string? projectName = configuration["AZURE_DEVOPS_PROJECT_NAME"];
         if(string.IsNullOrWhiteSpace(projectName))
-            throw new InvalidOperationException("AZURE_DEVOPS_PROJECT_NAME environment variable is required and cannot be null or empty.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_PROJECT_NAME environment variable is required and cannot be null or empty.",
+                "Configuration",
+                "StartupValidation");
         options.ProjectName = projectName;
     }
 
@@ -79,9 +92,15 @@ internal static class HostingExtensionsMcpServer
     {
         string? pat = configuration["AZURE_DEVOPS_PAT"];
         if(string.IsNullOrWhiteSpace(pat))
-            throw new InvalidOperationException("AZURE_DEVOPS_PAT environment variable is required and cannot be null or empty.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_PAT environment variable is required and cannot be null or empty.",
+                "Configuration",
+                "StartupValidation");
         if(pat.Length < 20) // Basic validation for PAT format
-            throw new InvalidOperationException("AZURE_DEVOPS_PAT appears to be too short to be a valid Personal Access Token.");
+            throw new AzureDevOpsConfigurationException(
+                "AZURE_DEVOPS_PAT appears to be too short to be a valid Personal Access Token.",
+                "Configuration",
+                "StartupValidation");
         options.PersonalAccessToken = pat;
     }
 

@@ -2,21 +2,28 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Exceptions;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Dotnet.AzureDevOps.Core.Search.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.Search;
 
-public class SearchClient : ISearchClient
+public class SearchClient : AzureDevOpsClientBase, ISearchClient
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger _logger;
 
-    public SearchClient(HttpClient httpClient, ILogger<SearchClient>? logger = null)
+    public SearchClient(HttpClient httpClient, ILogger<SearchClient>? logger = null, IRetryService? retryService = null, IExceptionHandlingService? exceptionHandlingService = null)
+        : base("https://dev.azure.com/placeholder", "placeholder-token", "placeholder-project", logger, retryService, exceptionHandlingService)
     {
         _httpClient = httpClient;
-        _logger = (ILogger?)logger ?? NullLogger.Instance;
+    }
+
+    public SearchClient(string organizationUrl, string personalAccessToken, HttpClient httpClient, ILogger<SearchClient>? logger = null, IRetryService? retryService = null, IExceptionHandlingService? exceptionHandlingService = null)
+        : base(organizationUrl, personalAccessToken, "placeholder-project", logger, retryService, exceptionHandlingService)
+    {
+        _httpClient = httpClient;
     }
 
     /// <summary>
@@ -39,7 +46,7 @@ public class SearchClient : ISearchClient
     {
         string? projectName = options.Project?[0];
         return projectName == null
-            ? Task.FromResult(AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", _logger))
+            ? Task.FromResult(AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", Logger))
             : SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
     }
 
@@ -96,36 +103,44 @@ public class SearchClient : ISearchClient
     {
         try
         {
-            string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
-
-            using HttpResponseMessage response = await _httpClient.GetAsync(url, cancellationToken);
-
-            if(response.StatusCode == HttpStatusCode.NotFound)
+            bool enabled = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                return AzureDevOpsActionResult<bool>.Success(false, _logger);
-            }
+                string url = "_apis/extensionmanagement/installedextensionsbyname/ms/vss-code-search?api-version=7.1";
 
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
+                using HttpResponseMessage response = await _httpClient.GetAsync(url, cancellationToken);
 
-            string content = await response.Content.ReadAsStringAsync(cancellationToken);
-            JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return false;
+                }
 
-            if(extension.TryGetProperty("installState", out JsonElement installState))
-            {
-                bool enabled = installState.TryGetProperty("flags", out JsonElement flags) &&
-                               flags.GetString()?.Contains("trusted") == true;
-                return AzureDevOpsActionResult<bool>.Success(enabled, _logger);
-            }
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    throw new AzureDevOpsApiException(
+                        $"Failed to check code search extension status: {response.StatusCode} - {response.ReasonPhrase}",
+                        (int)response.StatusCode,
+                        error,
+                        "IsCodeSearchEnabled");
+                }
 
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                string content = await response.Content.ReadAsStringAsync(cancellationToken);
+                JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
+
+                if (extension.TryGetProperty("installState", out JsonElement installState))
+                {
+                    return installState.TryGetProperty("flags", out JsonElement flags) &&
+                           flags.GetString()?.Contains("trusted") == true;
+                }
+
+                return true;
+            }, "IsCodeSearchEnabled", OperationType.Read);
+
+            return AzureDevOpsActionResult<bool>.Success(enabled, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -141,20 +156,56 @@ public class SearchClient : ISearchClient
     private async Task<AzureDevOpsActionResult<string>> SendSearchRequestAsync(string resource, object payload, CancellationToken cancellationToken)
     {
         string url = $"{resource}?api-version={GlobalConstants.ApiVersion}";
+        string correlationId = Guid.NewGuid().ToString("N")[..8];
+        
         try
         {
-            using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            Logger.LogDebug("Starting search request to {Resource}. CorrelationId: {CorrelationId}", resource, correlationId);
+
+            string content = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<string>.Failure(response.StatusCode, error, _logger);
-            }
-            string content = await response.Content.ReadAsStringAsync(cancellationToken);
-            return AzureDevOpsActionResult<string>.Success(content, _logger);
+                using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            $"Authentication failed for search request to {resource}",
+                            $"Search-{resource}",
+                            correlationId),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            $"Access denied for search request to {resource}",
+                            $"Search-{resource}",
+                            correlationId),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Search endpoint not found: {resource}",
+                            "SearchEndpoint",
+                            resource,
+                            $"Search-{resource}",
+                            correlationId),
+                        _ => new AzureDevOpsApiException(
+                            $"Search request failed for {resource}: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            $"Search-{resource}",
+                            correlationId)
+                    };
+
+                    throw exception;
+                }
+                
+                return await response.Content.ReadAsStringAsync(cancellationToken);
+            }, $"Search-{resource}", OperationType.Read, correlationId);
+            
+            Logger.LogDebug("Search request completed successfully for {Resource}. CorrelationId: {CorrelationId}", resource, correlationId);
+            return AzureDevOpsActionResult<string>.Success(content, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<string>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }
     }
 

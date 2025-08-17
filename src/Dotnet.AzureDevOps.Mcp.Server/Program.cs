@@ -1,67 +1,60 @@
-﻿using Dotnet.AzureDevOps.Mcp.Server;
+﻿using Azure.Monitor.OpenTelemetry.Exporter;
+using Dotnet.AzureDevOps.Mcp.Server;
 using Dotnet.AzureDevOps.Mcp.Server.McpServer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+namespace Dotnet.AzureDevOps.Mcp.Server;
 
-builder.ConfigureSettings();
-builder.ConfigureLogging();
-
-ValidateEnvironmentVariables(builder);
-
-builder.ConfigureMcpServer();
-builder.Services.AddMcpHealthChecks();
-
-WebApplication app = builder.Build();
-
-app.MapMcp("/mcp");
-app.MapMcpHealthEndpoint();
-
-await app.RunAsync();
-
-public partial class Program 
+public static class Program
 {
-    protected Program() { }
-
-    private static void ValidateEnvironmentVariables(WebApplicationBuilder builder)
+    public static async Task Main(string[] args)
     {
-        ILogger<Program> logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
-        
-        logger.LogInformation("Validating environment variables...");
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-        string? organizationUrl = builder.Configuration["AZURE_DEVOPS_ORGANIZATION_URL"];
-        if (string.IsNullOrWhiteSpace(organizationUrl))
+        builder.ConfigureSettings();
+        builder.ConfigureLogging();
+
+        McpServerSettings mcpSettings = builder.Configuration.GetSection("McpServer").Get<McpServerSettings>() ?? new();
+
+        // Add Application Insights if enabled
+        if (mcpSettings.EnableApplicationInsights)
         {
-            logger.LogCritical("AZURE_DEVOPS_ORGANIZATION_URL environment variable is required and cannot be null or empty.");
-            Environment.Exit(1);
+            builder.Services.AddApplicationInsightsTelemetry();
         }
 
-        string? projectName = builder.Configuration["AZURE_DEVOPS_PROJECT_NAME"];
-        if (string.IsNullOrWhiteSpace(projectName))
+        if (mcpSettings.EnableOpenTelemetry)
         {
-            logger.LogCritical("AZURE_DEVOPS_PROJECT_NAME environment variable is required and cannot be null or empty.");
-            Environment.Exit(1);
+            IOpenTelemetryBuilder openTelemetryBuilder = builder.Services.AddOpenTelemetry()
+                .ConfigureResource(r => r.AddService(serviceName: "azure-devops-mcp-server"))
+                .WithTracing(t => t
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddSource("Azure.*"))
+                .WithMetrics(m => m
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation());
+
+            // Add Azure Monitor exporters if Application Insights is enabled
+            if (mcpSettings.EnableApplicationInsights)
+            {
+                openTelemetryBuilder
+                    .WithTracing(t => t.AddAzureMonitorTraceExporter())
+                    .WithMetrics(m => m.AddAzureMonitorMetricExporter());
+            }
         }
 
-        string? pat = builder.Configuration["AZURE_DEVOPS_PAT"];
-        if (string.IsNullOrWhiteSpace(pat))
-        {
-            logger.LogCritical("AZURE_DEVOPS_PAT environment variable is required and cannot be null or empty.");
-            Environment.Exit(1);
-        }
+        builder.ConfigureMcpServer();
+        builder.Services.AddMcpHealthChecks();
 
-        if (pat.Length < 20)
-        {
-            logger.LogCritical("AZURE_DEVOPS_PAT appears to be too short to be a valid Personal Access Token.");
-            Environment.Exit(1);
-        }
+        WebApplication app = builder.Build();
 
-        if (!Uri.TryCreate(organizationUrl, UriKind.Absolute, out _))
-        {
-            logger.LogCritical("AZURE_DEVOPS_ORGANIZATION_URL must be a valid URL format.");
-            Environment.Exit(1);
-        }
+        app.MapMcp("/mcp");
+        app.MapMcpHealthEndpoint();
+
+        await app.RunAsync();
     }
-};
+}
