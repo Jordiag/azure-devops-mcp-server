@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Exceptions;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Operations;
@@ -47,28 +48,31 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="InvalidOperationException">Thrown when team creation fails due to project constraints or naming conflicts.</exception>
         public async Task<AzureDevOpsActionResult<bool>> CreateTeamIfDoesNotExistAsync(string teamName, string teamDescription, CancellationToken cancellationToken = default)
         {
-            AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName, cancellationToken);
-
-            if(teamNameResult.IsSuccessful)
-            {
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
-            }
-
-            var newTeam = new WebApiTeam
-            {
-                Name = teamName,
-                Description = teamDescription
-            };
-
             try
             {
-                WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, ProjectName, cancellationToken: cancellationToken);
-                bool success = createdTeam.Description == teamDescription && createdTeam.Name == teamName;
-                return success
-                    ? AzureDevOpsActionResult<bool>.Success(true, Logger)
-                    : AzureDevOpsActionResult<bool>.Failure("Created team does not match the expected values.", Logger);
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName, cancellationToken);
+
+                    if (teamNameResult.IsSuccessful)
+                    {
+                        return true;
+                    }
+
+                    var newTeam = new WebApiTeam
+                    {
+                        Name = teamName,
+                        Description = teamDescription
+                    };
+
+                    WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, ProjectName, cancellationToken: cancellationToken);
+                    return createdTeam.Description == teamDescription && createdTeam.Name == teamName;
+
+                }, "CreateTeamIfDoesNotExist");
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -93,10 +97,15 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                WebApiTeam team = await _teamClient.GetTeamAsync(ProjectName, teamName, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Guid>.Success(team.Id, Logger);
+                Guid teamId = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    WebApiTeam team = await _teamClient.GetTeamAsync(ProjectName, teamName, cancellationToken: cancellationToken);
+                    return team.Id;
+                }, "GetTeamId");
+
+                return AzureDevOpsActionResult<Guid>.Success(teamId, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -119,10 +128,14 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                List<WebApiTeam> teams = await _teamClient.GetAllTeamsAsync(cancellationToken: cancellationToken);
+                List<WebApiTeam> teams = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _teamClient.GetAllTeamsAsync(cancellationToken: cancellationToken);
+                }, "GetAllTeams");
+
                 return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<List<WebApiTeam>>.Failure(ex, Logger);
             }
@@ -148,21 +161,25 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                WebApiTeam team = await _teamClient.GetTeamAsync(ProjectName, teamName, cancellationToken: cancellationToken);
-
-                var updatedTeam = new WebApiTeam
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Description = newDescription
-                };
+                    WebApiTeam team = await _teamClient.GetTeamAsync(ProjectName, teamName, cancellationToken: cancellationToken);
 
-                WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, ProjectName, team.Id.ToString(), cancellationToken: cancellationToken);
+                    var updatedTeam = new WebApiTeam
+                    {
+                        Description = newDescription
+                    };
 
-                bool success = webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
-                return success
+                    WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, ProjectName, team.Id.ToString(), cancellationToken: cancellationToken);
+                    return webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
+
+                }, "UpdateTeamDescription");
+
+                return result
                     ? AzureDevOpsActionResult<bool>.Success(true, Logger)
                     : AzureDevOpsActionResult<bool>.Failure("Updated team values do not match expected.", Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -187,19 +204,28 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                string url = $"{OrganizationUrl}/_apis/projects/{ProjectName}/teams/{teamGuid}?api-version={GlobalConstants.ApiVersion}";
-
-                using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
-
-                if(!response.IsSuccessStatusCode)
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, Logger);
-                }
+                    string url = $"{OrganizationUrl}/_apis/projects/{ProjectName}/teams/{teamGuid}?api-version={GlobalConstants.ApiVersion}";
 
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                    using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                        throw new AzureDevOpsApiException(
+                            $"Failed to delete team: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "DeleteTeam");
+                    }
+
+                    return true;
+                }, "DeleteTeam");
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -224,36 +250,45 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="InvalidOperationException">Thrown when the base process doesn't exist or process name conflicts.</exception>
         public async Task<AzureDevOpsActionResult<bool>> CreateInheritedProcessAsync(string newProcessName, string description, string baseProcessName, CancellationToken cancellationToken = default)
         {
-            string parentProcessId = baseProcessName.ToLower() switch
-            {
-                "agile" => "adcc42ab-9882-485e-a3ed-7678f01f66bc",
-                "scrum" => "6b724908-ef14-45cf-84f8-768b5384da45",
-                "cmmi" => "27450541-8e31-4150-9947-dc59f998fc01",
-                _ => throw new ArgumentException("Unsupported base process name")
-            };
-
-            string url = $"{OrganizationUrl}_apis/projects?api-version={GlobalConstants.ApiVersion}";
-
-            object payload = new
-            {
-                name = newProcessName,
-                description = description,
-                parentProcessTypeId = parentProcessId
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
             try
             {
-                using HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
-                if(!response.IsSuccessStatusCode)
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, Logger);
-                }
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                    string parentProcessId = baseProcessName.ToLower() switch
+                    {
+                        "agile" => "adcc42ab-9882-485e-a3ed-7678f01f66bc",
+                        "scrum" => "6b724908-ef14-45cf-84f8-768b5384da45",
+                        "cmmi" => "27450541-8e31-4150-9947-dc59f998fc01",
+                        _ => throw new ArgumentException("Unsupported base process name")
+                    };
+
+                    string url = $"{OrganizationUrl}_apis/projects?api-version={GlobalConstants.ApiVersion}";
+
+                    object payload = new
+                    {
+                        name = newProcessName,
+                        description = description,
+                        parentProcessTypeId = parentProcessId
+                    };
+
+                    var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                    using HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                        throw new AzureDevOpsApiException(
+                            $"Failed to create inherited process: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "CreateInheritedProcess");
+                    }
+                    return true;
+                }, "CreateInheritedProcess");
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -276,20 +311,29 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="InvalidOperationException">Thrown when the process doesn't exist or is in use by projects.</exception>
         public async Task<AzureDevOpsActionResult<bool>> DeleteInheritedProcessAsync(string processId, CancellationToken cancellationToken = default)
         {
-            string url = $"{OrganizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
-
             try
             {
-                using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
-                if(!response.IsSuccessStatusCode)
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, Logger);
-                }
+                    string url = $"{OrganizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
 
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                    using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                        throw new AzureDevOpsApiException(
+                            $"Failed to delete inherited process: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "DeleteInheritedProcess");
+                    }
+
+                    return true;
+                }, "DeleteInheritedProcess");
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -312,28 +356,37 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="InvalidOperationException">Thrown when the process doesn't exist in the organization.</exception>
         public async Task<AzureDevOpsActionResult<string>> GetProcessIdAsync(string processName, CancellationToken cancellationToken = default)
         {
-            string url = $"{OrganizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
-
             try
             {
-                JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url, cancellationToken);
-
-                foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
+                string processId = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    string? name = element.GetProperty("name").GetString();
-                    if(string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
+                    string url = $"{OrganizationUrl}/_apis/work/processes?api-version={GlobalConstants.ApiVersion}";
+
+                    JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url, cancellationToken);
+
+                    foreach (JsonElement element in response.GetProperty("value").EnumerateArray())
                     {
-                        string? typeId = element.GetProperty("typeId").GetString();
-                        if(!string.IsNullOrEmpty(typeId))
+                        string? name = element.GetProperty("name").GetString();
+                        if (string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
                         {
-                            return AzureDevOpsActionResult<string>.Success(typeId, Logger);
+                            string? typeId = element.GetProperty("typeId").GetString();
+                            if (!string.IsNullOrEmpty(typeId))
+                            {
+                                return typeId;
+                            }
                         }
                     }
-                }
 
-                return AzureDevOpsActionResult<string>.Failure("ProcessId couldn't be found listing and inspecting all processes", Logger);
+                    throw new AzureDevOpsResourceNotFoundException(
+                        $"Process with name '{processName}' not found", 
+                        "Process", 
+                        processName, 
+                        "GetProcessId");
+                }, "GetProcessId");
+
+                return AzureDevOpsActionResult<string>.Success(processId, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<string>.Failure(ex, Logger);
             }
@@ -358,34 +411,47 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         /// <exception cref="InvalidOperationException">Thrown when project name conflicts or process ID is invalid.</exception>
         public async Task<AzureDevOpsActionResult<Guid>> CreateProjectAsync(string projectName, string description, string processId, CancellationToken cancellationToken = default)
         {
-            var teamProject = new TeamProject
-            {
-                Name = projectName,
-                Description = description,
-                Capabilities = new Dictionary<string, Dictionary<string, string>>
-                {
-                    ["versioncontrol"] = new Dictionary<string, string> { ["sourceControlType"] = "Git" },
-                    ["processTemplate"] = new Dictionary<string, string> { ["templateTypeId"] = processId }
-                }
-            };
-
             try
             {
-                OperationReference operationReference = await _projectClient.QueueCreateProject(teamProject, userState: null);
-
-                Operation operation = await WaitForOperationAsync(operationReference.Id);
-                if(operation.Status != OperationStatus.Succeeded)
+                Guid projectId = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    return AzureDevOpsActionResult<Guid>.Failure($"Project creation did not succeed: {operation.Status}", Logger);
-                }
+                    var teamProject = new TeamProject
+                    {
+                        Name = projectName,
+                        Description = description,
+                        Capabilities = new Dictionary<string, Dictionary<string, string>>
+                        {
+                            ["versioncontrol"] = new Dictionary<string, string> { ["sourceControlType"] = "Git" },
+                            ["processTemplate"] = new Dictionary<string, string> { ["templateTypeId"] = processId }
+                        }
+                    };
 
-                TeamProject? createdProject = await _projectClient.GetProject(projectName);
-                if(createdProject == null)
-                    return AzureDevOpsActionResult<Guid>.Failure("Project not found after creation.", Logger);
+                    OperationReference operationReference = await _projectClient.QueueCreateProject(teamProject, userState: null);
 
-                return AzureDevOpsActionResult<Guid>.Success(createdProject.Id, Logger);
+                    Operation operation = await WaitForOperationAsync(operationReference.Id);
+                    if (operation.Status != OperationStatus.Succeeded)
+                    {
+                        throw new AzureDevOpsException(
+                            $"Project creation did not succeed: {operation.Status}",
+                            "CreateProject");
+                    }
+
+                    TeamProject? createdProject = await _projectClient.GetProject(projectName);
+                    if (createdProject == null)
+                    {
+                        throw new AzureDevOpsResourceNotFoundException(
+                            "Project not found after creation",
+                            "Project",
+                            projectName,
+                            "CreateProject");
+                    }
+
+                    return createdProject.Id;
+                }, "CreateProject");
+
+                return AzureDevOpsActionResult<Guid>.Success(projectId, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -410,14 +476,14 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                TeamProject project = await _projectClient.GetProject(projectName);
+                TeamProject project = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _projectClient.GetProject(projectName);
+                }, "GetProject");
+
                 return AzureDevOpsActionResult<TeamProject>.Success(project, Logger);
             }
-            catch(ProjectDoesNotExistWithNameException ex)
-            {
-                return AzureDevOpsActionResult<TeamProject>.Failure(ex, Logger);
-            }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<TeamProject>.Failure(ex, Logger);
             }
@@ -442,14 +508,24 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
         {
             try
             {
-                OperationReference operationReference = await _projectClient.QueueDeleteProject(projectId, userState: null);
-                Operation operation = await WaitForOperationAsync(operationReference.Id);
-                bool success = operation.Status == OperationStatus.Succeeded;
-                return success
-                    ? AzureDevOpsActionResult<bool>.Success(true, Logger)
-                    : AzureDevOpsActionResult<bool>.Failure($"Project deletion did not succeed: {operation.Status}", Logger);
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    OperationReference operationReference = await _projectClient.QueueDeleteProject(projectId, userState: null);
+                    Operation operation = await WaitForOperationAsync(operationReference.Id);
+                    
+                    if (operation.Status != OperationStatus.Succeeded)
+                    {
+                        throw new AzureDevOpsException(
+                            $"Project deletion did not succeed: {operation.Status}",
+                            "DeleteProject");
+                    }
+
+                    return true;
+                }, "DeleteProject");
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -457,15 +533,18 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
         private async Task<Operation> WaitForOperationAsync(Guid operationId)
         {
-            Operation operation;
-            do
+            return await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                await Task.Delay(TimeSpan.FromSeconds(5));
-                operation = await _operationsClient.GetOperation(operationId, userState: null);
-            }
-            while(operation.Status == OperationStatus.InProgress || operation.Status == OperationStatus.Queued);
+                Operation operation;
+                do
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    operation = await _operationsClient.GetOperation(operationId, userState: null);
+                }
+                while (operation.Status == OperationStatus.InProgress || operation.Status == OperationStatus.Queued);
 
-            return operation;
+                return operation;
+            }, "WaitForOperation");
         }
     }
 }

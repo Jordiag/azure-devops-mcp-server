@@ -5,19 +5,36 @@ using System.Text.Json.Serialization;
 using Dotnet.AzureDevOps.Core.Artifacts.Models;
 using Dotnet.AzureDevOps.Core.Artifacts.Options;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Exceptions;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.Artifacts;
 
-public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<ArtifactsClient>? logger = null) : IArtifactsClient
+public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 {
     private const string ApiVersion = GlobalConstants.ApiVersion;
 
-    private readonly string _projectName = projectName.TrimEnd('/');
-    private readonly HttpClient _httpClient = httpClient;
-    private readonly string _organizationUrl = httpClient.BaseAddress?.ToString()?.Replace("https://dev.azure.com", "https://feeds.dev.azure.com") ?? "";
-    private readonly ILogger _logger = (ILogger?)logger ?? NullLogger.Instance;
+    private readonly string _projectName;
+    private readonly HttpClient _httpClient;
+    private readonly string _organizationUrl;
+
+    public ArtifactsClient(HttpClient httpClient, string projectName, ILogger<ArtifactsClient>? logger = null, IRetryService? retryService = null, IExceptionHandlingService? exceptionHandlingService = null)
+        : base(httpClient.BaseAddress?.ToString()?.Replace("https://feeds.dev.azure.com", "https://dev.azure.com") ?? "", "placeholder-token", projectName, logger, retryService, exceptionHandlingService)
+    {
+        _projectName = projectName.TrimEnd('/');
+        _httpClient = httpClient;
+        _organizationUrl = httpClient.BaseAddress?.ToString()?.Replace("https://dev.azure.com", "https://feeds.dev.azure.com") ?? "";
+    }
+
+    public ArtifactsClient(string organizationUrl, string personalAccessToken, string projectName, HttpClient httpClient, ILogger<ArtifactsClient>? logger = null, IRetryService? retryService = null, IExceptionHandlingService? exceptionHandlingService = null)
+        : base(organizationUrl, personalAccessToken, projectName, logger, retryService, exceptionHandlingService)
+    {
+        _projectName = projectName.TrimEnd('/');
+        _httpClient = httpClient;
+        _organizationUrl = httpClient.BaseAddress?.ToString()?.Replace("https://dev.azure.com", "https://feeds.dev.azure.com") ?? "";
+    }
 
     /// <summary>
     /// Creates a new package feed within the Azure DevOps project.
@@ -36,20 +53,52 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            string feedsUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}";
-            object payload = new { name = feedCreateOptions.Name, description = feedCreateOptions.Description };
-            using HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, feedsUrl, payload, cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            Guid feedId = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<Guid>.Failure(response.StatusCode, error, _logger);
-            }
-            Feed? feed = await response.Content.ReadFromJsonAsync<Feed>(cancellationToken);
-            return AzureDevOpsActionResult<Guid>.Success(feed!.Id, _logger);
+                string feedsUrl = $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}";
+                object payload = new { name = feedCreateOptions.Name, description = feedCreateOptions.Description };
+                using HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, feedsUrl, payload, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while creating feed",
+                            "CreateFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while creating feed",
+                            "CreateFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Conflict => new AzureDevOpsApiException(
+                            $"Feed with name '{feedCreateOptions.Name}' already exists",
+                            (int)response.StatusCode,
+                            error,
+                            "CreateFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to create feed: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "CreateFeed",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                Feed? feed = await response.Content.ReadFromJsonAsync<Feed>(cancellationToken);
+                return feed!.Id;
+            }, "CreateFeed", OperationType.Create);
+
+            return AzureDevOpsActionResult<Guid>.Success(feedId, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<Guid>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
         }
     }
 
@@ -71,35 +120,67 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            Dictionary<string, string?> fields = [];
-            if(feedUpdateOptions.Name is { Length: > 0 })
+            bool result = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                fields["name"] = feedUpdateOptions.Name;
-            }
-            if(feedUpdateOptions.Description is { Length: > 0 })
-            {
-                fields["description"] = feedUpdateOptions.Description;
-            }
-            if(fields.Count == 0)
-            {
-                return AzureDevOpsActionResult<bool>.Success(true, _logger);
-            }
+                Dictionary<string, string?> fields = [];
+                if (feedUpdateOptions.Name is { Length: > 0 })
+                {
+                    fields["name"] = feedUpdateOptions.Name;
+                }
+                if (feedUpdateOptions.Description is { Length: > 0 })
+                {
+                    fields["description"] = feedUpdateOptions.Description;
+                }
+                if (fields.Count == 0)
+                {
+                    return true;
+                }
 
-            using var requestMessage = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}")
-            {
-                Content = JsonContent.Create(fields)
-            };
-            using HttpResponseMessage response = await _httpClient.SendAsync(requestMessage, cancellationToken);
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                using var requestMessage = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}")
+                {
+                    Content = JsonContent.Create(fields)
+                };
+                using HttpResponseMessage response = await _httpClient.SendAsync(requestMessage, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while updating feed",
+                            "UpdateFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while updating feed",
+                            "UpdateFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "UpdateFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to update feed: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "UpdateFeed",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                return true;
+            }, "UpdateFeed", OperationType.Update);
+
+            return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -120,18 +201,50 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            Feed feed = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<Feed>.Failure(response.StatusCode, error, _logger);
-            }
-            Feed? feed = await response.Content.ReadFromJsonAsync<Feed>(cancellationToken);
-            return AzureDevOpsActionResult<Feed>.Success(feed!, _logger);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while retrieving feed",
+                            "GetFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while retrieving feed",
+                            "GetFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "GetFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to retrieve feed: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "GetFeed",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                Feed? feed = await response.Content.ReadFromJsonAsync<Feed>(cancellationToken);
+                return feed!;
+            }, "GetFeed", OperationType.Read);
+
+            return AzureDevOpsActionResult<Feed>.Success(feed, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<Feed>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<Feed>.Failure(ex, Logger);
         }
     }
 
@@ -150,19 +263,44 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            IReadOnlyList<Feed> feeds = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<Feed>>.Failure(response.StatusCode, error, _logger);
-            }
-            FeedList? list = await response.Content.ReadFromJsonAsync<FeedList>(cancellationToken);
-            IReadOnlyList<Feed> feeds = list?.Value?.ToArray() ?? Array.Empty<Feed>();
-            return AzureDevOpsActionResult<IReadOnlyList<Feed>>.Success(feeds, _logger);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while listing feeds",
+                            "ListFeeds",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while listing feeds",
+                            "ListFeeds",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to list feeds: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "ListFeeds",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                FeedList? list = await response.Content.ReadFromJsonAsync<FeedList>(cancellationToken);
+                return list?.Value?.ToArray() ?? Array.Empty<Feed>();
+            }, "ListFeeds", OperationType.Read);
+
+            return AzureDevOpsActionResult<IReadOnlyList<Feed>>.Success(feeds, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<Feed>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<Feed>>.Failure(ex, Logger);
         }
     }
 
@@ -184,17 +322,49 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            bool result = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while deleting feed",
+                            "DeleteFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while deleting feed",
+                            "DeleteFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "DeleteFeed",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to delete feed: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "DeleteFeed",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                return true;
+            }, "DeleteFeed", OperationType.Delete);
+
+            return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -216,19 +386,50 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            IReadOnlyList<Package> packages = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<Package>>.Failure(response.StatusCode, error, _logger);
-            }
-            PackageList? list = await response.Content.ReadFromJsonAsync<PackageList>(cancellationToken);
-            IReadOnlyList<Package> packages = list?.Value?.ToArray() ?? Array.Empty<Package>();
-            return AzureDevOpsActionResult<IReadOnlyList<Package>>.Success(packages, _logger);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while listing packages",
+                            "ListPackages",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while listing packages",
+                            "ListPackages",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "ListPackages",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to list packages: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "ListPackages",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                PackageList? list = await response.Content.ReadFromJsonAsync<PackageList>(cancellationToken);
+                return list?.Value?.ToArray() ?? Array.Empty<Package>();
+            }, "ListPackages", OperationType.Read);
+
+            return AzureDevOpsActionResult<IReadOnlyList<Package>>.Success(packages, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<Package>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<Package>>.Failure(ex, Logger);
         }
     }
 
@@ -252,17 +453,49 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            bool result = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while deleting package",
+                            "DeletePackage",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while deleting package",
+                            "DeletePackage",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Package '{packageName}' version '{version}' not found in feed",
+                            "Package",
+                            $"{packageName}@{version}",
+                            "DeletePackage",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to delete package: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "DeletePackage",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                return true;
+            }, "DeletePackage", OperationType.Delete);
+
+            return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -284,26 +517,57 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            var options = new JsonSerializerOptions
+            IReadOnlyList<FeedPermission> permissions = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true,
-                WriteIndented = true
-            };
-            options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<FeedPermission>>.Failure(response.StatusCode, error, _logger);
-            }
-            FeedPermissionList? list = await response.Content.ReadFromJsonAsync<FeedPermissionList>(options, cancellationToken);
-            IReadOnlyList<FeedPermission> permissions = list?.Value?.ToArray() ?? Array.Empty<FeedPermission>();
-            return AzureDevOpsActionResult<IReadOnlyList<FeedPermission>>.Success(permissions, _logger);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true,
+                    WriteIndented = true
+                };
+                options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/permissions?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while retrieving feed permissions",
+                            "GetFeedPermissions",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while retrieving feed permissions",
+                            "GetFeedPermissions",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "GetFeedPermissions",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to retrieve feed permissions: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "GetFeedPermissions",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                FeedPermissionList? list = await response.Content.ReadFromJsonAsync<FeedPermissionList>(options, cancellationToken);
+                return list?.Value?.ToArray() ?? Array.Empty<FeedPermission>();
+            }, "GetFeedPermissions", OperationType.Read);
+
+            return AzureDevOpsActionResult<IReadOnlyList<FeedPermission>>.Success(permissions, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<FeedPermission>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<FeedPermission>>.Failure(ex, Logger);
         }
     }
 
@@ -326,22 +590,60 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            var options = new JsonSerializerOptions
+            FeedView created = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                PropertyNameCaseInsensitive = true
-            };
-            using HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", feedView, cancellationToken);
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<FeedView>.Failure(response.StatusCode, error, _logger);
-            }
-            FeedView? created = await response.Content.ReadFromJsonAsync<FeedView>(options, cancellationToken);
-            return AzureDevOpsActionResult<FeedView>.Success(created!, _logger);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                using HttpResponseMessage response = await HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", feedView, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while creating feed view",
+                            "CreateFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while creating feed view",
+                            "CreateFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "CreateFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Conflict => new AzureDevOpsApiException(
+                            $"Feed view with name '{feedView.Name}' already exists",
+                            (int)response.StatusCode,
+                            error,
+                            "CreateFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to create feed view: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "CreateFeedView",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                FeedView? createdView = await response.Content.ReadFromJsonAsync<FeedView>(options, cancellationToken);
+                return createdView!;
+            }, "CreateFeedView", OperationType.Create);
+
+            return AzureDevOpsActionResult<FeedView>.Success(created, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<FeedView>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<FeedView>.Failure(ex, Logger);
         }
     }
 
@@ -363,19 +665,50 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            IReadOnlyList<FeedView> views = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<FeedView>>.Failure(response.StatusCode, error, _logger);
-            }
-            FeedViewList? list = await response.Content.ReadFromJsonAsync<FeedViewList>(cancellationToken);
-            IReadOnlyList<FeedView> views = list?.Value?.ToArray() ?? Array.Empty<FeedView>();
-            return AzureDevOpsActionResult<IReadOnlyList<FeedView>>.Success(views, _logger);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while listing feed views",
+                            "ListFeedViews",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while listing feed views",
+                            "ListFeedViews",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "ListFeedViews",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to list feed views: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "ListFeedViews",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                FeedViewList? list = await response.Content.ReadFromJsonAsync<FeedViewList>(cancellationToken);
+                return list?.Value?.ToArray() ?? Array.Empty<FeedView>();
+            }, "ListFeedViews", OperationType.Read);
+
+            return AzureDevOpsActionResult<IReadOnlyList<FeedView>>.Success(views, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<IReadOnlyList<FeedView>>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<IReadOnlyList<FeedView>>.Failure(ex, Logger);
         }
     }
 
@@ -398,17 +731,55 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views/{viewId}?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            bool result = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                using HttpResponseMessage response = await _httpClient.DeleteAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/views/{viewId}?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while deleting feed view",
+                            "DeleteFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while deleting feed view",
+                            "DeleteFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed view '{viewId}' not found in feed '{feedId}'",
+                            "FeedView",
+                            viewId,
+                            "DeleteFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.BadRequest => new AzureDevOpsApiException(
+                            $"Cannot delete default view '{viewId}'",
+                            (int)response.StatusCode,
+                            error,
+                            "DeleteFeedView",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to delete feed view: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "DeleteFeedView",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                return true;
+            }, "DeleteFeedView", OperationType.Delete);
+
+            return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -433,17 +804,49 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", behavior, cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            bool result = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                using HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", behavior, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while setting upstreaming behavior",
+                            "SetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while setting upstreaming behavior",
+                            "SetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Package '{packageName}' not found in feed '{feedId}'",
+                            "Package",
+                            packageName,
+                            "SetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to set upstreaming behavior: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "SetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                return true;
+            }, "SetUpstreamingBehavior", OperationType.Update);
+
+            return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -466,19 +869,50 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            UpstreamingBehavior behavior = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<UpstreamingBehavior>.Failure(response.StatusCode, error, _logger);
-            }
-            UpstreamingBehavior behavior = await response.Content.ReadFromJsonAsync<UpstreamingBehavior>(cancellationToken);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/upstreamingbehavior?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while retrieving upstreaming behavior",
+                            "GetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while retrieving upstreaming behavior",
+                            "GetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Package '{packageName}' not found in feed '{feedId}'",
+                            "Package",
+                            packageName,
+                            "GetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to retrieve upstreaming behavior: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "GetUpstreamingBehavior",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                UpstreamingBehavior result = await response.Content.ReadFromJsonAsync<UpstreamingBehavior>(cancellationToken);
+                return result;
+            }, "GetUpstreamingBehavior", OperationType.Read);
 
-            return AzureDevOpsActionResult<UpstreamingBehavior>.Success(behavior, _logger);
+            return AzureDevOpsActionResult<UpstreamingBehavior>.Success(behavior, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<UpstreamingBehavior>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<UpstreamingBehavior>.Failure(ex, Logger);
         }
     }
 
@@ -502,18 +936,50 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            Package package = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<Package>.Failure(response.StatusCode, error, _logger);
-            }
-            Package? package = await response.Content.ReadFromJsonAsync<Package>(cancellationToken);
-            return AzureDevOpsActionResult<Package>.Success(package!, _logger);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while retrieving package version",
+                            "GetPackageVersion",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while retrieving package version",
+                            "GetPackageVersion",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Package '{packageName}' version '{version}' not found in feed",
+                            "Package",
+                            $"{packageName}@{version}",
+                            "GetPackageVersion",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to retrieve package version: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "GetPackageVersion",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                Package? pkg = await response.Content.ReadFromJsonAsync<Package>(cancellationToken);
+                return pkg!;
+            }, "GetPackageVersion", OperationType.Read);
+
+            return AzureDevOpsActionResult<Package>.Success(package, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<Package>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<Package>.Failure(ex, Logger);
         }
     }
 
@@ -538,21 +1004,53 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}")
+            bool result = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                Content = JsonContent.Create(details)
-            };
-            using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<bool>.Failure(response.StatusCode, error, _logger);
-            }
-            return AzureDevOpsActionResult<bool>.Success(true, _logger);
+                var request = new HttpRequestMessage(HttpMethod.Patch, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}?api-version={ApiVersion}")
+                {
+                    Content = JsonContent.Create(details)
+                };
+                using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while updating package version",
+                            "UpdatePackageVersion",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while updating package version",
+                            "UpdatePackageVersion",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Package '{packageName}' version '{version}' not found in feed",
+                            "Package",
+                            $"{packageName}@{version}",
+                            "UpdatePackageVersion",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to update package version: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "UpdatePackageVersion",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                return true;
+            }, "UpdatePackageVersion", OperationType.Update);
+
+            return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
     }
 
@@ -577,18 +1075,50 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}/content?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            Stream contentStream = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<Stream>.Failure(response.StatusCode, error, _logger);
-            }
-            Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            return AzureDevOpsActionResult<Stream>.Success(contentStream, _logger);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/nuget/packages/{packageName}/versions/{version}/content?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while downloading package",
+                            "DownloadPackage",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while downloading package",
+                            "DownloadPackage",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Package '{packageName}' version '{version}' not found in feed",
+                            "Package",
+                            $"{packageName}@{version}",
+                            "DownloadPackage",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to download package: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "DownloadPackage",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                return stream;
+            }, "DownloadPackage", OperationType.Read);
+
+            return AzureDevOpsActionResult<Stream>.Success(contentStream, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<Stream>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<Stream>.Failure(ex, Logger);
         }
     }
 
@@ -611,20 +1141,52 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            FeedRetentionPolicy? policy = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(response.StatusCode, error, _logger);
-            }
-            FeedRetentionPolicy? policy = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken);
+                using HttpResponseMessage response = await _httpClient.GetAsync($"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while retrieving retention policy",
+                            "GetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while retrieving retention policy",
+                            "GetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "GetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to retrieve retention policy: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "GetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                FeedRetentionPolicy? result = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken);
+                return result;
+            }, "GetRetentionPolicy", OperationType.Read);
+
             return policy == null
-                ? AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(HttpStatusCode.NotFound, "No retention policy found for the specified feed.", _logger)
-                : AzureDevOpsActionResult<FeedRetentionPolicy>.Success(policy, _logger);
+                ? AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(HttpStatusCode.NotFound, "No retention policy found for the specified feed.", Logger)
+                : AzureDevOpsActionResult<FeedRetentionPolicy>.Success(policy, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(ex, Logger);
         }
     }
 
@@ -648,24 +1210,62 @@ public class ArtifactsClient(HttpClient httpClient, string projectName, ILogger<
     {
         try
         {
-            var options = new JsonSerializerOptions
+            FeedRetentionPolicy updated = await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = true,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-            };
-            using HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", policy, cancellationToken);
-            if(!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(response.StatusCode, error, _logger);
-            }
-            FeedRetentionPolicy? updated = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(options, cancellationToken);
-            return AzureDevOpsActionResult<FeedRetentionPolicy>.Success(updated!, _logger);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true,
+                    Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+                };
+                using HttpResponseMessage response = await HttpClientJsonExtensions.PutAsJsonAsync(_httpClient, $"{_organizationUrl}/{_projectName}/_apis/packaging/Feeds/{feedId}/retentionpolicies?api-version={ApiVersion}", policy, cancellationToken);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    
+                    AzureDevOpsException exception = response.StatusCode switch
+                    {
+                        HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
+                            "Authentication failed while setting retention policy",
+                            "SetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
+                            "Access denied while setting retention policy",
+                            "SetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
+                            $"Feed with ID '{feedId}' not found",
+                            "Feed",
+                            feedId.ToString(),
+                            "SetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        HttpStatusCode.BadRequest => new AzureDevOpsApiException(
+                            "Invalid retention policy configuration",
+                            (int)response.StatusCode,
+                            error,
+                            "SetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8]),
+                        _ => new AzureDevOpsApiException(
+                            $"Failed to set retention policy: {response.StatusCode} - {response.ReasonPhrase}",
+                            (int)response.StatusCode,
+                            error,
+                            "SetRetentionPolicy",
+                            Guid.NewGuid().ToString("N")[..8])
+                    };
+                    
+                    throw exception;
+                }
+                
+                FeedRetentionPolicy? result = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(options, cancellationToken);
+                return result!;
+            }, "SetRetentionPolicy", OperationType.Update);
+
+            return AzureDevOpsActionResult<FeedRetentionPolicy>.Success(updated, Logger);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(ex, _logger);
+            return AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(ex, Logger);
         }
     }
 }
