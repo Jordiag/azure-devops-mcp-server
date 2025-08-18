@@ -89,7 +89,17 @@ jobs:
       
       - name: Set Sonar PR Analysis Parameters (if pull_request)
         if: github.event_name == 'pull_request'
+        env:
+            PR_NUMBER: ${{ github.event.pull_request.number }}
+            PR_BRANCH_RAW: ${{ github.head_ref }}
+            PR_BASE_RAW: ${{ github.base_ref }}
         run: |
+          # Sanitize branch/base names: keep alnum . _ / -
+          $prBranch = "$env:PR_BRANCH_RAW" -replace '[^A-Za-z0-9._/\-]', ''
+          $prBase   = "$env:PR_BASE_RAW"   -replace '[^A-Za-z0-9._/\-]', ''
+          if (-not $prBranch) { Write-Error "Sanitized PR branch name empty (was '$env:PR_BRANCH_RAW')."; exit 1 }
+          if (-not $prBase) { Write-Error "Sanitized PR base name empty (was '$env:PR_BASE_RAW')."; exit 1 }
+
           dotnet sonarscanner begin `
             /k:"${{ env.sonarProjectKey }}" `
             /o:"${{ env.sonarOrganization }}" `
@@ -97,9 +107,9 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
             /d:sonar.dotnet.excludeTestProjects=true `
-            /d:sonar.pullrequest.key="${{ github.event.pull_request.number }}" `
-            /d:sonar.pullrequest.branch="${{ github.head_ref }}" `
-            /d:sonar.pullrequest.base="${{ github.base_ref }}"
+            /d:sonar.pullrequest.key="$env:PR_NUMBER" `
+            /d:sonar.pullrequest.branch="$prBranch" `
+            /d:sonar.pullrequest.base="$prBase"
         shell: pwsh
 
     # -- Sonar Begin (Non-PR: workflow_run or manual) --
@@ -142,4 +152,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
