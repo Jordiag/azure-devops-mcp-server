@@ -58,129 +58,40 @@ jobs:
           fetch-depth: 0  # Required for SonarCloud analysis
           fetch-tags: true
 
-     
-      # 🔎 Probe tags & compute version candidates (works on pushes and PRs, incl. forks)
-      - name: Probe git tags & versions
+      - name: Determine numeric version from tag
         id: ver
         shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          THIS_REPO:  ${{ github.repository }} # owner/name
-          HEAD_REPO:  ${{ github.event.pull_request.head.repo.full_name }}
-          BASE_REPO:  ${{ github.event.pull_request.base.repo.full_name }}
         run: |
-          set -euo pipefail
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
       
-          echo "== Git basics =="
-          git --version
-          echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
-          echo "HEAD:   $(git rev-parse --short HEAD)"
-          echo "Remotes:"
-          git remote -v || true
+          # strip leading 'v' or 'V'
+          TAG=${TAG#v}
+          TAG=${TAG#V}
       
-          echo ""
-          echo "== Ensure we have all tags from origin =="
-          git fetch --force --tags --prune origin \
-            '+refs/heads/*:refs/remotes/origin/*' \
-            '+refs/tags/*:refs/tags/*'
-          echo "Tag count (origin only): $(git tag | wc -l || echo 0)"
+          echo "Original tag: $TAG"
       
-          # If this is a PR from a fork, also fetch tags from the base repo
-          if [[ "${EVENT_NAME}" == "pull_request" ]] && [[ -n "${HEAD_REPO:-}" ]] && [[ -n "${BASE_REPO:-}" ]] && [[ "${HEAD_REPO}" != "${BASE_REPO}" ]]; then
-            echo ""
-            echo "== PR from fork detected =="
-            echo "Head repo: ${HEAD_REPO}"
-            echo "Base repo: ${BASE_REPO}"
-            if ! git remote get-url upstream >/dev/null 2>&1; then
-              git remote add upstream "https://github.com/${BASE_REPO}.git"
-            fi
-            git fetch --force --tags --prune upstream '+refs/tags/*:refs/tags/*'
-            echo "Tag count after fetching upstream: $(git tag | wc -l || echo 0)"
-          fi
+          # keep only numbers and dots
+          NUMERIC=$(echo "$TAG" | sed 's/[^0-9.]/./g')
       
-          echo ""
-          echo "== Sample of newest tags by creation date =="
-          git tag --list --sort=-creatordate | head -n 15 || true
+          # collapse multiple dots and trim leading/trailing
+          NUMERIC=$(echo "$NUMERIC" | sed -E 's/\.+/./g; s/^\.//; s/\.$//')
       
-          echo ""
-          echo "== Strategies =="
-          # 1) Nearest reachable plain tag from HEAD
-          REACHABLE="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-          echo "Reachable (git describe --tags --abbrev=0): ${REACHABLE:-<none>}"
+          # pad/truncate to 4 components (AssemblyVersion wants 4 numbers)
+          IFS=. read -r a b c d <<< "$NUMERIC"
+          a=${a:-0}; b=${b:-0}; c=${c:-0}; d=${d:-0}
+          FOUR="$a.$b.$c.$d"
       
-          # 2) Nearest description (may include distance/sha)
-          NEAREST_DESC="$(git describe --tags --always 2>/dev/null || true)"
-          echo "Nearest description (git describe --tags --always): ${NEAREST_DESC:-<none>}"
+          BUILD=${GITHUB_RUN_NUMBER}
+          INFO="$TAG+$GITHUB_SHA"
       
-          # 3) Most recently created tag (not limited to HEAD ancestry)
-          NEWEST_CREATED="$(git tag --list --sort=-creatordate | head -n1 || true)"
-          echo "Newest by creation date: ${NEWEST_CREATED:-<none>}"
+          echo "Numeric version: $FOUR"
+          echo "Informational: $INFO"
       
-          # 4) Highest SemVer tag (ignores non-SemVer tags)
-          HIGHEST_SEMVER="$(
-            git tag -l \
-              | grep -E '^[vV]?[0-9]+\.[0-9]+\.[0-9]+$' \
-              | sed -E 's/^[vV]//' \
-              | awk -F. '{printf("%d.%d.%d %s\n",$1,$2,$3,$0)}' \
-              | sort -n -k1 -k2 -k3 \
-              | awk '{print $4}' \
-              | tail -n1
-          )"
-          echo "Highest SemVer: ${HIGHEST_SEMVER:-<none>}"
-      
-          echo ""
-          echo "== Normalisation and selection =="
-          # Helper: strip leading v/V
-          clean() { printf "%s" "${1:-}" | sed -E 's/^[vV]//' ; }
-      
-          CANDIDATES=()
-          [[ -n "${REACHABLE:-}"      ]] && CANDIDATES+=("$(clean "$REACHABLE")")
-          [[ -n "${NEWEST_CREATED:-}" ]] && CANDIDATES+=("$(clean "$NEWEST_CREATED")")
-          [[ -n "${HIGHEST_SEMVER:-}" ]] && CANDIDATES+=("$(clean "$HIGHEST_SEMVER")")
-      
-          BASE=""
-          for c in "${CANDIDATES[@]:-}"; do
-            if [[ "$c" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then BASE="$c"; break; fi
-          done
-          BASE="${BASE:-0.0.0}"
-          BUILD="${GITHUB_RUN_NUMBER}"
-          FULL="$BASE.$BUILD"
-          INF="$FULL+${GITHUB_SHA::7}"
-      
-          echo "Chosen BASE: $BASE"
-          echo "Assembly/File: $FULL"
-          echo "Informational: $INF"
-      
-          echo ""
-          echo "== Final checks =="
-          echo "Tags reachable from current HEAD:"
-          git tag --points-at HEAD || true
-      
-          echo "::group::Summary (copy-paste)"
-          echo "REACHABLE=${REACHABLE:-}"
-          echo "NEWEST_CREATED=${NEWEST_CREATED:-}"
-          echo "HIGHEST_SEMVER=${HIGHEST_SEMVER:-}"
-          echo "BASE=$BASE"
-          echo "FULL=$FULL"
-          echo "INFORMATIONAL=$INF"
-          echo "::endgroup::"
-      
-          # Outputs (optional for subsequent steps)
           {
-            echo "base=$BASE"
-            echo "full=$FULL"
-            echo "informational=$INF"
+            echo "numeric=$FOUR"
+            echo "informational=$INFO"
+            echo "tag=$TAG"
           } >> "$GITHUB_OUTPUT"
-
-
-      - name: Ensure tags
-        shell: bash
-        run: git fetch --force --tags --prune
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.x'
 
       - name: Install NuGet
         uses: NuGet/setup-nuget@v1
@@ -236,11 +147,12 @@ jobs:
       
       - name: Build with Dotnet
         shell: pwsh
-        run: dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" --no-restore `
-          -p:Version=${{ steps.ver.outputs.base }} `
-          -p:AssemblyVersion=${{ steps.ver.outputs.full }} `
-          -p:FileVersion=${{ steps.ver.outputs.full }} `
-          "-p:InformationalVersion=${{ steps.ver.outputs.Informational }}"
+        run: >
+          dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" --no-restore
+          -p:Version=${{ steps.ver.outputs.tag }}
+          -p:AssemblyVersion=${{ steps.ver.outputs.full }}
+          -p:FileVersion=${{ steps.ver.outputs.full }}
+          "-p:InformationalVersion=${{ steps.ver.outputs.informational }}"
 
       - name: Run Tests with Coverage
         run: |
