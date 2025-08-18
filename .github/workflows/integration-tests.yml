@@ -63,35 +63,28 @@ jobs:
         shell: bash
         run: |
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-      
-          # strip leading 'v' or 'V'
-          TAG=${TAG#v}
-          TAG=${TAG#V}
-      
+          TAG=${TAG#v}; TAG=${TAG#V}
           echo "Original tag: $TAG"
       
-          # keep only numbers and dots
-          NUMERIC=$(echo "$TAG" | sed 's/[^0-9.]/./g')
-      
-          # collapse multiple dots and trim leading/trailing
-          NUMERIC=$(echo "$NUMERIC" | sed -E 's/\.+/./g; s/^\.//; s/\.$//')
-      
-          # pad/truncate to 4 components (AssemblyVersion wants 4 numbers)
-          IFS=. read -r a b c d <<< "$NUMERIC"
-          a=${a:-0}; b=${b:-0}; c=${c:-0}; d=${d:-0}
-          FOUR="$a.$b.$c.$d"
+          # Keep only numbers/dots, normalise
+          NUMERIC=$(echo "$TAG" | sed 's/[^0-9.]/./g' | sed -E 's/\.+/./g; s/^\.//; s/\.$//')
+          IFS=. read -r a b c _ <<< "$NUMERIC"
+          a=${a:-0}; b=${b:-0}; c=${c:-0}
       
           BUILD=${GITHUB_RUN_NUMBER}
-          INFO="$TAG+$GITHUB_SHA"
+          FOUR="$a.$b.$c.$BUILD"
+          SHORTSHA="${GITHUB_SHA::7}"
+          INFO="$TAG.$BUILD+$SHORTSHA"
       
-          echo "Numeric version: $FOUR"
+          echo "Four-part (Assembly/File): $FOUR"
           echo "Informational: $INFO"
       
           {
-            echo "numeric=$FOUR"
-            echo "informational=$INFO"
             echo "tag=$TAG"
+            echo "four=$FOUR"
+            echo "informational=$INFO"
           } >> "$GITHUB_OUTPUT"
+
 
       - name: Install NuGet
         uses: NuGet/setup-nuget@v1
@@ -144,14 +137,14 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" `
             /d:sonar.dotnet.excludeTestProjects=true
-      
+            
       - name: Build with Dotnet
         shell: pwsh
         run: >
           dotnet build "${{ env.solution }}" -c "${{ env.buildConfiguration }}" --no-restore
           -p:Version=${{ steps.ver.outputs.tag }}
-          -p:AssemblyVersion=${{ steps.ver.outputs.full }}
-          -p:FileVersion=${{ steps.ver.outputs.full }}
+          -p:AssemblyVersion=${{ steps.ver.outputs.four }}
+          -p:FileVersion=${{ steps.ver.outputs.four }}
           "-p:InformationalVersion=${{ steps.ver.outputs.informational }}"
 
       - name: Run Tests with Coverage
