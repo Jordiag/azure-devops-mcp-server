@@ -11,6 +11,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 {
     public partial class WorkItemsClient
     {
+        // Constants to reduce string duplication
         /// <summary>
         /// Creates multiple work items of the same type using individual API calls for each item.
         /// This method processes each work item creation sequentially, which provides better error isolation
