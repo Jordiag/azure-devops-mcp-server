@@ -13,9 +13,6 @@ internal static class HostingExtensionsLogging
                                             .GetSection("McpServer")
                                             .Get<McpServerSettings>() ?? new();
 
-        string? aspnetEnv = builder.Environment.EnvironmentName;
-        string effectiveEnv = settings.Environment ?? aspnetEnv ?? "Production";
-
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
 

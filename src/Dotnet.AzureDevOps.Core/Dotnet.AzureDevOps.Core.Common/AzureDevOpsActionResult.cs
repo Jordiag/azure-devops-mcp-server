@@ -40,15 +40,15 @@ public class AzureDevOpsActionResult<T>
 
     public static AzureDevOpsActionResult<T> Failure(Exception exception, ILogger? logger = null)
     {
-        logger?.LogError(exception, $"Request failed with an exception.");
+        logger?.LogError(exception, "Request failed with an exception.");
         return new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
     }
 
     public static AzureDevOpsActionResult<T> Failure(Exception exception, string? errorMessage, ILogger? logger = null)
     {
         string combinedMessage = $"Request failed with error: {errorMessage}. Exception: {exception.DumpFullException()}";
-        logger?.LogError(exception, combinedMessage);
-        return new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
+        logger?.LogError(exception, "Request failed with error: {ErrorMessage}. Exception details logged.", errorMessage);
+        return new(false, default!, combinedMessage);
     }
 
     public static AzureDevOpsActionResult<T> Failure(string errorMessage, ILogger? logger = null)

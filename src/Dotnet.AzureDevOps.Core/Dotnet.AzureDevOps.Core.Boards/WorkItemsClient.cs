@@ -13,9 +13,6 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private readonly WorkItemTrackingHttpClient _workItemClient;
         private readonly WorkHttpClient _workClient;
         private readonly HttpClient _httpClient;
-        private const string _patchMethod = Constants.PatchMethod;
-        private const string ContentTypeHeader = Constants.ContentTypeHeader;
-        private const string JsonPatchContentType = Constants.JsonPatchContentType;
 
         public WorkItemsClient(HttpClient httpClient, string organizationUrl, string projectName, string personalAccessToken, ILogger<WorkItemsClient>? logger = null)
             : base(organizationUrl, personalAccessToken, projectName, logger)
