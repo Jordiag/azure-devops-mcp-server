@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.TeamFoundation.Work.WebApi;
@@ -26,7 +27,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             _workItemClient = Connection.GetClient<WorkItemTrackingHttpClient>();
             _workClient = Connection.GetClient<WorkHttpClient>();
         }
-
+        
         /// <summary>
         /// Determines whether the Azure DevOps project uses a system-managed process template.
         /// System processes are predefined templates (Agile, Scrum, CMMI) that cannot be customized,
@@ -45,33 +46,26 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                string projectUrl = $"{OrganizationUrl}/_apis/projects/{ProjectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
-                JsonElement projectResponse = await _httpClient.GetFromJsonAsync<JsonElement>(projectUrl, cancellationToken);
-
-                string? processId = projectResponse
-                    .GetProperty("capabilities")
-                    .GetProperty("processTemplate")
-                    .GetProperty("templateTypeId")
-                    .GetString();
-
-                if(string.IsNullOrEmpty(processId))
+                bool isSystem = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    return AzureDevOpsActionResult<bool>.Failure("Unable to determine the process ID for the project.");
-                }
+                    string projectUrl = $"{OrganizationUrl}/_apis/projects/{ProjectName}?api-version={GlobalConstants.ApiVersion}&includeCapabilities=true";
+                    JsonElement projectResponse = await _httpClient.GetFromJsonAsync<JsonElement>(projectUrl, cancellationToken);
+                    string? processId = projectResponse.GetProperty("capabilities").GetProperty("processTemplate").GetProperty("templateTypeId").GetString();
+                    if (string.IsNullOrEmpty(processId))
+                        throw new InvalidOperationException("Unable to determine the process ID for the project.");
 
-                string processUrl = $"{OrganizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
-                JsonElement processResponse = await _httpClient.GetFromJsonAsync<JsonElement>(processUrl, cancellationToken);
-                string? processType = processResponse.GetProperty("type").GetString();
+                    string processUrl = $"{OrganizationUrl}/_apis/process/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
+                    JsonElement processResponse = await _httpClient.GetFromJsonAsync<JsonElement>(processUrl, cancellationToken);
+                    string? processType = processResponse.GetProperty("type").GetString();
+                    if (string.IsNullOrEmpty(processType))
+                        throw new InvalidOperationException("Unable to determine process type for the project.");
 
-                if(string.IsNullOrEmpty(processType))
-                {
-                    return AzureDevOpsActionResult<bool>.Failure("Unable to determine process type for the project.");
-                }
+                    return processType.Equals("system", StringComparison.OrdinalIgnoreCase);
+                }, "IsSystemProcess", OperationType.Read);
 
-                bool isSystem = processType.Equals("system", StringComparison.OrdinalIgnoreCase);
                 return AzureDevOpsActionResult<bool>.Success(isSystem, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }

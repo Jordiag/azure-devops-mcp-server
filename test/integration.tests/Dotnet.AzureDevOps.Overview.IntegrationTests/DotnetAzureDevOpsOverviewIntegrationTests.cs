@@ -250,6 +250,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             };
 
             AzureDevOpsActionResult<int> pageIdActionResult = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+            Assert.Null(pageIdActionResult.ErrorMessage);
             Assert.True(pageIdActionResult.IsSuccessful, "Expected page creation to be successful.");
 
             AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;

@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Dashboards.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -26,12 +27,16 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var teamContext = new TeamContext(this.ProjectName);
-                List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
-                IReadOnlyList<Dashboard> dashboards = group?.Where(d => d != null).ToList() ?? new List<Dashboard>();
+                IReadOnlyList<Dashboard> dashboards = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    var teamContext = new TeamContext(this.ProjectName);
+                    List<Dashboard> group = await _dashboardHttpClient.GetDashboardsByProjectAsync(teamContext, cancellationToken: cancellationToken);
+                    return (IReadOnlyList<Dashboard>)(group?.Where(d => d != null).ToList() ?? new List<Dashboard>());
+                }, "ListDashboards", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Failure(ex, this.Logger);
             }
@@ -58,11 +63,15 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var teamContext = new TeamContext(this.ProjectName, teamName);
-                Dashboard dashboard = await this._dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
+                Dashboard dashboard = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    var teamContext = new TeamContext(this.ProjectName, teamName);
+                    return await this._dashboardHttpClient.GetDashboardAsync(teamContext, dashboardId, cancellationToken: cancellationToken);
+                }, "GetDashboard", OperationType.Read);
+
                 return AzureDevOpsActionResult<Dashboard>.Success(dashboard, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<Dashboard>.Failure(ex, this.Logger);
             }

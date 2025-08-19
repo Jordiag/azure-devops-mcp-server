@@ -1,15 +1,13 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Common.Exceptions;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Operations;
-using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
 {
@@ -68,7 +66,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     WebApiTeam createdTeam = await _teamClient.CreateTeamAsync(newTeam, ProjectName, cancellationToken: cancellationToken);
                     return createdTeam.Description == teamDescription && createdTeam.Name == teamName;
 
-                }, "CreateTeamIfDoesNotExist");
+                }, "CreateTeamIfDoesNotExist", OperationType.Create);
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
@@ -101,7 +99,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 {
                     WebApiTeam team = await _teamClient.GetTeamAsync(ProjectName, teamName, cancellationToken: cancellationToken);
                     return team.Id;
-                }, "GetTeamId");
+                }, "GetTeamId", OperationType.Read);
 
                 return AzureDevOpsActionResult<Guid>.Success(teamId, Logger);
             }
@@ -131,7 +129,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 List<WebApiTeam> teams = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
                     return await _teamClient.GetAllTeamsAsync(cancellationToken: cancellationToken);
-                }, "GetAllTeams");
+                }, "GetAllTeams", OperationType.Read);
 
                 return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams, Logger);
             }
@@ -173,7 +171,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     WebApiTeam webApiTeam = await _teamClient.UpdateTeamAsync(updatedTeam, ProjectName, team.Id.ToString(), cancellationToken: cancellationToken);
                     return webApiTeam.Description == newDescription && webApiTeam.Name == teamName;
 
-                }, "UpdateTeamDescription");
+                }, "UpdateTeamDescription", OperationType.Update);
 
                 return result
                     ? AzureDevOpsActionResult<bool>.Success(true, Logger)
@@ -221,7 +219,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     }
 
                     return true;
-                }, "DeleteTeam");
+                }, "DeleteTeam", OperationType.Delete);
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
@@ -284,7 +282,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                             "CreateInheritedProcess");
                     }
                     return true;
-                }, "CreateInheritedProcess");
+                }, "CreateInheritedProcess", OperationType.Create);
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
@@ -329,7 +327,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     }
 
                     return true;
-                }, "DeleteInheritedProcess");
+                }, "DeleteInheritedProcess", OperationType.Delete);
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
@@ -382,7 +380,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                         "Process", 
                         processName, 
                         "GetProcessId");
-                }, "GetProcessId");
+                }, "GetProcessId", OperationType.Read);
 
                 return AzureDevOpsActionResult<string>.Success(processId, Logger);
             }
@@ -447,7 +445,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     }
 
                     return createdProject.Id;
-                }, "CreateProject");
+                }, "CreateProject", OperationType.Create);
 
                 return AzureDevOpsActionResult<Guid>.Success(projectId, Logger);
             }
@@ -479,7 +477,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 TeamProject project = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
                     return await _projectClient.GetProject(projectName);
-                }, "GetProject");
+                }, "GetProject", OperationType.Read);
 
                 return AzureDevOpsActionResult<TeamProject>.Success(project, Logger);
             }
@@ -521,7 +519,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     }
 
                     return true;
-                }, "DeleteProject");
+                }, "DeleteProject", OperationType.Delete);
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }

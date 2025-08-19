@@ -2,13 +2,12 @@ using System.IO.Compression;
 using System.Text;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Common.Exceptions;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
+
 
 namespace Dotnet.AzureDevOps.Core.Pipelines;
 
@@ -84,7 +83,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return queued.Id;
-            }, "QueueBuild");
+            }, "QueueBuild", OperationType.Create);
 
             return AzureDevOpsActionResult<int>.Success(buildId, Logger);
         }
@@ -131,7 +130,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                 }
 
                 return result;
-            }, "GetBuild");
+            }, "GetBuild", OperationType.Read);
 
             return AzureDevOpsActionResult<Build>.Success(build, Logger);
         }
@@ -173,7 +172,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return (IReadOnlyList<Build>)result;
-            }, "ListBuilds");
+            }, "ListBuilds", OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<Build>>.Success(builds, Logger);
         }
@@ -219,7 +218,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return true;
-            }, "CancelBuild");
+            }, "CancelBuild", OperationType.Update);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -270,7 +269,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return queued.Id;
-            }, "RetryBuild");
+            }, "RetryBuild", OperationType.Create);
 
             return AzureDevOpsActionResult<int>.Success(retryBuildId, Logger);
         }
@@ -346,7 +345,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                 }
 
                 return result;
-            }, "DownloadConsoleLog");
+            }, "DownloadConsoleLog", OperationType.Read);
 
             return AzureDevOpsActionResult<string>.Success(logResult, Logger);
         }
@@ -403,7 +402,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return created.Id;
-            }, "CreatePipeline");
+            }, "CreatePipeline", OperationType.Create);
 
             return AzureDevOpsActionResult<int>.Success(pipelineId, Logger);
         }
@@ -450,7 +449,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                 }
 
                 return result;
-            }, "GetPipeline");
+            }, "GetPipeline", OperationType.Read);
 
             return AzureDevOpsActionResult<BuildDefinition>.Success(definition, Logger);
         }
@@ -485,7 +484,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return (IReadOnlyList<BuildDefinitionReference>)result;
-            }, "ListPipelines");
+            }, "ListPipelines", OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, Logger);
         }
@@ -537,7 +536,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return (IReadOnlyList<BuildDefinitionReference>)result;
-            }, "ListDefinitions");
+            }, "ListDefinitions", OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, Logger);
         }
@@ -570,7 +569,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
             List<BuildDefinitionRevision> revisions = await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 return await _build.GetDefinitionRevisionsAsync(ProjectName, definitionId, cancellationToken: cancellationToken);
-            }, "GetDefinitionRevisions");
+            }, "GetDefinitionRevisions", OperationType.Read);
 
             return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Success(revisions, Logger);
         }
@@ -603,7 +602,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
             List<BuildLog> logs = await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 return await _build.GetBuildLogsAsync(ProjectName, buildId, cancellationToken: cancellationToken);
-            }, "GetBuildLogs");
+            }, "GetBuildLogs", OperationType.Read);
 
             return AzureDevOpsActionResult<List<BuildLog>>.Success(logs, Logger);
         }
@@ -639,7 +638,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
             List<string> lines = await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 return await _build.GetBuildLogLinesAsync(ProjectName, buildId, logId, startLine, endLine, cancellationToken: cancellationToken);
-            }, "GetLogLines");
+            }, "GetLogLines", OperationType.Read);
 
             return AzureDevOpsActionResult<List<string>>.Success(lines, Logger);
         }
@@ -675,7 +674,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
             List<Change> changes = await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 return await _build.GetBuildChangesAsync(ProjectName, buildId, continuationToken, top, includeSourceChange, cancellationToken: cancellationToken);
-            }, "GetBuildChanges");
+            }, "GetBuildChanges", OperationType.Read);
 
             return AzureDevOpsActionResult<List<Change>>.Success(changes, Logger);
         }
@@ -717,7 +716,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                         "GetBuildReport");
                 }
                 return result;
-            }, "GetBuildReport");
+            }, "GetBuildReport", OperationType.Read);
 
             return AzureDevOpsActionResult<BuildReportMetadata>.Success(report, Logger);
         }
@@ -755,7 +754,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                 var parameters = new UpdateStageParameters { State = status, ForceRetryAllJobs = forceRetryAllJobs };
                 await _build.UpdateStageAsync(parameters, ProjectName, buildId, stageName, cancellationToken: cancellationToken);
                 return true;
-            }, "UpdateBuildStage");
+            }, "UpdateBuildStage", OperationType.Update);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -810,7 +809,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     cancellationToken: cancellationToken);
 
                 return true;
-            }, "UpdatePipeline");
+            }, "UpdatePipeline", OperationType.Update);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -847,7 +846,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     definitionId: definitionId,
                     cancellationToken: cancellationToken);
                 return true;
-            }, "DeletePipeline");
+            }, "DeletePipeline", OperationType.Delete);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }

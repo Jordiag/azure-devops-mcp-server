@@ -38,9 +38,16 @@ public class AzureDevOpsActionResult<T>
         return new(false, default!, $"http response status code: {(int)statusCode}, errorMessage: {errorMessage}");
     }
 
-    public static AzureDevOpsActionResult<T> Failure(Exception exception, ILogger? logger = null)
+    public static AzureDevOpsActionResult<T> Failure(Exception exception, ILogger ? logger = null)
     {
-        logger?.LogError(exception, "Request failed with an exception.");
+        logger?.LogError(exception, $"Request failed with an exception.");
+        return new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
+    }
+
+    public static AzureDevOpsActionResult<T> Failure(Exception exception, string? errorMessage, ILogger? logger = null)
+    {
+        logger?.LogError(exception, $"Request failed with an exception.");
+        logger?.LogError("Request failed with error: {ErrorMessage}", errorMessage);
         return new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
     }
 

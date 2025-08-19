@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
@@ -21,36 +22,36 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// An <see cref="AzureDevOpsActionResult{T}"/> containing the unique identifier (GUID) of the created attachment,
         /// or error details if the upload or attachment operation fails.
         /// </returns>
-        /// <exception cref="ArgumentException">Thrown when workItemId is invalid or filePath is null/empty.</exception>
-        /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
-        /// <exception cref="HttpRequestException">Thrown when the upload or attachment API request fails.</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to attach files to work items.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the work item doesn't exist or file upload limits are exceeded.</exception>
         public async Task<AzureDevOpsActionResult<Guid>> AddAttachmentAsync(int workItemId, string filePath, CancellationToken cancellationToken = default)
         {
             try
             {
-                using FileStream fileStream = File.OpenRead(filePath);
-                AttachmentReference reference = await _workItemClient.CreateAttachmentAsync(fileStream, fileName: Path.GetFileName(filePath), cancellationToken: cancellationToken);
-
-                var patch = new JsonPatchDocument
+                Guid attachmentId = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    new JsonPatchOperation
-                    {
-                        Operation = Operation.Add,
-                        Path = Constants.JsonPatchOperationPath,
-                        Value = new
-                        {
-                            rel = "AttachedFile",
-                            url = reference.Url
-                        }
-                    }
-                };
+                    using FileStream fileStream = File.OpenRead(filePath);
+                    AttachmentReference reference = await _workItemClient.CreateAttachmentAsync(fileStream, fileName: Path.GetFileName(filePath), cancellationToken: cancellationToken);
 
-                _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Guid>.Success(reference.Id, Logger);
+                    var patch = new JsonPatchDocument
+                    {
+                        new JsonPatchOperation
+                        {
+                            Operation = Operation.Add,
+                            Path = Constants.JsonPatchOperationPath,
+                            Value = new
+                            {
+                                rel = "AttachedFile",
+                                url = reference.Url
+                            }
+                        }
+                    };
+
+                    _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                    return reference.Id;
+                }, "AddAttachment", OperationType.Update);
+
+                return AzureDevOpsActionResult<Guid>.Success(attachmentId, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -69,19 +70,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// An <see cref="AzureDevOpsActionResult{T}"/> containing a stream with the attachment content,
         /// or error details if the download fails or the attachment doesn't exist.
         /// </returns>
-        /// <exception cref="ArgumentException">Thrown when projectName is null/empty or attachmentId is empty GUID.</exception>
-        /// <exception cref="HttpRequestException">Thrown when the download API request fails.</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access attachments.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the attachment doesn't exist or has been corrupted.</exception>
-        /// <exception cref="VssServiceException">Thrown for Azure DevOps service-specific errors during download.</exception>
         public async Task<AzureDevOpsActionResult<Stream>> GetAttachmentAsync(string projectName, Guid attachmentId, CancellationToken cancellationToken = default)
         {
             try
             {
-                Stream content = await _workItemClient.GetAttachmentContentAsync(projectName, attachmentId, cancellationToken: cancellationToken);
+                Stream content = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workItemClient.GetAttachmentContentAsync(projectName, attachmentId, cancellationToken: cancellationToken);
+                }, "GetAttachment", OperationType.Read);
+
                 return AzureDevOpsActionResult<Stream>.Success(content, Logger);
             }
-            catch(VssServiceException ex)
+            catch (VssServiceException ex)
+            {
+                return AzureDevOpsActionResult<Stream>.Failure(ex, Logger);
+            }
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<Stream>.Failure(ex, Logger);
             }

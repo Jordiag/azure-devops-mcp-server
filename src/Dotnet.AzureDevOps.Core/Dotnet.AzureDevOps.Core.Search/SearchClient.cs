@@ -42,12 +42,22 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
     /// <exception cref="ArgumentException">Thrown when no project is specified in the search options</exception>
     /// <exception cref="HttpRequestException">Thrown when the Azure DevOps API request fails due to network issues or invalid credentials</exception>
     /// <exception cref="JsonException">Thrown when the API response cannot be parsed as valid JSON</exception>
-    public Task<AzureDevOpsActionResult<string>> SearchCodeAsync(CodeSearchOptions options, CancellationToken cancellationToken = default)
+    public async Task<AzureDevOpsActionResult<string>> SearchCodeAsync(CodeSearchOptions options, CancellationToken cancellationToken = default)
     {
-        string? projectName = options.Project?[0];
-        return projectName == null
-            ? Task.FromResult(AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", Logger))
-            : SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
+        try
+        {
+            return await ExecuteWithExceptionHandlingAsync(async () =>
+            {
+                string? projectName = options.Project?.FirstOrDefault();
+                if (projectName == null)
+                    return AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", Logger);
+                return await SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
+            }, "SearchCode", OperationType.Read);
+        }
+        catch (Exception ex)
+        {
+            return AzureDevOpsActionResult<string>.Failure(ex, Logger);
+        }
     }
 
     /// <summary>
@@ -67,8 +77,19 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
     /// <exception cref="HttpRequestException">Thrown when the Azure DevOps API request fails due to network connectivity issues or service unavailability</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when authentication fails or insufficient permissions exist to access wiki content</exception>
     /// <exception cref="JsonException">Thrown when the search response contains invalid JSON or unexpected data structure</exception>
-    public Task<AzureDevOpsActionResult<string>> SearchWikiAsync(WikiSearchOptions options, CancellationToken cancellationToken = default)
-        => SendSearchRequestAsync("_apis/search/wikisearchresults", BuildWikiPayload(options), cancellationToken);
+    public async Task<AzureDevOpsActionResult<string>> SearchWikiAsync(WikiSearchOptions options, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await ExecuteWithExceptionHandlingAsync(async () =>
+                await SendSearchRequestAsync("_apis/search/wikisearchresults", BuildWikiPayload(options), cancellationToken),
+                "SearchWiki", OperationType.Read);
+        }
+        catch (Exception ex)
+        {
+            return AzureDevOpsActionResult<string>.Failure(ex, Logger);
+        }
+    }
 
     /// <summary>
     /// Searches for work items across Azure DevOps projects using advanced full-text search and sophisticated filtering capabilities.
@@ -87,8 +108,19 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
     /// <exception cref="HttpRequestException">Thrown when the Azure DevOps API request fails due to network connectivity problems or service interruption</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when authentication credentials are invalid or insufficient permissions exist to access work item data</exception>
     /// <exception cref="JsonException">Thrown when the search response contains malformed JSON or unexpected response structure from the search service</exception>
-    public Task<AzureDevOpsActionResult<string>> SearchWorkItemsAsync(WorkItemSearchOptions options, CancellationToken cancellationToken = default)
-        => SendSearchRequestAsync("_apis/search/workitemsearchresults", BuildWorkItemPayload(options), cancellationToken);
+    public async Task<AzureDevOpsActionResult<string>> SearchWorkItemsAsync(WorkItemSearchOptions options, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await ExecuteWithExceptionHandlingAsync(async () =>
+                await SendSearchRequestAsync("_apis/search/workitemsearchresults", BuildWorkItemPayload(options), cancellationToken),
+                "SearchWorkItems", OperationType.Read);
+        }
+        catch (Exception ex)
+        {
+            return AzureDevOpsActionResult<string>.Failure(ex, Logger);
+        }
+    }
 
     /// <summary>
     /// Checks if the Azure DevOps Code Search extension is enabled for the organization.

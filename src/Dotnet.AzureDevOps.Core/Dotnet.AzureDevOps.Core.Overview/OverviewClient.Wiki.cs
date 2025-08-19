@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Dotnet.AzureDevOps.Core.Overview.Options;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.Wiki.WebApi;
@@ -30,23 +31,25 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var wikiCreateParameters = new WikiCreateParametersV2
+                Guid wikiId = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Name = wikiCreateOptions.Name,
-                    ProjectId = wikiCreateOptions.ProjectId,
-                    RepositoryId = wikiCreateOptions.RepositoryId,
-                    Type = wikiCreateOptions.Type,
-                    MappedPath = wikiCreateOptions.MappedPath,
-                    Version = wikiCreateOptions.Version,
-                };
+                    var wikiCreateParameters = new WikiCreateParametersV2
+                    {
+                        Name = wikiCreateOptions.Name,
+                        ProjectId = wikiCreateOptions.ProjectId,
+                        RepositoryId = wikiCreateOptions.RepositoryId,
+                        Type = wikiCreateOptions.Type,
+                        MappedPath = wikiCreateOptions.MappedPath,
+                        Version = wikiCreateOptions.Version,
+                    };
 
-                WikiV2 wiki = await this._wikiHttpClient.CreateWikiAsync(
-                    wikiCreateParams: wikiCreateParameters,
-                    project: this.ProjectName,
-                    cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<Guid>.Success(wiki.Id, this.Logger);
+                    WikiV2 wiki = await this._wikiHttpClient.CreateWikiAsync(wikiCreateParams: wikiCreateParameters, project: this.ProjectName, cancellationToken: cancellationToken);
+                    return wiki.Id;
+                }, "CreateWiki", OperationType.Create);
+
+                return AzureDevOpsActionResult<Guid>.Success(wikiId, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, this.Logger);
             }
@@ -72,10 +75,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiV2 wiki = await this._wikiHttpClient.GetWikiAsync(project: this.ProjectName, wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+                WikiV2 wiki = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await this._wikiHttpClient.GetWikiAsync(project: this.ProjectName, wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+                }, "GetWiki", OperationType.Read);
+
                 return AzureDevOpsActionResult<WikiV2>.Success(wiki, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<WikiV2>.Failure(ex, this.Logger);
             }
@@ -100,10 +107,15 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                List<WikiV2> wikis = await this._wikiHttpClient.GetAllWikisAsync(project: this.ProjectName, cancellationToken: cancellationToken);
+                IReadOnlyList<WikiV2> wikis = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<WikiV2> result = await this._wikiHttpClient.GetAllWikisAsync(project: this.ProjectName, cancellationToken: cancellationToken);
+                    return (IReadOnlyList<WikiV2>)result;
+                }, "ListWikis", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Success(wikis, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Failure(ex, this.Logger);
             }
@@ -129,10 +141,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiV2 wiki = await this._wikiHttpClient.DeleteWikiAsync(wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+                WikiV2 wiki = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await this._wikiHttpClient.DeleteWikiAsync(wikiIdentifier: wikiId, cancellationToken: cancellationToken);
+                }, "DeleteWiki", OperationType.Delete);
+
                 return AzureDevOpsActionResult<WikiV2>.Success(wiki, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<WikiV2>.Failure(ex, this.Logger);
             }
@@ -160,26 +176,27 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var pageParameters = new WikiPageCreateOrUpdateParameters
+                int pageId = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Content = wikiPageUpdateOptions.Content
-                };
+                    var pageParameters = new WikiPageCreateOrUpdateParameters { Content = wikiPageUpdateOptions.Content };
+                    WikiPageResponse response = await this._wikiHttpClient.CreateOrUpdatePageAsync(
+                        parameters: pageParameters,
+                        project: this.ProjectName,
+                        wikiIdentifier: wikiId,
+                        path: wikiPageUpdateOptions.Path,
+                        Version: wikiPageUpdateOptions.Version,
+                        versionDescriptor: gitVersionDescriptor,
+                        cancellationToken: cancellationToken);
 
-                WikiPageResponse response = await this._wikiHttpClient.CreateOrUpdatePageAsync(
-                    parameters: pageParameters,
-                    project: this.ProjectName,
-                    wikiIdentifier: wikiId,
-                    path: wikiPageUpdateOptions.Path,
-                    Version: wikiPageUpdateOptions.Version,
-                    versionDescriptor: gitVersionDescriptor,
-                    cancellationToken: cancellationToken);
+                    if (!response.Page?.Id.HasValue ?? true)
+                        throw new InvalidOperationException("Wiki page id is null.");
 
-                int? pageId = response.Page?.Id;
-                return pageId.HasValue
-                    ? AzureDevOpsActionResult<int>.Success(pageId.Value, this.Logger)
-                    : AzureDevOpsActionResult<int>.Failure("Wiki page id is null.", this.Logger);
+                    return response.Page.Id.Value;
+                }, "CreateOrUpdatePage", OperationType.Update);
+
+                return AzureDevOpsActionResult<int>.Success(pageId, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, this.Logger);
             }
@@ -206,15 +223,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiPageResponse response = await this._wikiHttpClient.GetPageAsync(
-                    project: this.ProjectName,
-                    wikiIdentifier: wikiId,
-                    path: path,
-                    includeContent: true,
-                    cancellationToken: cancellationToken);
+                WikiPageResponse response = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await this._wikiHttpClient.GetPageAsync(project: this.ProjectName, wikiIdentifier: wikiId, path: path, includeContent: true, cancellationToken: cancellationToken);
+                }, "GetPage", OperationType.Read);
+
                 return AzureDevOpsActionResult<WikiPageResponse>.Success(response, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, this.Logger);
             }
@@ -242,23 +258,28 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                var request = new WikiPagesBatchRequest
+                IReadOnlyList<WikiPageDetail> pages = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Top = pagesOptions.Top,
-                    ContinuationToken = pagesOptions.ContinuationToken,
-                    PageViewsForDays = pagesOptions.PageViewsForDays
-                };
+                    var request = new WikiPagesBatchRequest
+                    {
+                        Top = pagesOptions.Top,
+                        ContinuationToken = pagesOptions.ContinuationToken,
+                        PageViewsForDays = pagesOptions.PageViewsForDays
+                    };
 
-                PagedList<WikiPageDetail> pages = await this._wikiHttpClient.GetPagesBatchAsync(
-                    pagesBatchRequest: request,
-                    project: this.ProjectName,
-                    wikiIdentifier: wikiId,
-                    versionDescriptor: versionDescriptor,
-                    cancellationToken: cancellationToken);
+                    PagedList<WikiPageDetail> result = await this._wikiHttpClient.GetPagesBatchAsync(
+                        pagesBatchRequest: request,
+                        project: this.ProjectName,
+                        wikiIdentifier: wikiId,
+                        versionDescriptor: versionDescriptor,
+                        cancellationToken: cancellationToken);
+
+                    return (IReadOnlyList<WikiPageDetail>)result;
+                }, "ListPages", OperationType.Read);
 
                 return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Success(pages, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Failure(ex, this.Logger);
             }
@@ -285,20 +306,23 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                Stream stream = await this._wikiHttpClient.GetPageTextAsync(
-                    project: this.ProjectName,
-                    wikiIdentifier: wikiId,
-                    path: path,
-                    recursionLevel: VersionControlRecursionType.None,
-                    versionDescriptor: null,
-                    includeContent: true,
-                    cancellationToken: cancellationToken);
+                string content = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    Stream stream = await this._wikiHttpClient.GetPageTextAsync(
+                        project: this.ProjectName,
+                        wikiIdentifier: wikiId,
+                        path: path,
+                        recursionLevel: VersionControlRecursionType.None,
+                        versionDescriptor: null,
+                        includeContent: true,
+                        cancellationToken: cancellationToken);
+                    using StreamReader reader = new(stream);
+                    return await reader.ReadToEndAsync(cancellationToken);
+                }, "GetPageText", OperationType.Read);
 
-                using StreamReader reader = new StreamReader(stream);
-                string content = await reader.ReadToEndAsync(cancellationToken);
                 return AzureDevOpsActionResult<string>.Success(content, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<string>.Failure(ex, this.Logger);
             }
@@ -326,10 +350,14 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                WikiPageResponse response = await this._wikiHttpClient.DeletePageAsync(project: this.ProjectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
+                WikiPageResponse response = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await this._wikiHttpClient.DeletePageAsync(project: this.ProjectName, wikiIdentifier: wikiId, path: path, versionDescriptor: gitVersionDescriptor, cancellationToken: cancellationToken);
+                }, "DeletePage", OperationType.Delete);
+
                 return AzureDevOpsActionResult<WikiPageResponse>.Success(response, this.Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, this.Logger);
             }

@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace Dotnet.AzureDevOps.Core.Boards
@@ -27,11 +28,16 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                var commentCreate = new CommentCreate { Text = comment };
-                _ = await _workItemClient.AddCommentAsync(commentCreate, projectName, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    var commentCreate = new CommentCreate { Text = comment };
+                    _ = await _workItemClient.AddCommentAsync(commentCreate, projectName, workItemId, cancellationToken: cancellationToken);
+                    return true;
+                }, "AddComment", OperationType.Create);
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -57,11 +63,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                WorkItemComments commentsResult = await _workItemClient.GetCommentsAsync(workItemId, cancellationToken: cancellationToken);
-                IEnumerable<WorkItemComment> comments = commentsResult.Comments ?? Array.Empty<WorkItemComment>();
+                IEnumerable<WorkItemComment> comments = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    WorkItemComments commentsResult = await _workItemClient.GetCommentsAsync(workItemId, cancellationToken: cancellationToken);
+                    return (IEnumerable<WorkItemComment>)(commentsResult.Comments ?? Array.Empty<WorkItemComment>());
+                }, "GetComments", OperationType.Read);
+
                 return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Success(comments, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Failure(ex, Logger);
             }
@@ -87,10 +97,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<WorkItemUpdate> updates = await _workItemClient.GetUpdatesAsync(workItemId, cancellationToken: cancellationToken);
+                IReadOnlyList<WorkItemUpdate> updates = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<WorkItemUpdate> result = await _workItemClient.GetUpdatesAsync(workItemId, cancellationToken: cancellationToken);
+                    return (IReadOnlyList<WorkItemUpdate>)result;
+                }, "GetHistory", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Success(updates, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Failure(ex, Logger);
             }

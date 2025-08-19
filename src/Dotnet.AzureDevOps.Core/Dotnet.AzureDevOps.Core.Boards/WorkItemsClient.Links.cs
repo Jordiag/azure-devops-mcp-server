@@ -2,6 +2,7 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Dotnet.AzureDevOps.Core.Boards
@@ -30,24 +31,24 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                var patch = new JsonPatchDocument
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    new JsonPatchOperation
+                    var patch = new JsonPatchDocument
                     {
-                        Operation = Operation.Add,
-                        Path = Constants.JsonPatchOperationPath,
-                        Value = new
+                        new JsonPatchOperation
                         {
-                            rel = linkType,
-                            url = $"{OrganizationUrl}/{ProjectName}/_apis/wit/workItems/{targetWorkItemId}"
+                            Operation = Operation.Add,
+                            Path = Constants.JsonPatchOperationPath,
+                            Value = new { rel = linkType, url = $"{OrganizationUrl}/{ProjectName}/_apis/wit/workItems/{targetWorkItemId}" }
                         }
-                    }
-                };
+                    };
+                    _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                    return true;
+                }, "AddLink", OperationType.Update);
 
-                _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -73,105 +74,87 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task<AzureDevOpsActionResult<bool>> RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default)
         {
             AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
-            if(!itemResult.IsSuccessful)
-            {
+            if (!itemResult.IsSuccessful)
                 return AzureDevOpsActionResult<bool>.Failure(itemResult.ErrorMessage!, Logger);
-            }
 
             WorkItem item = itemResult.Value;
-            if(item.Relations == null)
-            {
+            if (item.Relations == null)
                 return AzureDevOpsActionResult<bool>.Failure("Work item has no relations to remove.", Logger);
-            }
 
             WorkItemRelation? relation = item.Relations.FirstOrDefault(r => r.Url == linkUrl);
-            if(relation == null)
-            {
+            if (relation == null)
                 return AzureDevOpsActionResult<bool>.Failure("Link not found in work item relations.", Logger);
-            }
 
             int index = item.Relations.IndexOf(relation);
-            if(index < 0)
-            {
+            if (index < 0)
                 return AzureDevOpsActionResult<bool>.Failure("Invalid relation index.", Logger);
-            }
 
             try
             {
-                var patch = new JsonPatchDocument
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    new JsonPatchOperation
+                    var patch = new JsonPatchDocument
                     {
-                        Operation = Operation.Remove,
-                        Path = $"/relations/{index}"
-                    }
-                };
+                        new JsonPatchOperation { Operation = Operation.Remove, Path = $"/relations/{index}" }
+                    };
+                    _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                    return true;
+                }, "RemoveLink", OperationType.Update);
 
-                _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
         }
 
         /// <summary>
-        /// Retrieves all relationship links associated with a work item, providing comprehensive information
-        /// about how the work item relates to other work items in the project. This includes parent-child
-        /// relationships, related items, duplicates, and any other configured link types. Each relation
-        /// contains the link type, target URL, and any additional attributes or comments.
+        /// Links a work item to a pull request, establishing a connection between the two entities.
+        /// This is accomplished by creating an artifact link of type "Pull Request" in the work item
+        /// that references the pull request's VSTS URL. The operation is asynchronous and can be
+        /// cancelled using the provided cancellation token.
         /// </summary>
-        /// <param name="workItemId">The ID of the work item whose links to retrieve.</param>
+        /// <param name="projectId">The ID of the project containing the repository.</param>
+        /// <param name="repositoryId">The ID of the repository containing the pull request.</param>
+        /// <param name="pullRequestId">The ID of the pull request to link to.</param>
+        /// <param name="workItemId">The ID of the work item to update with the link.</param>
         /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
         /// <returns>
-        /// An <see cref="AzureDevOpsActionResult{T}"/> containing a read-only list of work item relations,
-        /// or an empty list if no links exist, or error details if the operation fails.
+        /// An <see cref="AzureDevOpsActionResult{T}"/> containing true if the link was successfully created,
+        /// or error details if the operation fails.
         /// </returns>
-        /// <exception cref="ArgumentException">Thrown when workItemId is invalid.</exception>
+        /// <exception cref="ArgumentException">Thrown when projectId, repositoryId, pullRequestId, or workItemId is invalid.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to read work item relationships.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the work item doesn't exist.</exception>
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>> GetLinksAsync(int workItemId, CancellationToken cancellationToken = default)
-        {
-            AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
-            if(!itemResult.IsSuccessful)
-            {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Failure(itemResult.ErrorMessage!, Logger);
-            }
-
-            WorkItem item = itemResult.Value;
-            IReadOnlyList<WorkItemRelation> relations = (IReadOnlyList<WorkItemRelation>)(item.Relations ?? []);
-            return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Success(relations, Logger);
-        }
-
+        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to modify the work item.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the work item doesn't exist or the pull request link already exists.</exception>
         public async Task<AzureDevOpsActionResult<bool>> LinkWorkItemToPullRequestAsync(string projectId, string repositoryId, int pullRequestId, int workItemId, CancellationToken cancellationToken = default)
         {
             try
             {
-                string artifactPathValue = $"{projectId}/{repositoryId}/{pullRequestId}";
-                string encodedPath = Uri.EscapeDataString(artifactPathValue);
-                string vstfsUrl = $"vstfs:///Git/PullRequestId/{encodedPath}";
-
-                var patch = new JsonPatchDocument
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    new JsonPatchOperation
-                    {
-                        Operation = Operation.Add,
-                        Path = Constants.JsonPatchOperationPath,
-                        Value = new
-                        {
-                            rel = "ArtifactLink",
-                            url = vstfsUrl,
-                            attributes = new { name = "Pull Request" }
-                        }
-                    }
-                };
+                    string artifactPathValue = $"{projectId}/{repositoryId}/{pullRequestId}";
+                    string encodedPath = Uri.EscapeDataString(artifactPathValue);
+                    string vstfsUrl = $"vstfs:///Git/PullRequestId/{encodedPath}";
 
-                _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                    var patch = new JsonPatchDocument
+                    {
+                        new JsonPatchOperation
+                        {
+                            Operation = Operation.Add,
+                            Path = Constants.JsonPatchOperationPath,
+                            Value = new { rel = "ArtifactLink", url = vstfsUrl, attributes = new { name = "Pull Request" } }
+                        }
+                    };
+
+                    _ = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                    return true;
+                }, "LinkWorkItemToPullRequest", OperationType.Update);
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
