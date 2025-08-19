@@ -17,7 +17,7 @@ public partial class IntegrationTestFixture : IAsyncLifetime
 {
     private const string BasicAuthenticationScheme = "Basic";
     private IServiceProvider? _serviceProvider;
-    
+
     public AzureDevOpsConfiguration Configuration { get; private set; } = null!;
     public WorkItemsClient WorkItemsClient { get; private set; } = null!;
     public ReposClient ReposClient { get; private set; } = null!;
@@ -28,16 +28,16 @@ public partial class IntegrationTestFixture : IAsyncLifetime
     public SearchClient SearchClient { get; private set; } = null!;
     public IdentityClient IdentityClient { get; private set; } = null!;
     public TestPlansClient TestPlansClient { get; private set; } = null!;
-    
+
     /// <summary>
     /// Gets an HttpClient configured for the specified base URL with proper authentication.
     /// Use this method in integration tests instead of creating HttpClient instances directly.
     /// </summary>
     public HttpClient CreateHttpClient(string baseUrl)
     {
-        if (_serviceProvider == null)
+        if(_serviceProvider == null)
             throw new InvalidOperationException("Service provider not initialized. Call InitializeAsync first.");
-            
+
         IHttpClientFactory factory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
         HttpClient client = factory.CreateClient();
         client.BaseAddress = new Uri(baseUrl);
@@ -51,13 +51,13 @@ public partial class IntegrationTestFixture : IAsyncLifetime
 
         // Configure services with HttpClientFactory
         ServiceCollection services = new();
-        
+
         // Add HttpClient factory - provides proper connection pooling and resource management
         services.AddHttpClient();
-        
+
         // Build service provider
         _serviceProvider = services.BuildServiceProvider();
-        
+
         // Create clients using HttpClientFactory pattern for HTTP-based clients
         HttpClient workItemsHttpClient = CreateHttpClient(Configuration.OrganisationUrl);
         WorkItemsClient = new WorkItemsClient(
@@ -92,16 +92,16 @@ public partial class IntegrationTestFixture : IAsyncLifetime
             Configuration.OrganisationUrl,
             Configuration.ProjectName,
             Configuration.PersonalAccessToken);
-            
+
         OverviewClient = new OverviewClient(
             Configuration.OrganisationUrl,
             Configuration.ProjectName,
             Configuration.PersonalAccessToken);
-            
+
         IdentityClient = new IdentityClient(
             Configuration.OrganisationUrl,
             Configuration.PersonalAccessToken);
-            
+
         TestPlansClient = new TestPlansClient(
             Configuration.OrganisationUrl,
             Configuration.ProjectName,
@@ -119,7 +119,7 @@ public partial class IntegrationTestFixture : IAsyncLifetime
 
     public Task DisposeAsync()
     {
-        if (_serviceProvider is IDisposable disposable)
+        if(_serviceProvider is IDisposable disposable)
             disposable.Dispose();
         return Task.CompletedTask;
     }

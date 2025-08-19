@@ -26,7 +26,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<GitCommitDiffs>.Success(diffs, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitCommitDiffs>.Failure(ex, Logger);
             }
@@ -54,7 +54,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(commits, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Failure(ex, Logger);
             }
@@ -76,7 +76,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(commits, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Failure(ex, Logger);
             }
@@ -113,7 +113,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<string>.Success(commitId, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<string>.Failure(ex, Logger);
             }

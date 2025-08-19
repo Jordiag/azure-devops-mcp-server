@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.ProjectSettings;
-using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Core.WebApi;
 using ModelContextProtocol.Server;
 

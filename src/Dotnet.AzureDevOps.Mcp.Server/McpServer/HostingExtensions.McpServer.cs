@@ -56,7 +56,7 @@ internal static class HostingExtensionsMcpServer
         if(!Uri.TryCreate(orgUrl, UriKind.Absolute, out Uri? orgUri) || orgUri.Scheme != "https")
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_ORGANIZATION_URL must be a valid HTTPS URL.",
-                "Configuration", 
+                "Configuration",
                 "StartupValidation");
         options.OrganizationUrl = orgUrl;
     }

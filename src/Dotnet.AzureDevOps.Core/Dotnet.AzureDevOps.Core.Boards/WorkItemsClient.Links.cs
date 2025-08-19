@@ -1,8 +1,8 @@
+using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
-using Dotnet.AzureDevOps.Core.Common;
-using Dotnet.AzureDevOps.Core.Common.Services;
 using WorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Dotnet.AzureDevOps.Core.Boards
@@ -48,7 +48,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -74,19 +74,19 @@ namespace Dotnet.AzureDevOps.Core.Boards
         public async Task<AzureDevOpsActionResult<bool>> RemoveLinkAsync(int workItemId, string linkUrl, CancellationToken cancellationToken = default)
         {
             AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
-            if (!itemResult.IsSuccessful)
+            if(!itemResult.IsSuccessful)
                 return AzureDevOpsActionResult<bool>.Failure(itemResult.ErrorMessage!, Logger);
 
             WorkItem item = itemResult.Value;
-            if (item.Relations == null)
+            if(item.Relations == null)
                 return AzureDevOpsActionResult<bool>.Failure("Work item has no relations to remove.", Logger);
 
             WorkItemRelation? relation = item.Relations.FirstOrDefault(r => r.Url == linkUrl);
-            if (relation == null)
+            if(relation == null)
                 return AzureDevOpsActionResult<bool>.Failure("Link not found in work item relations.", Logger);
 
             int index = item.Relations.IndexOf(relation);
-            if (index < 0)
+            if(index < 0)
                 return AzureDevOpsActionResult<bool>.Failure("Invalid relation index.", Logger);
 
             try
@@ -103,7 +103,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -154,7 +154,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }

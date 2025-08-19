@@ -23,7 +23,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<Guid>.Success(id, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -40,12 +40,12 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     project: ProjectName,
                     cancellationToken: cancellationToken
                 );
-                return true;
+                    return true;
                 }, "DeleteRepository", OperationType.Delete);
 
                 return AzureDevOpsActionResult<bool>.Success(deleted, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -63,7 +63,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<GitRepository>.Success(repo, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitRepository>.Failure(ex, Logger);
             }
@@ -84,7 +84,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<GitRepository>.Success(repo, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitRepository>.Failure(ex, Logger);
             }
@@ -101,7 +101,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRepository>>.Success(repos, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<GitRepository>>.Failure(ex, Logger);
             }

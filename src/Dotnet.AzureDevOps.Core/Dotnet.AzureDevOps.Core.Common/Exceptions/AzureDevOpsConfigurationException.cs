@@ -20,7 +20,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Exceptions
         /// <param name="operationContext">The context in which the operation was being performed.</param>
         /// <param name="correlationId">The correlation ID for tracking related operations.</param>
         public AzureDevOpsConfigurationException(string message, string? configurationKey = null, string? operationContext = null, string? correlationId = null)
-            : base(message, operationContext, correlationId) => 
+            : base(message, operationContext, correlationId) =>
             ConfigurationKey = configurationKey;
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Exceptions
         /// <param name="operationContext">The context in which the operation was being performed.</param>
         /// <param name="correlationId">The correlation ID for tracking related operations.</param>
         public AzureDevOpsConfigurationException(string message, Exception innerException, string? configurationKey = null, string? operationContext = null, string? correlationId = null)
-            : base(message, innerException, operationContext, correlationId) => 
+            : base(message, innerException, operationContext, correlationId) =>
             ConfigurationKey = configurationKey;
     }
 }

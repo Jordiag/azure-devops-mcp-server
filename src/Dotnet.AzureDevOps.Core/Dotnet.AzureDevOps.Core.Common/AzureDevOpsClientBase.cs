@@ -1,9 +1,9 @@
+using Dotnet.AzureDevOps.Core.Common.Exceptions;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using Dotnet.AzureDevOps.Core.Common.Exceptions;
-using Dotnet.AzureDevOps.Core.Common.Services;
 
 namespace Dotnet.AzureDevOps.Core.Common
 {
@@ -33,22 +33,22 @@ namespace Dotnet.AzureDevOps.Core.Common
         /// <param name="retryService">Retry service for handling transient failures</param>
         /// <param name="exceptionHandlingService">Exception handling service for transforming exceptions</param>
         protected AzureDevOpsClientBase(
-            string organizationUrl, 
-            string personalAccessToken, 
-            string? projectName = null, 
+            string organizationUrl,
+            string personalAccessToken,
+            string? projectName = null,
             ILogger? logger = null,
             IRetryService? retryService = null,
             IExceptionHandlingService? exceptionHandlingService = null)
         {
             ValidateConstructorArguments(organizationUrl, personalAccessToken);
-            
+
             OrganizationUrl = organizationUrl;
             ProjectName = projectName ?? string.Empty;
             Logger = logger ?? NullLogger.Instance;
-            
+
             RetryService = retryService ?? CreateDefaultRetryService();
             ExceptionHandlingService = exceptionHandlingService ?? CreateDefaultExceptionHandlingService();
-            
+
             var credentials = new VssBasicCredential(string.Empty, personalAccessToken);
             Connection = new VssConnection(new Uri(organizationUrl), credentials);
         }
@@ -70,17 +70,17 @@ namespace Dotnet.AzureDevOps.Core.Common
 
             try
             {
-                Logger.LogDebug("Starting operation {OperationName}. CorrelationId: {CorrelationId}", 
+                Logger.LogDebug("Starting operation {OperationName}. CorrelationId: {CorrelationId}",
                     operationName, correlationId);
 
                 T result = await RetryService.ExecuteWithRetryAsync(operation, operationName);
 
-                Logger.LogDebug("Operation {OperationName} completed successfully. CorrelationId: {CorrelationId}", 
+                Logger.LogDebug("Operation {OperationName} completed successfully. CorrelationId: {CorrelationId}",
                     operationName, correlationId);
 
                 return result;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, "Operation {OperationName} failed with correlation ID {CorrelationId}",
                     operationName, correlationId);
@@ -110,17 +110,17 @@ namespace Dotnet.AzureDevOps.Core.Common
 
             try
             {
-                Logger.LogDebug("Starting {OperationType} operation {OperationName}. CorrelationId: {CorrelationId}", 
+                Logger.LogDebug("Starting {OperationType} operation {OperationName}. CorrelationId: {CorrelationId}",
                     operationType, operationName, correlationId);
 
                 T result = await RetryService.ExecuteWithRetryAsync(operation, operationName, operationType, correlationId: correlationId);
 
-                Logger.LogDebug("Operation {OperationName} completed successfully. CorrelationId: {CorrelationId}", 
+                Logger.LogDebug("Operation {OperationName} completed successfully. CorrelationId: {CorrelationId}",
                     operationName, correlationId);
 
                 return result;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, "{OperationType} operation {OperationName} failed with correlation ID {CorrelationId}",
                     operationType, operationName, correlationId);
@@ -141,7 +141,7 @@ namespace Dotnet.AzureDevOps.Core.Common
         protected async Task ExecuteWithExceptionHandlingAsync(
             Func<Task> operation,
             string operationName,
-            string? correlationId = null) => 
+            string? correlationId = null) =>
             await ExecuteWithExceptionHandlingAsync(async () =>
                 {
                     await operation();
@@ -156,13 +156,13 @@ namespace Dotnet.AzureDevOps.Core.Common
         /// <param name="personalAccessToken">The personal access token to validate.</param>
         private static void ValidateConstructorArguments(string organizationUrl, string personalAccessToken)
         {
-            if (organizationUrl == "https://dev.azure.com/placeholder" && 
+            if(organizationUrl == "https://dev.azure.com/placeholder" &&
                 personalAccessToken == "placeholder-token")
             {
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(organizationUrl))
+            if(string.IsNullOrWhiteSpace(organizationUrl))
             {
                 throw new AzureDevOpsConfigurationException(
                     "Organization URL is required and cannot be null or empty",
@@ -170,7 +170,7 @@ namespace Dotnet.AzureDevOps.Core.Common
                     "ClientInitialization");
             }
 
-            if (string.IsNullOrWhiteSpace(personalAccessToken))
+            if(string.IsNullOrWhiteSpace(personalAccessToken))
             {
                 throw new AzureDevOpsConfigurationException(
                     "Personal Access Token is required and cannot be null or empty",
@@ -178,7 +178,7 @@ namespace Dotnet.AzureDevOps.Core.Common
                     "ClientInitialization");
             }
 
-            if (!Uri.IsWellFormedUriString(organizationUrl, UriKind.Absolute))
+            if(!Uri.IsWellFormedUriString(organizationUrl, UriKind.Absolute))
             {
                 throw new AzureDevOpsConfigurationException(
                     $"Organization URL '{organizationUrl}' is not a valid absolute URI",
@@ -202,7 +202,7 @@ namespace Dotnet.AzureDevOps.Core.Common
         /// Creates a default exception handling service instance when none is injected.
         /// </summary>
         /// <returns>A new ExceptionHandlingService instance.</returns>
-        private static IExceptionHandlingService CreateDefaultExceptionHandlingService() => 
+        private static IExceptionHandlingService CreateDefaultExceptionHandlingService() =>
             new ExceptionHandlingService();
 
         public void Dispose()
@@ -213,9 +213,9 @@ namespace Dotnet.AzureDevOps.Core.Common
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!Disposed)
+            if(!Disposed)
             {
-                if (disposing)
+                if(disposing)
                 {
                     Connection?.Dispose();
                 }

@@ -4,7 +4,6 @@ using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Services.Identity;
 using Microsoft.VisualStudio.Services.Identity.Client;
-using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos
 {
@@ -27,14 +26,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 {
                     IdentitiesCollection identities = await _identityHttpClient.ReadIdentitiesAsync(IdentitySearchFilter.General, email, cancellationToken: cancellationToken);
                     Identity? identity = identities?.FirstOrDefault(i => i.Properties != null && i.Properties.ContainsKey("Mail") && string.Equals(i.Properties["Mail"].ToString(), email, StringComparison.OrdinalIgnoreCase));
-                    if (identity == null)
+                    if(identity == null)
                         throw new InvalidOperationException($"I Couldn't find an identity from that email: {email}");
                     return (identity.Id.ToString(), identity.DisplayName ?? string.Empty);
                 }, "GetUserLocalIdFromEmail", OperationType.Read);
 
                 return AzureDevOpsActionResult<(string localId, string displayName)>.Success(tuple, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<(string localId, string displayName)>.Failure(ex, Logger);
             }

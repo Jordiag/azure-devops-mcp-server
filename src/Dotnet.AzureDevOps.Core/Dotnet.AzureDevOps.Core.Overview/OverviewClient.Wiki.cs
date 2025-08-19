@@ -49,7 +49,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<Guid>.Success(wikiId, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, this.Logger);
             }
@@ -82,7 +82,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<WikiV2>.Success(wiki, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WikiV2>.Failure(ex, this.Logger);
             }
@@ -115,7 +115,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Success(wikis, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WikiV2>>.Failure(ex, this.Logger);
             }
@@ -148,7 +148,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<WikiV2>.Success(wiki, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WikiV2>.Failure(ex, this.Logger);
             }
@@ -188,7 +188,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
                         versionDescriptor: gitVersionDescriptor,
                         cancellationToken: cancellationToken);
 
-                    if (!response.Page?.Id.HasValue ?? true)
+                    if(!response.Page?.Id.HasValue ?? true)
                         throw new InvalidOperationException("Wiki page id is null.");
 
                     return response.Page.Id.Value;
@@ -196,7 +196,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<int>.Success(pageId, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, this.Logger);
             }
@@ -230,7 +230,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<WikiPageResponse>.Success(response, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, this.Logger);
             }
@@ -279,7 +279,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Success(pages, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WikiPageDetail>>.Failure(ex, this.Logger);
             }
@@ -322,7 +322,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<string>.Success(content, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<string>.Failure(ex, this.Logger);
             }
@@ -357,7 +357,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<WikiPageResponse>.Success(response, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WikiPageResponse>.Failure(ex, this.Logger);
             }

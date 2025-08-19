@@ -76,7 +76,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             _ = await _overviewClient.DeleteWikiAsync(id);
             _createdWikis.Remove(id);
-            
+
             WikiV2? afterDelete = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {

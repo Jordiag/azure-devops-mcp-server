@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Boards.Options;
-using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;

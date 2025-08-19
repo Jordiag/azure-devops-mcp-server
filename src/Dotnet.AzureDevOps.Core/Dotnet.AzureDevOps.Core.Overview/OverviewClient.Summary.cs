@@ -33,7 +33,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<TeamProject>.Success(project, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<TeamProject>.Failure(ex, this.Logger);
             }

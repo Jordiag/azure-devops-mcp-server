@@ -21,7 +21,7 @@ public class TestPlansClient : AzureDevOpsClientBase, ITestPlansClient
     private readonly TestPlanHttpClient _testPlanClient;
 
     public TestPlansClient(string organizationUrl, string projectName, string personalAccessToken, ILogger? logger = null, IRetryService? retryService = null, IExceptionHandlingService? exceptionHandlingService = null)
-        : base(organizationUrl, personalAccessToken, projectName, logger, retryService, exceptionHandlingService) => 
+        : base(organizationUrl, personalAccessToken, projectName, logger, retryService, exceptionHandlingService) =>
         _testPlanClient = Connection.GetClient<TestPlanHttpClient>();
 
     /// <summary>
@@ -66,7 +66,7 @@ public class TestPlansClient : AzureDevOpsClientBase, ITestPlansClient
 
             return AzureDevOpsActionResult<int>.Success(planId, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
@@ -102,11 +102,11 @@ public class TestPlansClient : AzureDevOpsClientBase, ITestPlansClient
 
             return AzureDevOpsActionResult<TestPlan>.Success(plan, Logger);
         }
-        catch (VssServiceException vssEx) when (vssEx.Message.Contains("not found") || vssEx.Message.Contains("NotFound"))
+        catch(VssServiceException vssEx) when(vssEx.Message.Contains("not found") || vssEx.Message.Contains("NotFound"))
         {
             return AzureDevOpsActionResult<TestPlan>.Failure("Test plan is not found", Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<TestPlan>.Failure(ex, Logger);
         }

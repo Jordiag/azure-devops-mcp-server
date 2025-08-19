@@ -1,6 +1,6 @@
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Dotnet.AzureDevOps.Core.Common.Services;
 
 namespace Dotnet.AzureDevOps.Core.Common.Extensions
 {
@@ -33,7 +33,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Extensions
         public static IServiceCollection AddAzureDevOpsCoreServices(this IServiceCollection services, ILoggerFactory loggerFactory)
         {
             // Register core exception handling and Polly-based retry services with specific logger
-            services.AddSingleton<IRetryService>(provider => 
+            services.AddSingleton<IRetryService>(provider =>
                 new RetryService(loggerFactory.CreateLogger<RetryService>()));
             services.AddSingleton<IExceptionHandlingService, ExceptionHandlingService>();
 

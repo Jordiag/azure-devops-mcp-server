@@ -37,7 +37,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -71,7 +71,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Success(comments, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IEnumerable<WorkItemComment>>.Failure(ex, Logger);
             }
@@ -105,7 +105,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Success(updates, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemUpdate>>.Failure(ex, Logger);
             }

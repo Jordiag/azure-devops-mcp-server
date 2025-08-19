@@ -1,12 +1,10 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Common.Exceptions;
 using Dotnet.AzureDevOps.Core.Common.Services;
 using Dotnet.AzureDevOps.Core.Search.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dotnet.AzureDevOps.Core.Search;
 
@@ -49,12 +47,12 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
             return await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 string? projectName = options.Project?.FirstOrDefault();
-                if (projectName == null)
+                if(projectName == null)
                     return AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", Logger);
                 return await SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);
             }, "SearchCode", OperationType.Read);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }
@@ -85,7 +83,7 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
                 await SendSearchRequestAsync("_apis/search/wikisearchresults", BuildWikiPayload(options), cancellationToken),
                 "SearchWiki", OperationType.Read);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }
@@ -116,7 +114,7 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
                 await SendSearchRequestAsync("_apis/search/workitemsearchresults", BuildWorkItemPayload(options), cancellationToken),
                 "SearchWorkItems", OperationType.Read);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }
@@ -141,12 +139,12 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
 
                 using HttpResponseMessage response = await _httpClient.GetAsync(url, cancellationToken);
 
-                if (response.StatusCode == HttpStatusCode.NotFound)
+                if(response.StatusCode == HttpStatusCode.NotFound)
                 {
                     return false;
                 }
 
-                if (!response.IsSuccessStatusCode)
+                if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync(cancellationToken);
                     throw new AzureDevOpsApiException(
@@ -159,7 +157,7 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
                 string content = await response.Content.ReadAsStringAsync(cancellationToken);
                 JsonElement extension = JsonSerializer.Deserialize<JsonElement>(content);
 
-                if (extension.TryGetProperty("installState", out JsonElement installState))
+                if(extension.TryGetProperty("installState", out JsonElement installState))
                 {
                     return installState.TryGetProperty("flags", out JsonElement flags) &&
                            flags.GetString()?.Contains("trusted") == true;
@@ -170,7 +168,7 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
 
             return AzureDevOpsActionResult<bool>.Success(enabled, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
@@ -189,7 +187,7 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
     {
         string url = $"{resource}?api-version={GlobalConstants.ApiVersion}";
         string correlationId = Guid.NewGuid().ToString("N")[..8];
-        
+
         try
         {
             Logger.LogDebug("Starting search request to {Resource}. CorrelationId: {CorrelationId}", resource, correlationId);
@@ -197,11 +195,11 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
             string content = await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 using HttpResponseMessage response = await System.Net.Http.Json.HttpClientJsonExtensions.PostAsJsonAsync(_httpClient, url, payload, cancellationToken);
-                
-                if (!response.IsSuccessStatusCode)
+
+                if(!response.IsSuccessStatusCode)
                 {
                     string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                    
+
                     AzureDevOpsException exception = response.StatusCode switch
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
@@ -228,14 +226,14 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
 
                     throw exception;
                 }
-                
+
                 return await response.Content.ReadAsStringAsync(cancellationToken);
             }, $"Search-{resource}", OperationType.Read, correlationId);
-            
+
             Logger.LogDebug("Search request completed successfully for {Resource}. CorrelationId: {CorrelationId}", resource, correlationId);
             return AzureDevOpsActionResult<string>.Success(content, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }

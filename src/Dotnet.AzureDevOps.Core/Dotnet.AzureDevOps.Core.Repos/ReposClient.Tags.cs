@@ -35,7 +35,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<GitAnnotatedTag>.Success(gitAnnotatedTag, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitAnnotatedTag>.Failure(ex, Logger);
             }
@@ -56,7 +56,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<GitAnnotatedTag>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitAnnotatedTag>.Failure(ex, Logger);
             }
@@ -74,7 +74,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     filter: "tags/",
                     cancellationToken: cancellationToken);
                     GitRef? tagRef = refs.FirstOrDefault(r => r.Name.EndsWith($"/{tagName}"));
-                    if (tagRef == null)
+                    if(tagRef == null)
                         throw new InvalidOperationException($"Tag '{tagName}' not found.");
 
                     var refUpdate = new GitRefUpdate
@@ -89,14 +89,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     repositoryId: repositoryId,
                     project: ProjectName,
                     cancellationToken: cancellationToken);
-                    if (gitRefUpdateResultList.Count == 0)
+                    if(gitRefUpdateResultList.Count == 0)
                         throw new InvalidOperationException("Failed to delete tag.");
                     return gitRefUpdateResultList[0];
                 }, "DeleteTag", OperationType.Delete);
 
                 return AzureDevOpsActionResult<GitRefUpdateResult>.Success(deleteResult, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitRefUpdateResult>.Failure(ex, Logger);
             }

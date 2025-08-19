@@ -22,7 +22,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<List<GitRefUpdateResult>>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<List<GitRefUpdateResult>>.Failure(ex, Logger);
             }
@@ -43,7 +43,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Success(refs, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Failure(ex, Logger);
             }
@@ -66,7 +66,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Success(refs, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Failure(ex, Logger);
             }
@@ -84,14 +84,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     filter: $"heads/{branchName}",
                     cancellationToken: cancellationToken);
 
-                    if (refs.Count == 0)
+                    if(refs.Count == 0)
                         throw new InvalidOperationException($"Branch '{branchName}' not found.");
                     return refs[0];
                 }, "GetBranch", OperationType.Read);
 
                 return AzureDevOpsActionResult<GitRef>.Success(branch, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<GitRef>.Failure(ex, Logger);
             }

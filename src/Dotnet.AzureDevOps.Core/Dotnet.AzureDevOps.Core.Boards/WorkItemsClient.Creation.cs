@@ -36,7 +36,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "CreateEpic", OperationType.Create);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -69,7 +69,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "CreateFeature", OperationType.Create);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -101,7 +101,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "CreateUserStory", OperationType.Create);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -133,7 +133,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "CreateTask", OperationType.Create);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -166,7 +166,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "UpdateEpic", OperationType.Update);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -199,7 +199,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "UpdateFeature", OperationType.Update);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -232,7 +232,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "UpdateUserStory", OperationType.Update);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -265,7 +265,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     "UpdateTask", OperationType.Update);
                 return inner;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -299,7 +299,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -324,7 +324,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         expand: expand,
                         cancellationToken: cancellationToken);
 
-                    if (!newWorkItem.Id.HasValue)
+                    if(!newWorkItem.Id.HasValue)
                         throw new InvalidOperationException("Work item creation returned null identifier.");
 
                     return newWorkItem.Id.Value;
@@ -332,7 +332,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<int>.Success(id, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -351,7 +351,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         id: workItemId,
                         cancellationToken: cancellationToken);
 
-                    if (!updatedWorkItem.Id.HasValue)
+                    if(!updatedWorkItem.Id.HasValue)
                         throw new InvalidOperationException("Work item update returned null identifier.");
 
                     return updatedWorkItem.Id.Value;
@@ -359,7 +359,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<int>.Success(id, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
@@ -369,7 +369,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// </summary>
         private static void AddStringField(JsonPatchDocument patchDocument, string? value, string fieldPath)
         {
-            if (!string.IsNullOrWhiteSpace(value))
+            if(!string.IsNullOrWhiteSpace(value))
                 patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = fieldPath, Value = value });
         }
 
@@ -378,7 +378,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// </summary>
         private static void AddNumericField<T>(JsonPatchDocument patchDocument, T? value, string fieldPath) where T : struct
         {
-            if (value.HasValue)
+            if(value.HasValue)
                 patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = fieldPath, Value = value.Value });
         }
         /// <summary>
@@ -415,7 +415,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AddNumericField(patchDocument, workItemCreateOptions.RemainingWork, "/fields/Microsoft.VSTS.Scheduling.RemainingWork");
             AddNumericField(patchDocument, workItemCreateOptions.OriginalEstimate, "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate");
 
-            if (workItemCreateOptions.ParentId.HasValue)
+            if(workItemCreateOptions.ParentId.HasValue)
             {
                 patchDocument.Add(new JsonPatchOperation
                 {
@@ -460,10 +460,10 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     ArgumentNullException.ThrowIfNull(fields);
 
                     var patchDocument = new JsonPatchDocument();
-                    foreach (WorkItemFieldValue field in fields)
+                    foreach(WorkItemFieldValue field in fields)
                     {
                         patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = $"/fields/{field.Name}", Value = field.Value });
-                        if (!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
+                        if(!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
                         {
                             patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = $"/multilineFieldsFormat/{field.Name}", Value = field.Format });
                         }
@@ -477,7 +477,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<WorkItem>.Success(workItem, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
@@ -509,10 +509,10 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 {
                     ArgumentNullException.ThrowIfNull(updates);
                     var patchDocument = new JsonPatchDocument();
-                    foreach (WorkItemFieldUpdate update in updates)
+                    foreach(WorkItemFieldUpdate update in updates)
                     {
                         patchDocument.Add(new JsonPatchOperation { Operation = update.Operation, Path = update.Path, Value = update.Value });
-                        if (!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
+                        if(!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
                         {
                             string formatPath = $"/multilineFieldsFormat{update.Path.Replace("/fields", string.Empty, StringComparison.OrdinalIgnoreCase)}";
                             patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = formatPath, Value = update.Format });
@@ -525,7 +525,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<WorkItem>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
@@ -554,7 +554,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<WorkItem>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
@@ -590,13 +590,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 }, "CreateCustomField", OperationType.Create);
                 return AzureDevOpsActionResult<WorkItemField2>.Success(created, Logger);
             }
-            catch (VssServiceException ex)
+            catch(VssServiceException ex)
             {
-                if (ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
+                if(ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
                     return AzureDevOpsActionResult<WorkItemField2>.Success(field, Logger);
                 return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, Logger);
             }

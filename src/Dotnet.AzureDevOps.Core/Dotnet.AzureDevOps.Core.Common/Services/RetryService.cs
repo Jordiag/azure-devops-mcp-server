@@ -72,7 +72,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
             await ExecuteWithRetryAsync(async () =>
             {
                 await operation();
-                return true; 
+                return true;
             }, operationName, shouldRetry);
         }
 
@@ -86,7 +86,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         {
             string operationId = correlationId ?? Guid.NewGuid().ToString("N")[..8];
 
-            if (operationType != OperationType.Read && shouldRetry == null)
+            if(operationType != OperationType.Read && shouldRetry == null)
             {
                 shouldRetry = ex => ShouldRetryNonIdempotentOperation(ex);
             }
@@ -264,7 +264,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         /// </summary>
         /// <param name="ex">The exception to evaluate.</param>
         /// <returns>True if the operation should be retried, false otherwise.</returns>
-        private static bool ShouldRetryNonIdempotentOperation(Exception ex) => 
+        private static bool ShouldRetryNonIdempotentOperation(Exception ex) =>
             ex switch
             {
                 HttpRequestException httpEx when IsNetworkError(httpEx) => true,
@@ -288,7 +288,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         /// <returns>Configured retry strategy options.</returns>
         private RetryStrategyOptions CreateRetryOptionsForOperationType(
             OperationType operationType,
-            Func<Exception, bool>? shouldRetry) => 
+            Func<Exception, bool>? shouldRetry) =>
             operationType switch
             {
                 OperationType.Read => CreateReadRetryOptions(),
@@ -299,7 +299,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         /// Creates retry options optimized for read operations.
         /// </summary>
         /// <returns>Configured retry strategy options for read operations.</returns>
-        private RetryStrategyOptions CreateReadRetryOptions() => 
+        private RetryStrategyOptions CreateReadRetryOptions() =>
             new()
             {
                 MaxRetryAttempts = 3,
@@ -321,23 +321,23 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         /// </summary>
         /// <param name="shouldRetry">Custom retry predicate.</param>
         /// <returns>Configured retry strategy options for write operations.</returns>
-        private RetryStrategyOptions CreateWriteRetryOptions(Func<Exception, bool>? shouldRetry) => 
+        private RetryStrategyOptions CreateWriteRetryOptions(Func<Exception, bool>? shouldRetry) =>
             new()
             {
-            MaxRetryAttempts = 2, // Fewer retries
-            Delay = TimeSpan.FromSeconds(1),
-            BackoffType = DelayBackoffType.Linear, // No exponential backoff
-            UseJitter = false,
-            ShouldHandle = new PredicateBuilder()
+                MaxRetryAttempts = 2, // Fewer retries
+                Delay = TimeSpan.FromSeconds(1),
+                BackoffType = DelayBackoffType.Linear, // No exponential backoff
+                UseJitter = false,
+                ShouldHandle = new PredicateBuilder()
                     .Handle<Exception>(shouldRetry ?? (_ => false)),
-            OnRetry = CreateOnRetryCallback()
-        };
+                OnRetry = CreateOnRetryCallback()
+            };
 
         /// <summary>
         /// Creates a callback function for retry events.
         /// </summary>
         /// <returns>Async callback for retry events.</returns>
-        private Func<OnRetryArguments<object>, ValueTask> CreateOnRetryCallback() => 
+        private Func<OnRetryArguments<object>, ValueTask> CreateOnRetryCallback() =>
             async args =>
             {
                 (string operationName, string operationId, string operationType) = ExtractOperationProperties(args.Context);
@@ -374,8 +374,8 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         private static bool IsNetworkError(HttpRequestException ex)
         {
             string message = ex.Message.ToLowerInvariant();
-            return message.Contains("timeout") || 
-                   message.Contains("connection") || 
+            return message.Contains("timeout") ||
+                   message.Contains("connection") ||
                    message.Contains("network") ||
                    message.Contains("dns");
         }

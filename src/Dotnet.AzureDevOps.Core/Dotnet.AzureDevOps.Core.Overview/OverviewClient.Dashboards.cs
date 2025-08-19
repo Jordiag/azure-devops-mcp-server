@@ -36,7 +36,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Success(dashboards, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<Dashboard>>.Failure(ex, this.Logger);
             }
@@ -71,7 +71,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
 
                 return AzureDevOpsActionResult<Dashboard>.Success(dashboard, this.Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Dashboard>.Failure(ex, this.Logger);
             }

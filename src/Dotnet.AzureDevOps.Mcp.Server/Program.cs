@@ -1,5 +1,4 @@
 ﻿using Azure.Monitor.OpenTelemetry.Exporter;
-using Dotnet.AzureDevOps.Mcp.Server;
 using Dotnet.AzureDevOps.Mcp.Server.McpServer;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -20,12 +19,12 @@ public static class Program
         McpServerSettings mcpSettings = builder.Configuration.GetSection("McpServer").Get<McpServerSettings>() ?? new();
 
         // Add Application Insights if enabled
-        if (mcpSettings.EnableApplicationInsights)
+        if(mcpSettings.EnableApplicationInsights)
         {
             builder.Services.AddApplicationInsightsTelemetry();
         }
 
-        if (mcpSettings.EnableOpenTelemetry)
+        if(mcpSettings.EnableOpenTelemetry)
         {
             IOpenTelemetryBuilder openTelemetryBuilder = builder.Services.AddOpenTelemetry()
                 .ConfigureResource(r => r.AddService(serviceName: "azure-devops-mcp-server"))
@@ -39,7 +38,7 @@ public static class Program
                     .AddRuntimeInstrumentation());
 
             // Add Azure Monitor exporters if Application Insights is enabled
-            if (mcpSettings.EnableApplicationInsights)
+            if(mcpSettings.EnableApplicationInsights)
             {
                 openTelemetryBuilder
                     .WithTracing(t => t.AddAzureMonitorTraceExporter())

@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-
-namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
+﻿namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
 internal static class HostingExtensionsSettings
 {

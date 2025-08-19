@@ -1,16 +1,15 @@
 using Dotnet.AzureDevOps.Core.Common;
-using Dotnet.AzureDevOps.Core.TestPlans;
-using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Dotnet.AzureDevOps.Core.Pipelines;
 using Dotnet.AzureDevOps.Core.Pipelines.Options;
-using Microsoft.TeamFoundation.Build.WebApi;
+using Dotnet.AzureDevOps.Core.TestPlans;
+using Dotnet.AzureDevOps.Core.TestPlans.Options;
 using Dotnet.AzureDevOps.Tests.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
-using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
-using Microsoft.VisualStudio.Services.TestResults.WebApi;
+using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
-using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
+using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
+using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
 
 namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
 {

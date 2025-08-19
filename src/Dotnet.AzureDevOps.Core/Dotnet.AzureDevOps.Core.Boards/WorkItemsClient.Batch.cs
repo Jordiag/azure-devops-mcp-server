@@ -35,10 +35,10 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 IReadOnlyList<int> createdIds = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
                     var ids = new List<int>();
-                    foreach (WorkItemCreateOptions itemOptions in items)
+                    foreach(WorkItemCreateOptions itemOptions in items)
                     {
                         AzureDevOpsActionResult<int> id = await CreateWorkItemAsync(workItemType, itemOptions, cancellationToken: cancellationToken);
-                        if (id.IsSuccessful)
+                        if(id.IsSuccessful)
                         {
                             ids.Add(id.Value);
                         }
@@ -48,7 +48,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<int>>.Success(createdIds, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<int>>.Failure(ex, Logger);
             }
@@ -76,7 +76,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    foreach ((int id, WorkItemCreateOptions options) in updates)
+                    foreach((int id, WorkItemCreateOptions options) in updates)
                     {
                         await UpdateWorkItemAsync(id, options, cancellationToken);
                     }
@@ -85,7 +85,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -125,7 +125,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(responses, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
@@ -163,7 +163,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                     var batch = new List<WitBatchRequest>();
 
-                    foreach ((int id, WorkItemCreateOptions options) in updates)
+                    foreach((int id, WorkItemCreateOptions options) in updates)
                     {
                         JsonPatchDocument patch = BuildPatchDocument(options);
 
@@ -187,7 +187,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(responses, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
@@ -225,11 +225,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     ArgumentNullException.ThrowIfNull(links);
                     var batch = new List<WitBatchRequest>();
 
-                    foreach ((int sourceId, int targetId, string relation) in links)
+                    foreach((int sourceId, int targetId, string relation) in links)
                     {
-                        if (string.IsNullOrWhiteSpace(relation))
+                        if(string.IsNullOrWhiteSpace(relation))
                         {
-                            throw new ArgumentException("links array parameter has a Relation that cannot be null or whitespace.",relation);
+                            throw new ArgumentException("links array parameter has a Relation that cannot be null or whitespace.", relation);
                         }
 
                         var patch = new JsonPatchDocument
@@ -267,7 +267,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(responses, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
@@ -308,7 +308,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     ArgumentNullException.ThrowIfNull(workItemIds);
                     var batch = new List<WitBatchRequest>();
 
-                    foreach (int id in workItemIds)
+                    foreach(int id in workItemIds)
                     {
                         var patch = new JsonPatchDocument
                         {
@@ -320,7 +320,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                             }
                         };
 
-                        if (!string.IsNullOrWhiteSpace(closedReason))
+                        if(!string.IsNullOrWhiteSpace(closedReason))
                         {
                             patch.Add(new JsonPatchOperation
                             {
@@ -350,7 +350,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(responses, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
@@ -387,7 +387,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     ArgumentNullException.ThrowIfNull(pairs);
                     var batch = new List<WitBatchRequest>();
 
-                    foreach ((int duplicateId, int canonicalId) in pairs)
+                    foreach((int duplicateId, int canonicalId) in pairs)
                     {
                         var patch = new JsonPatchDocument
                         {
@@ -436,7 +436,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(responses, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }
@@ -484,7 +484,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(workItems, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Failure(ex, Logger);
             }
@@ -522,7 +522,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     ArgumentNullException.ThrowIfNull(links);
                     var batch = new List<WitBatchRequest>();
 
-                    foreach ((int sourceId, int targetId, string type, string? comment) in links)
+                    foreach((int sourceId, int targetId, string type, string? comment) in links)
                     {
                         string relation = GetRelationFromName(type);
 
@@ -561,7 +561,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(responses, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
             }

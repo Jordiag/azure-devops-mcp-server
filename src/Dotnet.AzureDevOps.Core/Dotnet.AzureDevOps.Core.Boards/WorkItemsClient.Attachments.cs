@@ -51,7 +51,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<Guid>.Success(attachmentId, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -81,11 +81,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<Stream>.Success(content, Logger);
             }
-            catch (VssServiceException ex)
+            catch(VssServiceException ex)
             {
                 return AzureDevOpsActionResult<Stream>.Failure(ex, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Stream>.Failure(ex, Logger);
             }

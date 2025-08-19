@@ -4,9 +4,9 @@ using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Common.Exceptions;
 using Dotnet.AzureDevOps.Core.Common.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Operations;
-using Microsoft.Extensions.Logging;
 
 
 namespace Dotnet.AzureDevOps.Core.ProjectSettings
@@ -52,7 +52,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 {
                     AzureDevOpsActionResult<Guid> teamNameResult = await GetTeamIdAsync(teamName, cancellationToken);
 
-                    if (teamNameResult.IsSuccessful)
+                    if(teamNameResult.IsSuccessful)
                     {
                         return true;
                     }
@@ -70,7 +70,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -103,7 +103,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<Guid>.Success(teamId, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -133,7 +133,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<List<WebApiTeam>>.Success(teams, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<List<WebApiTeam>>.Failure(ex, Logger);
             }
@@ -177,7 +177,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     ? AzureDevOpsActionResult<bool>.Success(true, Logger)
                     : AzureDevOpsActionResult<bool>.Failure("Updated team values do not match expected.", Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -208,7 +208,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                     using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
 
-                    if (!response.IsSuccessStatusCode)
+                    if(!response.IsSuccessStatusCode)
                     {
                         string error = await response.Content.ReadAsStringAsync(cancellationToken);
                         throw new AzureDevOpsApiException(
@@ -223,7 +223,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -272,7 +272,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
                     using HttpResponseMessage response = await _httClient.PostAsync(url, content, cancellationToken);
-                    if (!response.IsSuccessStatusCode)
+                    if(!response.IsSuccessStatusCode)
                     {
                         string error = await response.Content.ReadAsStringAsync(cancellationToken);
                         throw new AzureDevOpsApiException(
@@ -286,7 +286,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -316,7 +316,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     string url = $"{OrganizationUrl}/_apis/work/processadmin/processes/{processId}?api-version={GlobalConstants.ApiVersion}";
 
                     using HttpResponseMessage response = await _httClient.DeleteAsync(url, cancellationToken);
-                    if (!response.IsSuccessStatusCode)
+                    if(!response.IsSuccessStatusCode)
                     {
                         string error = await response.Content.ReadAsStringAsync(cancellationToken);
                         throw new AzureDevOpsApiException(
@@ -331,7 +331,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -362,13 +362,13 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                     JsonElement response = await _httClient.GetFromJsonAsync<JsonElement>(url, cancellationToken);
 
-                    foreach (JsonElement element in response.GetProperty("value").EnumerateArray())
+                    foreach(JsonElement element in response.GetProperty("value").EnumerateArray())
                     {
                         string? name = element.GetProperty("name").GetString();
-                        if (string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
+                        if(string.Equals(name, processName, StringComparison.OrdinalIgnoreCase))
                         {
                             string? typeId = element.GetProperty("typeId").GetString();
-                            if (!string.IsNullOrEmpty(typeId))
+                            if(!string.IsNullOrEmpty(typeId))
                             {
                                 return typeId;
                             }
@@ -376,15 +376,15 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     }
 
                     throw new AzureDevOpsResourceNotFoundException(
-                        $"Process with name '{processName}' not found", 
-                        "Process", 
-                        processName, 
+                        $"Process with name '{processName}' not found",
+                        "Process",
+                        processName,
                         "GetProcessId");
                 }, "GetProcessId", OperationType.Read);
 
                 return AzureDevOpsActionResult<string>.Success(processId, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<string>.Failure(ex, Logger);
             }
@@ -427,7 +427,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     OperationReference operationReference = await _projectClient.QueueCreateProject(teamProject, userState: null);
 
                     Operation operation = await WaitForOperationAsync(operationReference.Id);
-                    if (operation.Status != OperationStatus.Succeeded)
+                    if(operation.Status != OperationStatus.Succeeded)
                     {
                         throw new AzureDevOpsException(
                             $"Project creation did not succeed: {operation.Status}",
@@ -435,7 +435,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     }
 
                     TeamProject? createdProject = await _projectClient.GetProject(projectName);
-                    if (createdProject == null)
+                    if(createdProject == null)
                     {
                         throw new AzureDevOpsResourceNotFoundException(
                             "Project not found after creation",
@@ -449,7 +449,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<Guid>.Success(projectId, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Guid>.Failure(ex, Logger);
             }
@@ -481,7 +481,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<TeamProject>.Success(project, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<TeamProject>.Failure(ex, Logger);
             }
@@ -510,8 +510,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                 {
                     OperationReference operationReference = await _projectClient.QueueDeleteProject(projectId, userState: null);
                     Operation operation = await WaitForOperationAsync(operationReference.Id);
-                    
-                    if (operation.Status != OperationStatus.Succeeded)
+
+                    if(operation.Status != OperationStatus.Succeeded)
                     {
                         throw new AzureDevOpsException(
                             $"Project deletion did not succeed: {operation.Status}",
@@ -523,7 +523,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
 
                 return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
             }
@@ -539,7 +539,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
                     await Task.Delay(TimeSpan.FromSeconds(5));
                     operation = await _operationsClient.GetOperation(operationId, userState: null);
                 }
-                while (operation.Status == OperationStatus.InProgress || operation.Status == OperationStatus.Queued);
+                while(operation.Status == OperationStatus.InProgress || operation.Status == OperationStatus.Queued);
 
                 return operation;
             }, "WaitForOperation");

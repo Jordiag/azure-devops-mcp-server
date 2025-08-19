@@ -71,10 +71,10 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     SourceBranch = buildQueueOptions.Branch
                 };
 
-                if (IsValidCommitSha(buildQueueOptions.CommitSha))
+                if(IsValidCommitSha(buildQueueOptions.CommitSha))
                     build.SourceVersion = buildQueueOptions.CommitSha!;
 
-                if (buildQueueOptions.Parameters is { Count: > 0 })
+                if(buildQueueOptions.Parameters is { Count: > 0 })
                     build.Parameters = System.Text.Json.JsonSerializer.Serialize(buildQueueOptions.Parameters);
 
                 Build queued = await _build.QueueBuildAsync(
@@ -87,7 +87,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<int>.Success(buildId, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
@@ -120,7 +120,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     buildId: buildId,
                     cancellationToken: cancellationToken);
 
-                if (result == null)
+                if(result == null)
                 {
                     throw new AzureDevOpsResourceNotFoundException(
                         "Build could not be found",
@@ -134,7 +134,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<Build>.Success(build, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<Build>.Failure(ex, Logger);
         }
@@ -176,7 +176,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<IReadOnlyList<Build>>.Success(builds, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<IReadOnlyList<Build>>.Failure(ex, Logger);
         }
@@ -222,7 +222,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
@@ -273,7 +273,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<int>.Success(retryBuildId, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
@@ -316,7 +316,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     .OrderBy(e => e.FullName) // Ensure correct order
                     .ToList();
 
-                if (logEntries.Count == 0)
+                if(logEntries.Count == 0)
                 {
                     throw new AzureDevOpsResourceNotFoundException(
                         "No console logs were found in the build output",
@@ -326,7 +326,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                 }
 
                 var fullLog = new StringBuilder();
-                foreach (ZipArchiveEntry? entry in logEntries)
+                foreach(ZipArchiveEntry? entry in logEntries)
                 {
                     fullLog.AppendLine($"--- {entry.FullName} ---");
                     using var reader = new StreamReader(entry.Open());
@@ -337,7 +337,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
                 string result = fullLog.ToString().Trim();
 
-                if (string.IsNullOrWhiteSpace(result))
+                if(string.IsNullOrWhiteSpace(result))
                 {
                     throw new AzureDevOpsException(
                         "Console logs were found but all are empty",
@@ -349,7 +349,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<string>.Success(logResult, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<string>.Failure(ex, Logger);
         }
@@ -406,7 +406,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<int>.Success(pipelineId, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<int>.Failure(ex, Logger);
         }
@@ -439,7 +439,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     definitionId: definitionId,
                     cancellationToken: cancellationToken);
 
-                if (result == null)
+                if(result == null)
                 {
                     throw new AzureDevOpsResourceNotFoundException(
                         "Pipeline definition not found",
@@ -453,7 +453,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<BuildDefinition>.Success(definition, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<BuildDefinition>.Failure(ex, Logger);
         }
@@ -488,7 +488,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Failure(ex, Logger);
         }
@@ -540,7 +540,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Success(definitions, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<IReadOnlyList<BuildDefinitionReference>>.Failure(ex, Logger);
         }
@@ -573,7 +573,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Success(revisions, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<List<BuildDefinitionRevision>>.Failure(ex, Logger);
         }
@@ -606,7 +606,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<List<BuildLog>>.Success(logs, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<List<BuildLog>>.Failure(ex, Logger);
         }
@@ -642,7 +642,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<List<string>>.Success(lines, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<List<string>>.Failure(ex, Logger);
         }
@@ -678,7 +678,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<List<Change>>.Success(changes, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<List<Change>>.Failure(ex, Logger);
         }
@@ -707,7 +707,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
             BuildReportMetadata report = await ExecuteWithExceptionHandlingAsync(async () =>
             {
                 BuildReportMetadata result = await _build.GetBuildReportAsync(ProjectName, buildId, cancellationToken: cancellationToken);
-                if (result == null)
+                if(result == null)
                 {
                     throw new AzureDevOpsResourceNotFoundException(
                         "Build report not found",
@@ -720,7 +720,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<BuildReportMetadata>.Success(report, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<BuildReportMetadata>.Failure(ex, Logger);
         }
@@ -758,7 +758,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
@@ -793,13 +793,13 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
                     definitionId: definitionId,
                     cancellationToken: cancellationToken);
 
-                if (pipelineUpdateOptions.Name is { Length: > 0 })
+                if(pipelineUpdateOptions.Name is { Length: > 0 })
                     buildDefinition.Name = pipelineUpdateOptions.Name;
-                if (pipelineUpdateOptions.Description is { Length: > 0 })
+                if(pipelineUpdateOptions.Description is { Length: > 0 })
                     buildDefinition.Description = pipelineUpdateOptions.Description;
-                if (pipelineUpdateOptions.DefaultBranch is { Length: > 0 })
+                if(pipelineUpdateOptions.DefaultBranch is { Length: > 0 })
                     buildDefinition.Repository.DefaultBranch = pipelineUpdateOptions.DefaultBranch;
-                if (pipelineUpdateOptions.YamlPath is { Length: > 0 } && buildDefinition.Process is YamlProcess yamlProcess)
+                if(pipelineUpdateOptions.YamlPath is { Length: > 0 } && buildDefinition.Process is YamlProcess yamlProcess)
                     yamlProcess.YamlFilename = pipelineUpdateOptions.YamlPath;
 
                 await _build.UpdateDefinitionAsync(
@@ -813,7 +813,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }
@@ -850,7 +850,7 @@ public partial class PipelinesClient : AzureDevOpsClientBase, IPipelinesClient
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
         }

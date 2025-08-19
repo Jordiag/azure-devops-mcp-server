@@ -38,7 +38,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Success(boards, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Failure(ex, Logger);
             }
@@ -74,7 +74,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<TeamSettingsIteration>.Success(iteration, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<TeamSettingsIteration>.Failure(ex, Logger);
             }
@@ -111,7 +111,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, Logger);
             }
@@ -148,7 +148,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Success(columns, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Failure(ex, Logger);
             }
@@ -183,7 +183,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Success(backlogs, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Failure(ex, Logger);
             }
@@ -219,7 +219,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<BacklogLevelWorkItems>.Success(items, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<BacklogLevelWorkItems>.Failure(ex, Logger);
             }
@@ -256,7 +256,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<PredefinedQuery>.Success(query, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<PredefinedQuery>.Failure(ex, Logger);
             }
@@ -292,7 +292,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IterationWorkItems>.Success(workItems, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IterationWorkItems>.Failure(ex, Logger);
             }
@@ -328,7 +328,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, Logger);
             }
@@ -362,7 +362,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     ArgumentNullException.ThrowIfNull(iterations);
                     var list = new List<WorkItemClassificationNode>();
 
-                    foreach (IterationCreateOptions iteration in iterations)
+                    foreach(IterationCreateOptions iteration in iterations)
                     {
                         var node = new WorkItemClassificationNode
                         {
@@ -370,12 +370,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
                             Attributes = new Dictionary<string, object?>()
                         };
 
-                        if (iteration.StartDate.HasValue)
+                        if(iteration.StartDate.HasValue)
                         {
                             node.Attributes["startDate"] = iteration.StartDate.Value;
                         }
 
-                        if (iteration.FinishDate.HasValue)
+                        if(iteration.FinishDate.HasValue)
                         {
                             node.Attributes["finishDate"] = iteration.FinishDate.Value;
                         }
@@ -395,7 +395,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Success(created, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Failure(ex, Logger);
             }
@@ -427,7 +427,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 {
                     ArgumentNullException.ThrowIfNull(iterations);
                     var list = new List<TeamSettingsIteration>();
-                    foreach (IterationAssignmentOptions iteration in iterations)
+                    foreach(IterationAssignmentOptions iteration in iterations)
                     {
                         var data = new TeamSettingsIteration
                         {
@@ -444,7 +444,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(assigned, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Failure(ex, Logger);
             }
@@ -477,7 +477,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<TeamFieldValues>.Success(values, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<TeamFieldValues>.Failure(ex, Logger);
             }
@@ -512,7 +512,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
 
                 return AzureDevOpsActionResult<Board>.Success(board, Logger);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return AzureDevOpsActionResult<Board>.Failure(ex, Logger);
             }

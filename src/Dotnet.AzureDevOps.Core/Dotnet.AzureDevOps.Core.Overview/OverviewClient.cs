@@ -1,5 +1,4 @@
 using Dotnet.AzureDevOps.Core.Common;
-using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Dashboards.WebApi;

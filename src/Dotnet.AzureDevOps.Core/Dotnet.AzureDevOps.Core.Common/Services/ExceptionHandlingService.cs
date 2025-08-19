@@ -67,7 +67,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
             // Use a constant message template for all logger calls to fix CA2254
             const string messageTemplate = "Operation {OperationName} failed. CorrelationId: {CorrelationId}{Context}{ResponseBody}";
 
-            if (ex is AzureDevOpsException azureEx)
+            if(ex is AzureDevOpsException azureEx)
             {
                 string context = azureEx.OperationContext != null ? $", Context: {azureEx.OperationContext}" : string.Empty;
                 string responseBody = (azureEx is AzureDevOpsApiException apiEx && !string.IsNullOrEmpty(apiEx.ResponseBody))
