@@ -14,6 +14,31 @@ namespace Dotnet.AzureDevOps.Core.Artifacts;
 public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 {
     private const string ApiVersion = GlobalConstants.ApiVersion;
+    
+    // Operation constants
+    private const string CreateFeedOperation = "CreateFeed";
+    private const string UpdateFeedOperation = "UpdateFeed";
+    private const string GetFeedOperation = "GetFeed";
+    private const string ListFeedsOperation = "ListFeeds";
+    private const string DeleteFeedOperation = "DeleteFeed";
+    private const string ListPackagesOperation = "ListPackages";
+    private const string DeletePackageOperation = "DeletePackage";
+    private const string GetFeedPermissionsOperation = "GetFeedPermissions";
+    private const string CreateFeedViewOperation = "CreateFeedView";
+    private const string ListFeedViewsOperation = "ListFeedViews";
+    private const string DeleteFeedViewOperation = "DeleteFeedView";
+    private const string SetUpstreamingBehaviorOperation = "SetUpstreamingBehavior";
+    private const string GetUpstreamingBehaviorOperation = "GetUpstreamingBehavior";
+    private const string GetPackageVersionOperation = "GetPackageVersion";
+    private const string UpdatePackageVersionOperation = "UpdatePackageVersion";
+    private const string DownloadPackageOperation = "DownloadPackage";
+    private const string GetRetentionPolicyOperation = "GetRetentionPolicy";
+    private const string SetRetentionPolicyOperation = "SetRetentionPolicy";
+    
+    // Resource type constants
+    private const string FeedResourceType = "Feed";
+    private const string PackageResourceType = "Package";
+    private const string FeedViewResourceType = "FeedView";
 
     private readonly string _projectName;
     private readonly HttpClient _httpClient;
@@ -66,23 +91,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while creating feed",
-                            "CreateFeed",
+                            CreateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while creating feed",
-                            "CreateFeed",
+                            CreateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Conflict => new AzureDevOpsApiException(
                             $"Feed with name '{feedCreateOptions.Name}' already exists",
                             (int)response.StatusCode,
                             error,
-                            "CreateFeed",
+                            CreateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to create feed: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "CreateFeed",
+                            CreateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -91,7 +116,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 Feed? feed = await response.Content.ReadFromJsonAsync<Feed>(cancellationToken);
                 return feed!.Id;
-            }, "CreateFeed", OperationType.Create);
+            }, CreateFeedOperation, OperationType.Create);
 
             return AzureDevOpsActionResult<Guid>.Success(feedId, Logger);
         }
@@ -149,23 +174,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while updating feed",
-                            "UpdateFeed",
+                            UpdateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while updating feed",
-                            "UpdateFeed",
+                            UpdateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "UpdateFeed",
+                            UpdateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to update feed: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "UpdateFeed",
+                            UpdateFeedOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -173,13 +198,13 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                 }
 
                 return true;
-            }, "UpdateFeed", OperationType.Update);
+            }, UpdateFeedOperation, OperationType.Update);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
         catch(Exception ex)
         {
-            return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
+            return AzureDevOpsActionResult<bool>. Failure(ex, Logger);
         }
     }
 
@@ -212,23 +237,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while retrieving feed",
-                            "GetFeed",
+                            GetFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while retrieving feed",
-                            "GetFeed",
+                            GetFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "GetFeed",
+                            GetFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to retrieve feed: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "GetFeed",
+                            GetFeedOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -237,7 +262,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 Feed? feed = await response.Content.ReadFromJsonAsync<Feed>(cancellationToken);
                 return feed!;
-            }, "GetFeed", OperationType.Read);
+            }, GetFeedOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<Feed>.Success(feed, Logger);
         }
@@ -274,17 +299,17 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while listing feeds",
-                            "ListFeeds",
+                            ListFeedsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while listing feeds",
-                            "ListFeeds",
+                            ListFeedsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to list feeds: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "ListFeeds",
+                            ListFeedsOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -293,7 +318,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 FeedList? list = await response.Content.ReadFromJsonAsync<FeedList>(cancellationToken);
                 return list?.Value?.ToArray() ?? Array.Empty<Feed>();
-            }, "ListFeeds", OperationType.Read);
+            }, ListFeedsOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<Feed>>.Success(feeds, Logger);
         }
@@ -333,23 +358,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while deleting feed",
-                            "DeleteFeed",
+                            DeleteFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while deleting feed",
-                            "DeleteFeed",
+                            DeleteFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "DeleteFeed",
+                            DeleteFeedOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to delete feed: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "DeleteFeed",
+                            DeleteFeedOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -357,7 +382,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                 }
 
                 return true;
-            }, "DeleteFeed", OperationType.Delete);
+            }, DeleteFeedOperation, OperationType.Delete);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -397,23 +422,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while listing packages",
-                            "ListPackages",
+                            ListPackagesOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while listing packages",
-                            "ListPackages",
+                            ListPackagesOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "ListPackages",
+                            ListPackagesOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to list packages: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "ListPackages",
+                            ListPackagesOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -422,7 +447,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 PackageList? list = await response.Content.ReadFromJsonAsync<PackageList>(cancellationToken);
                 return list?.Value?.ToArray() ?? Array.Empty<Package>();
-            }, "ListPackages", OperationType.Read);
+            }, ListPackagesOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<Package>>.Success(packages, Logger);
         }
@@ -464,23 +489,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while deleting package",
-                            "DeletePackage",
+                            DeletePackageOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while deleting package",
-                            "DeletePackage",
+                            DeletePackageOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Package '{packageName}' version '{version}' not found in feed",
-                            "Package",
+                            PackageResourceType,
                             $"{packageName}@{version}",
-                            "DeletePackage",
+                            DeletePackageOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to delete package: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "DeletePackage",
+                            DeletePackageOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -488,7 +513,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                 }
 
                 return true;
-            }, "DeletePackage", OperationType.Delete);
+            }, DeletePackageOperation, OperationType.Delete);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -535,23 +560,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while retrieving feed permissions",
-                            "GetFeedPermissions",
+                            GetFeedPermissionsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while retrieving feed permissions",
-                            "GetFeedPermissions",
+                            GetFeedPermissionsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "GetFeedPermissions",
+                            GetFeedPermissionsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to retrieve feed permissions: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "GetFeedPermissions",
+                            GetFeedPermissionsOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -560,7 +585,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 FeedPermissionList? list = await response.Content.ReadFromJsonAsync<FeedPermissionList>(options, cancellationToken);
                 return list?.Value?.ToArray() ?? Array.Empty<FeedPermission>();
-            }, "GetFeedPermissions", OperationType.Read);
+            }, GetFeedPermissionsOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<FeedPermission>>.Success(permissions, Logger);
         }
@@ -605,29 +630,29 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while creating feed view",
-                            "CreateFeedView",
+                            CreateFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while creating feed view",
-                            "CreateFeedView",
+                            CreateFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "CreateFeedView",
+                            CreateFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Conflict => new AzureDevOpsApiException(
                             $"Feed view with name '{feedView.Name}' already exists",
                             (int)response.StatusCode,
                             error,
-                            "CreateFeedView",
+                            CreateFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to create feed view: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "CreateFeedView",
+                            CreateFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -636,7 +661,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 FeedView? createdView = await response.Content.ReadFromJsonAsync<FeedView>(options, cancellationToken);
                 return createdView!;
-            }, "CreateFeedView", OperationType.Create);
+            }, CreateFeedViewOperation, OperationType.Create);
 
             return AzureDevOpsActionResult<FeedView>.Success(created, Logger);
         }
@@ -676,23 +701,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while listing feed views",
-                            "ListFeedViews",
+                            ListFeedViewsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while listing feed views",
-                            "ListFeedViews",
+                            ListFeedViewsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "ListFeedViews",
+                            ListFeedViewsOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to list feed views: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "ListFeedViews",
+                            ListFeedViewsOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -701,7 +726,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 FeedViewList? list = await response.Content.ReadFromJsonAsync<FeedViewList>(cancellationToken);
                 return list?.Value?.ToArray() ?? Array.Empty<FeedView>();
-            }, "ListFeedViews", OperationType.Read);
+            }, ListFeedViewsOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<IReadOnlyList<FeedView>>.Success(views, Logger);
         }
@@ -742,29 +767,29 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while deleting feed view",
-                            "DeleteFeedView",
+                            DeleteFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while deleting feed view",
-                            "DeleteFeedView",
+                            DeleteFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed view '{viewId}' not found in feed '{feedId}'",
-                            "FeedView",
+                            FeedViewResourceType,
                             viewId,
-                            "DeleteFeedView",
+                            DeleteFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.BadRequest => new AzureDevOpsApiException(
                             $"Cannot delete default view '{viewId}'",
                             (int)response.StatusCode,
                             error,
-                            "DeleteFeedView",
+                            DeleteFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to delete feed view: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "DeleteFeedView",
+                            DeleteFeedViewOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -772,7 +797,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                 }
 
                 return true;
-            }, "DeleteFeedView", OperationType.Delete);
+            }, DeleteFeedViewOperation, OperationType.Delete);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -815,23 +840,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while setting upstreaming behavior",
-                            "SetUpstreamingBehavior",
+                            SetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while setting upstreaming behavior",
-                            "SetUpstreamingBehavior",
+                            SetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Package '{packageName}' not found in feed '{feedId}'",
-                            "Package",
+                            PackageResourceType,
                             packageName,
-                            "SetUpstreamingBehavior",
+                            SetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to set upstreaming behavior: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "SetUpstreamingBehavior",
+                            SetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -839,7 +864,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                 }
 
                 return true;
-            }, "SetUpstreamingBehavior", OperationType.Update);
+            }, SetUpstreamingBehaviorOperation, OperationType.Update);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -880,23 +905,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while retrieving upstreaming behavior",
-                            "GetUpstreamingBehavior",
+                            GetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while retrieving upstreaming behavior",
-                            "GetUpstreamingBehavior",
+                            GetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Package '{packageName}' not found in feed '{feedId}'",
-                            "Package",
+                            PackageResourceType,
                             packageName,
-                            "GetUpstreamingBehavior",
+                            GetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to retrieve upstreaming behavior: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "GetUpstreamingBehavior",
+                            GetUpstreamingBehaviorOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -905,7 +930,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 UpstreamingBehavior result = await response.Content.ReadFromJsonAsync<UpstreamingBehavior>(cancellationToken);
                 return result;
-            }, "GetUpstreamingBehavior", OperationType.Read);
+            }, GetUpstreamingBehaviorOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<UpstreamingBehavior>.Success(behavior, Logger);
         }
@@ -928,7 +953,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
     /// An <see cref="AzureDevOpsActionResult{T}"/> containing the <see cref="Package"/> object with detailed version information if successful,
     /// or error details if the operation fails, the package is not found, or the version doesn't exist.
     /// </returns>
-    /// <exception cref="ArgumentException">Thrown when feedId is empty, packageName is null/empty, or version is null/empty.</exception>
+    /// <exception cref="ArgumentException">Thrown when feedId is empty, packageName/version is null or empty.</exception>
     /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access the feed or package.</exception>
     public async Task<AzureDevOpsActionResult<Package>> GetPackageVersionAsync(Guid feedId, string packageName, string version, CancellationToken cancellationToken = default)
@@ -947,23 +972,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while retrieving package version",
-                            "GetPackageVersion",
+                            GetPackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while retrieving package version",
-                            "GetPackageVersion",
+                            GetPackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Package '{packageName}' version '{version}' not found in feed",
-                            "Package",
+                            PackageResourceType,
                             $"{packageName}@{version}",
-                            "GetPackageVersion",
+                            GetPackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to retrieve package version: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "GetPackageVersion",
+                            GetPackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -972,7 +997,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 Package? pkg = await response.Content.ReadFromJsonAsync<Package>(cancellationToken);
                 return pkg!;
-            }, "GetPackageVersion", OperationType.Read);
+            }, GetPackageVersionOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<Package>.Success(package, Logger);
         }
@@ -1019,23 +1044,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while updating package version",
-                            "UpdatePackageVersion",
+                            UpdatePackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while updating package version",
-                            "UpdatePackageVersion",
+                            UpdatePackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Package '{packageName}' version '{version}' not found in feed",
-                            "Package",
+                            PackageResourceType,
                             $"{packageName}@{version}",
-                            "UpdatePackageVersion",
+                            UpdatePackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to update package version: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "UpdatePackageVersion",
+                            UpdatePackageVersionOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -1043,7 +1068,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                 }
 
                 return true;
-            }, "UpdatePackageVersion", OperationType.Update);
+            }, UpdatePackageVersionOperation, OperationType.Update);
 
             return AzureDevOpsActionResult<bool>.Success(result, Logger);
         }
@@ -1065,7 +1090,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
     /// <returns>
     /// An <see cref="AzureDevOpsActionResult{T}"/> containing a <see cref="Stream"/> with the package content if successful,
     /// or error details if the operation fails, the package is not found, or the version doesn't exist.
-    /// The caller is responsible for disposing of the returned stream.
+    /// The caller is responsible to disposing of the returned stream.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when feedId is empty, packageName is null/empty, or version is null/empty.</exception>
     /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
@@ -1086,23 +1111,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while downloading package",
-                            "DownloadPackage",
+                            DownloadPackageOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while downloading package",
-                            "DownloadPackage",
+                            DownloadPackageOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Package '{packageName}' version '{version}' not found in feed",
-                            "Package",
+                            PackageResourceType,
                             $"{packageName}@{version}",
-                            "DownloadPackage",
+                            DownloadPackageOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to download package: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "DownloadPackage",
+                            DownloadPackageOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -1111,7 +1136,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 return stream;
-            }, "DownloadPackage", OperationType.Read);
+            }, DownloadPackageOperation, OperationType.Read);
 
             return AzureDevOpsActionResult<Stream>.Success(contentStream, Logger);
         }
@@ -1152,23 +1177,23 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while retrieving retention policy",
-                            "GetRetentionPolicy",
+                            GetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while retrieving retention policy",
-                            "GetRetentionPolicy",
+                            GetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "GetRetentionPolicy",
+                            GetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to retrieve retention policy: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "GetRetentionPolicy",
+                            GetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -1177,7 +1202,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 FeedRetentionPolicy? result = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(cancellationToken);
                 return result;
-            }, "GetRetentionPolicy", OperationType.Read);
+            }, GetRetentionPolicyOperation, OperationType.Read);
 
             return policy == null
                 ? AzureDevOpsActionResult<FeedRetentionPolicy>.Failure(HttpStatusCode.NotFound, "No retention policy found for the specified feed.", Logger)
@@ -1227,29 +1252,29 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
                     {
                         HttpStatusCode.Unauthorized => new AzureDevOpsAuthenticationException(
                             "Authentication failed while setting retention policy",
-                            "SetRetentionPolicy",
+                            SetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.Forbidden => new AzureDevOpsAuthenticationException(
                             "Access denied while setting retention policy",
-                            "SetRetentionPolicy",
+                            SetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.NotFound => new AzureDevOpsResourceNotFoundException(
                             $"Feed with ID '{feedId}' not found",
-                            "Feed",
+                            FeedResourceType,
                             feedId.ToString(),
-                            "SetRetentionPolicy",
+                            SetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         HttpStatusCode.BadRequest => new AzureDevOpsApiException(
                             "Invalid retention policy configuration",
                             (int)response.StatusCode,
                             error,
-                            "SetRetentionPolicy",
+                            SetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8]),
                         _ => new AzureDevOpsApiException(
                             $"Failed to set retention policy: {response.StatusCode} - {response.ReasonPhrase}",
                             (int)response.StatusCode,
                             error,
-                            "SetRetentionPolicy",
+                            SetRetentionPolicyOperation,
                             Guid.NewGuid().ToString("N")[..8])
                     };
 
@@ -1258,7 +1283,7 @@ public class ArtifactsClient : AzureDevOpsClientBase, IArtifactsClient
 
                 FeedRetentionPolicy? result = await response.Content.ReadFromJsonAsync<FeedRetentionPolicy>(options, cancellationToken);
                 return result!;
-            }, "SetRetentionPolicy", OperationType.Update);
+            }, SetRetentionPolicyOperation, OperationType.Update);
 
             return AzureDevOpsActionResult<FeedRetentionPolicy>.Success(updated, Logger);
         }

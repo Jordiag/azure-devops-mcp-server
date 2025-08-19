@@ -16,6 +16,12 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
     /// </summary>
     public class RetryService : IRetryService
     {
+        // Constants for resilience property keys
+        private const string OperationNamePropertyKey = "OperationName";
+        private const string OperationIdPropertyKey = "OperationId";
+        private const string OperationTypePropertyKey = "OperationType";
+        private const string UnknownValue = "Unknown";
+        
         private readonly ILogger<RetryService> _logger;
         private readonly ResiliencePipeline _defaultPipeline;
         private readonly ResiliencePipeline<HttpResponseMessage> _httpPipeline;
@@ -40,8 +46,8 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
             string operationId = Guid.NewGuid().ToString("N")[..8];
 
             ResilienceContext context = ResilienceContextPool.Shared.Get();
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationName"), operationName);
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationId"), operationId);
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationNamePropertyKey), operationName);
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationIdPropertyKey), operationId);
 
             try
             {
@@ -98,9 +104,9 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
                 .Build();
 
             ResilienceContext context = ResilienceContextPool.Shared.Get();
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationName"), operationName);
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationId"), operationId);
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationType"), operationType.ToString());
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationNamePropertyKey), operationName);
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationIdPropertyKey), operationId);
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationTypePropertyKey), operationType.ToString());
 
             try
             {
@@ -135,8 +141,8 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
             string operationId = Guid.NewGuid().ToString("N")[..8];
 
             ResilienceContext context = ResilienceContextPool.Shared.Get();
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationName"), operationName);
-            context.Properties.Set(new ResiliencePropertyKey<string>("OperationId"), operationId);
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationNamePropertyKey), operationName);
+            context.Properties.Set(new ResiliencePropertyKey<string>(OperationIdPropertyKey), operationId);
 
             try
             {
@@ -172,8 +178,8 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
                                                         .Handle<AzureDevOpsApiException>(ex => ShouldRetryApiException(ex)),
                     OnRetry = async args =>
                     {
-                        string operationName = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>("OperationName"), out string? opName) ? opName ?? "Unknown" : "Unknown";
-                        string operationId = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>("OperationId"), out string? opId) ? opId ?? "Unknown" : "Unknown";
+                        string operationName = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>(OperationNamePropertyKey), out string? opName) ? opName ?? UnknownValue : UnknownValue;
+                        string operationId = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>(OperationIdPropertyKey), out string? opId) ? opId ?? UnknownValue : UnknownValue;
 
                         _logger.LogWarning(args.Outcome.Exception,
                             "Operation {OperationName} failed (attempt {AttemptNumber}), retrying in {Delay}ms. OperationId: {OperationId}",
@@ -210,8 +216,8 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
                                         response.StatusCode == HttpStatusCode.TooManyRequests),
                     OnRetry = async args =>
                     {
-                        string operationName = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>("OperationName"), out string? opName) ? opName ?? "Unknown" : "Unknown";
-                        string operationId = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>("OperationId"), out string? opId) ? opId ?? "Unknown" : "Unknown";
+                        string operationName = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>(OperationNamePropertyKey), out string? opName) ? opName ?? UnknownValue : UnknownValue;
+                        string operationId = args.Context.Properties.TryGetValue(new ResiliencePropertyKey<string>(OperationIdPropertyKey), out string? opId) ? opId ?? UnknownValue : UnknownValue;
 
                         _logger.LogWarning(args.Outcome.Exception,
                             "HTTP operation {OperationName} failed (attempt {AttemptNumber}), retrying in {Delay}ms. OperationId: {OperationId}",
@@ -318,8 +324,7 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
 
         /// <summary>
         /// Creates retry options optimized for write operations (Create/Update/Delete).
-        /// </summary>
-        /// <param name="shouldRetry">Custom retry predicate.</param>
+        /// /// <param name="shouldRetry">Custom retry predicate.</param>
         /// <returns>Configured retry strategy options for write operations.</returns>
         private RetryStrategyOptions CreateWriteRetryOptions(Func<Exception, bool>? shouldRetry) =>
             new()
@@ -357,11 +362,11 @@ namespace Dotnet.AzureDevOps.Core.Common.Services
         private static (string OperationName, string OperationId, string OperationType) ExtractOperationProperties(ResilienceContext context)
         {
             string operationName = context.Properties.TryGetValue(
-                new ResiliencePropertyKey<string>("OperationName"), out string? opName) ? opName ?? "Unknown" : "Unknown";
+                new ResiliencePropertyKey<string>(OperationNamePropertyKey), out string? opName) ? opName ?? UnknownValue : UnknownValue;
             string operationId = context.Properties.TryGetValue(
-                new ResiliencePropertyKey<string>("OperationId"), out string? opId) ? opId ?? "Unknown" : "Unknown";
+                new ResiliencePropertyKey<string>(OperationIdPropertyKey), out string? opId) ? opId ?? UnknownValue : UnknownValue;
             string operationType = context.Properties.TryGetValue(
-                new ResiliencePropertyKey<string>("OperationType"), out string? opType) ? opType ?? "Unknown" : "Unknown";
+                new ResiliencePropertyKey<string>(OperationTypePropertyKey), out string? opType) ? opType ?? UnknownValue : UnknownValue;
 
             return (operationName, operationId, operationType);
         }

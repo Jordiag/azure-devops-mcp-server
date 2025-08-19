@@ -7,6 +7,14 @@ namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
 internal static class HostingExtensionsMcpServer
 {
+    // Constants for duplicated string literals
+    private const string ConfigurationOperationName = "Configuration";
+    private const string StartupValidationCorrelationId = "StartupValidation";
+    private const string AzDevOpsProjectNameEnvVar = "AZURE_DEVOPS_PROJECT_NAME";
+    private const string AzDevOpsPatEnvVar = "AZURE_DEVOPS_PAT";
+    private const string AzDevOpsOrganizationUrlEnvVar = "AZURE_DEVOPS_ORGANIZATION_URL";
+    private const string AzDevOpsSearchOrganizationUrlEnvVar = "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL";
+
     public static WebApplicationBuilder ConfigureMcpServer(this WebApplicationBuilder builder)
     {
         McpServerSettings settings = builder.Configuration
@@ -47,60 +55,60 @@ internal static class HostingExtensionsMcpServer
 
     private static void ValidateAndSetOrganizationUrl(IConfiguration configuration, AzureDevOpsConfiguration options)
     {
-        string? orgUrl = configuration["AZURE_DEVOPS_ORGANIZATION_URL"];
+        string? orgUrl = configuration[AzDevOpsOrganizationUrlEnvVar];
         if(string.IsNullOrWhiteSpace(orgUrl))
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_ORGANIZATION_URL environment variable is required and cannot be null or empty.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         if(!Uri.TryCreate(orgUrl, UriKind.Absolute, out Uri? orgUri) || orgUri.Scheme != "https")
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_ORGANIZATION_URL must be a valid HTTPS URL.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         options.OrganizationUrl = orgUrl;
     }
 
     private static void ValidateAndSetSearchOrganizationUrl(IConfiguration configuration, AzureDevOpsConfiguration options)
     {
-        string? searchOrgUrl = configuration["AZURE_DEVOPS_SEARCH_ORGANIZATION_URL"];
+        string? searchOrgUrl = configuration[AzDevOpsSearchOrganizationUrlEnvVar];
         if(string.IsNullOrWhiteSpace(searchOrgUrl))
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL environment variable is required and cannot be null or empty.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         if(!Uri.TryCreate(searchOrgUrl, UriKind.Absolute, out Uri? searchUri) || searchUri.Scheme != "https")
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL must be a valid HTTPS URL.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         options.SearchOrganizationUrl = searchOrgUrl;
     }
 
     private static void ValidateAndSetProjectName(IConfiguration configuration, AzureDevOpsConfiguration options)
     {
-        string? projectName = configuration["AZURE_DEVOPS_PROJECT_NAME"];
+        string? projectName = configuration[AzDevOpsProjectNameEnvVar];
         if(string.IsNullOrWhiteSpace(projectName))
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_PROJECT_NAME environment variable is required and cannot be null or empty.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         options.ProjectName = projectName;
     }
 
     private static void ValidateAndSetPersonalAccessToken(IConfiguration configuration, AzureDevOpsConfiguration options)
     {
-        string? pat = configuration["AZURE_DEVOPS_PAT"];
+        string? pat = configuration[AzDevOpsPatEnvVar];
         if(string.IsNullOrWhiteSpace(pat))
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_PAT environment variable is required and cannot be null or empty.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         if(pat.Length < 20) // Basic validation for PAT format
             throw new AzureDevOpsConfigurationException(
                 "AZURE_DEVOPS_PAT appears to be too short to be a valid Personal Access Token.",
-                "Configuration",
-                "StartupValidation");
+                ConfigurationOperationName,
+                StartupValidationCorrelationId);
         options.PersonalAccessToken = pat;
     }
 

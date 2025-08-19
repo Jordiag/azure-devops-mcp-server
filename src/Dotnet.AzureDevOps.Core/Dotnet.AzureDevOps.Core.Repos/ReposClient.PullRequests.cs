@@ -154,7 +154,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsAsync(string repositoryId, PullRequestSearchOptions opts, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsAsync(string repositoryId, PullRequestSearchOptions pullRequestSearchOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -162,9 +162,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 {
                     var criteria = new GitPullRequestSearchCriteria
                     {
-                        Status = opts.Status,
-                        TargetRefName = opts.TargetBranch,
-                        SourceRefName = opts.SourceBranch
+                        Status = pullRequestSearchOptions.Status,
+                        TargetRefName = pullRequestSearchOptions.TargetBranch,
+                        SourceRefName = pullRequestSearchOptions.SourceBranch
                     };
                     List<GitPullRequest> list = await _gitHttpClient.GetPullRequestsAsync(
                     repositoryId: repositoryId,
@@ -184,7 +184,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByProjectAsync(PullRequestSearchOptions opts, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByProjectAsync(PullRequestSearchOptions pullRequestSearchOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -192,9 +192,9 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 {
                     GitPullRequestSearchCriteria searchCriteria = new GitPullRequestSearchCriteria
                     {
-                        Status = opts.Status,
-                        TargetRefName = opts.TargetBranch,
-                        SourceRefName = opts.SourceBranch
+                        Status = pullRequestSearchOptions.Status,
+                        TargetRefName = pullRequestSearchOptions.TargetBranch,
+                        SourceRefName = pullRequestSearchOptions.SourceBranch
                     };
                     List<GitPullRequest> list = await _gitHttpClient.GetPullRequestsByProjectAsync(
                     project: ProjectName,
@@ -212,11 +212,11 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByLabelAsync(string repositoryId, string labelName, PullRequestStatus status, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>> ListPullRequestsByLabelAsync(string repositoryId, string labelName, PullRequestStatus pullRequestStatus, CancellationToken cancellationToken = default)
         {
             try
             {
-                AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> all = await ListPullRequestsAsync(repositoryId, new PullRequestSearchOptions { Status = status }, cancellationToken);
+                AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> all = await ListPullRequestsAsync(repositoryId, new PullRequestSearchOptions { Status = pullRequestStatus }, cancellationToken);
                 if(!all.IsSuccessful || all.Value == null)
                     return AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>>.Failure(all.ErrorMessage ?? "Failed to list pull requests.", Logger);
 
@@ -232,7 +232,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitPullRequestStatus>> SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions opts, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<GitPullRequestStatus>> SetPullRequestStatusAsync(string repositoryId, int pullRequestId, PullRequestStatusOptions pullRequestStatusOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -240,10 +240,10 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 {
                     var status = new GitPullRequestStatus
                     {
-                        Context = new GitStatusContext { Name = opts.ContextName, Genre = opts.ContextGenre },
-                        State = opts.State,
-                        Description = opts.Description,
-                        TargetUrl = opts.TargetUrl
+                        Context = new GitStatusContext { Name = pullRequestStatusOptions.ContextName, Genre = pullRequestStatusOptions.ContextGenre },
+                        State = pullRequestStatusOptions.State,
+                        Description = pullRequestStatusOptions.Description,
+                        TargetUrl = pullRequestStatusOptions.TargetUrl
                     };
                     return await _gitHttpClient.CreatePullRequestStatusAsync(status, repositoryId, pullRequestId, ProjectName, cancellationToken);
                 }, "SetPullRequestStatus", OperationType.Update);
@@ -256,7 +256,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<GitPullRequest>> EnableAutoCompleteAsync(string repositoryId, int pullRequestId, string displayName, string localId, GitPullRequestCompletionOptions options, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<GitPullRequest>> EnableAutoCompleteAsync(string repositoryId, int pullRequestId, string displayName, string localId, GitPullRequestCompletionOptions gitPullRequestCompletionOptions, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -265,7 +265,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     var pullRequestUpdate = new GitPullRequest
                     {
                         AutoCompleteSetBy = new IdentityRef { DisplayName = displayName, Id = localId },
-                        CompletionOptions = options
+                        CompletionOptions = gitPullRequestCompletionOptions
                     };
                     return await _gitHttpClient.UpdatePullRequestAsync(
                     gitPullRequestToUpdate: pullRequestUpdate,
@@ -417,7 +417,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
         public Task<AzureDevOpsActionResult<bool>> RemoveReviewersAsync(string repositoryId, int pullRequestId, params string[] reviewerIds) =>
             RemoveReviewersAsync(repositoryId, pullRequestId, CancellationToken.None, reviewerIds);
 
-        public async Task<AzureDevOpsActionResult<bool>> RemoveReviewersAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken, params string[] reviewerIds)
+        public async Task<AzureDevOpsActionResult<bool>> RemoveReviewersAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken, params String[] reviewerIds)
         {
             try
             {
@@ -694,7 +694,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
             }
         }
 
-        public async Task<AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>> GetPullRequestLabelsAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>>> GetPullRequestLabelsAsync(string repository, int pullRequestId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -702,7 +702,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 {
                     List<WebApiTagDefinition> list = await _gitHttpClient.GetPullRequestLabelsAsync(
                     project: ProjectName,
-                    repositoryId: repositoryId,
+                    repositoryId: repository,
                     pullRequestId: pullRequestId,
                     cancellationToken: cancellationToken);
                     return (IReadOnlyList<WebApiTagDefinition>)list;

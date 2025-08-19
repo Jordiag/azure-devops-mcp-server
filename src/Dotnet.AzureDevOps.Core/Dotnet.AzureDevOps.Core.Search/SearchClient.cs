@@ -46,7 +46,7 @@ public class SearchClient : AzureDevOpsClientBase, ISearchClient
         {
             return await ExecuteWithExceptionHandlingAsync(async () =>
             {
-                string? projectName = options.Project?.FirstOrDefault();
+                string? projectName = options.Project?.Count > 0 ? options.Project[0] : null;
                 if(projectName == null)
                     return AzureDevOpsActionResult<string>.Failure("Project name must be specified in CodeSearchOptions.", Logger);
                 return await SendSearchRequestAsync($"{projectName}/_apis/search/codesearchresults", BuildCodePayload(options), cancellationToken);

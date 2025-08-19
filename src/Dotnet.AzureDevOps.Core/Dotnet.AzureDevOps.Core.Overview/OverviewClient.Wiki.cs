@@ -191,7 +191,7 @@ namespace Dotnet.AzureDevOps.Core.Overview
                     if(!response.Page?.Id.HasValue ?? true)
                         throw new InvalidOperationException("Wiki page id is null.");
 
-                    return response.Page.Id.Value;
+                    return response.Page!.Id!.Value;
                 }, "CreateOrUpdatePage", OperationType.Update);
 
                 return AzureDevOpsActionResult<int>.Success(pageId, this.Logger);

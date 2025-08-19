@@ -192,7 +192,7 @@ namespace Dotnet.AzureDevOps.Core.Common
         /// Uses a NullLogger to avoid casting issues in tests.
         /// </summary>
         /// <returns>A new RetryService instance with appropriate logger.</returns>
-        private IRetryService CreateDefaultRetryService()
+        private static RetryService CreateDefaultRetryService()
         {
             ILogger<RetryService> retryServiceLogger = NullLogger<RetryService>.Instance;
             return new RetryService(retryServiceLogger);
@@ -202,7 +202,7 @@ namespace Dotnet.AzureDevOps.Core.Common
         /// Creates a default exception handling service instance when none is injected.
         /// </summary>
         /// <returns>A new ExceptionHandlingService instance.</returns>
-        private static IExceptionHandlingService CreateDefaultExceptionHandlingService() =>
+        private static ExceptionHandlingService CreateDefaultExceptionHandlingService() =>
             new ExceptionHandlingService();
 
         public void Dispose()

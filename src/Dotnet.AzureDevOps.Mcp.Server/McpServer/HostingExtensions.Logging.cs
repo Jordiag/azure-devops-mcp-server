@@ -15,8 +15,6 @@ internal static class HostingExtensionsLogging
 
         string? aspnetEnv = builder.Environment.EnvironmentName;
         string effectiveEnv = settings.Environment ?? aspnetEnv ?? "Production";
-        bool isLocalDev = effectiveEnv.Equals("Development", StringComparison.OrdinalIgnoreCase) ||
-                          effectiveEnv.Equals("Local", StringComparison.OrdinalIgnoreCase);
 
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
