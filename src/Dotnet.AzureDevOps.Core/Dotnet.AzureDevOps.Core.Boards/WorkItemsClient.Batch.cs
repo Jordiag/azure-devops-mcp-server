@@ -464,7 +464,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             };
         }
 
-        private WitBatchRequest CreateLinkRequest(int sourceId, int targetId, string relation, string comment, bool suppressNotifications, bool bypassRules)
+        private static WitBatchRequest CreateLinkRequest(int sourceId, int targetId, string relation, string comment, bool suppressNotifications, bool bypassRules)
         {
             var patch = new JsonPatchDocument
             {
@@ -490,7 +490,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             };
         }
 
-        private WitBatchRequest CreateCloseWorkItemRequest(int workItemId, string closedState, string? closedReason)
+        private static WitBatchRequest CreateCloseWorkItemRequest(int workItemId, string closedState, string? closedReason)
         {
             var patch = new JsonPatchDocument
             {
@@ -521,7 +521,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
             };
         }
 
-        private WitBatchRequest CreateCloseDuplicateRequest(int duplicateId, int canonicalId)
+        private static WitBatchRequest CreateCloseDuplicateRequest(int duplicateId, int canonicalId)
         {
             var patch = new JsonPatchDocument
             {

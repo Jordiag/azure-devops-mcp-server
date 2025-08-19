@@ -523,7 +523,7 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings
             return updatedTeam.Description == expectedDescription && updatedTeam.Name == expectedName;
         }
 
-        private string GetProcessIdByName(string baseProcessName)
+        private static string GetProcessIdByName(string baseProcessName)
         {
             return baseProcessName.ToLower() switch
             {
