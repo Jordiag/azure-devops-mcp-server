@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -29,11 +30,10 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                WorkItem item = await _workItemClient.GetWorkItemAsync(
-                    id: workItemId,
-                    expand: WorkItemExpand.All,
-                    cancellationToken: cancellationToken
-                );
+                WorkItem item = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workItemClient.GetWorkItemAsync(id: workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
+                }, "GetWorkItem", OperationType.Read);
 
                 return AzureDevOpsActionResult<WorkItem>.Success(item, Logger);
             }
@@ -66,27 +66,27 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                var query = new Wiql { Query = wiql };
-                WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: ProjectName, cancellationToken: cancellationToken);
-
-                if(result.WorkItems?.Any() == true)
+                IReadOnlyList<WorkItem> items = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    int[] ids = [.. result.WorkItems.Select(w => w.Id)];
-                    const int BatchSize = 200;
+                    var query = new Wiql { Query = wiql };
+                    WorkItemQueryResult result = await _workItemClient.QueryByWiqlAsync(query, project: ProjectName, cancellationToken: cancellationToken);
 
-                    var allItems = new List<WorkItem>();
-
-                    foreach(int[] batch in ids.Chunk(BatchSize))
+                    if(result.WorkItems?.Any() == true)
                     {
-                        List<WorkItem> batchItems = await _workItemClient.GetWorkItemsAsync(batch, cancellationToken: cancellationToken);
-                        allItems.AddRange(batchItems);
+                        int[] ids = [.. result.WorkItems.Select(w => w.Id)];
+                        const int BatchSize = 200;
+                        var allItems = new List<WorkItem>();
+                        foreach(int[] batch in ids.Chunk(BatchSize))
+                        {
+                            List<WorkItem> batchItems = await _workItemClient.GetWorkItemsAsync(batch, cancellationToken: cancellationToken);
+                            allItems.AddRange(batchItems);
+                        }
+                        return (IReadOnlyList<WorkItem>)allItems;
                     }
+                    return Array.Empty<WorkItem>();
+                }, "QueryWorkItems", OperationType.Read);
 
-                    return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(allItems, Logger);
-                }
-
-                IReadOnlyList<WorkItem> empty = Array.Empty<WorkItem>();
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(empty, Logger);
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(items, Logger);
             }
             catch(Exception ex)
             {
@@ -111,14 +111,20 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to execute queries.</exception>
         public async Task<AzureDevOpsActionResult<int>> GetWorkItemCountAsync(string wiql, CancellationToken cancellationToken = default)
         {
-            AzureDevOpsActionResult<IReadOnlyList<WorkItem>> itemsResult = await QueryWorkItemsAsync(wiql, cancellationToken);
-            if(!itemsResult.IsSuccessful)
+            try
             {
-                return AzureDevOpsActionResult<int>.Failure(itemsResult.ErrorMessage!, Logger);
+                return await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    AzureDevOpsActionResult<IReadOnlyList<WorkItem>> itemsResult = await QueryWorkItemsAsync(wiql, cancellationToken);
+                    return itemsResult.IsSuccessful
+                        ? AzureDevOpsActionResult<int>.Success(itemsResult.Value.Count, Logger)
+                        : AzureDevOpsActionResult<int>.Failure(itemsResult.ErrorMessage!, Logger);
+                }, "GetWorkItemCount", OperationType.Read);
             }
-
-            int count = itemsResult.Value.Count;
-            return AzureDevOpsActionResult<int>.Success(count, Logger);
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
         }
 
         /// <summary>
@@ -141,7 +147,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                WorkItemType type = await _workItemClient.GetWorkItemTypeAsync(projectName, workItemTypeName, cancellationToken: cancellationToken);
+                WorkItemType type = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workItemClient.GetWorkItemTypeAsync(projectName, workItemTypeName, cancellationToken: cancellationToken);
+                }, "GetWorkItemType", OperationType.Read);
+
                 return AzureDevOpsActionResult<WorkItemType>.Success(type, Logger);
             }
             catch(Exception ex)
@@ -174,7 +184,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                QueryHierarchyItem result = await _workItemClient.GetQueryAsync(projectName, queryIdOrPath, expand, depth, includeDeleted, useIsoDateFormat, cancellationToken: cancellationToken);
+                QueryHierarchyItem result = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workItemClient.GetQueryAsync(projectName, queryIdOrPath, expand, depth, includeDeleted, useIsoDateFormat, cancellationToken: cancellationToken);
+                }, "GetQuery", OperationType.Read);
+
                 return AzureDevOpsActionResult<QueryHierarchyItem>.Success(result, Logger);
             }
             catch(Exception ex)
@@ -205,7 +219,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                WorkItemQueryResult result = await _workItemClient.QueryByIdAsync(teamContext, queryId, timePrecision, top, cancellationToken: cancellationToken);
+                WorkItemQueryResult result = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workItemClient.QueryByIdAsync(teamContext, queryId, timePrecision, top, cancellationToken: cancellationToken);
+                }, "GetQueryResultsById", OperationType.Read);
+
                 return AzureDevOpsActionResult<WorkItemQueryResult>.Success(result, Logger);
             }
             catch(Exception ex)
@@ -236,31 +254,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                object requestBody = new
+                bool created = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    name = queryName,
-                    wiql = wiql,
-                    isFolder = false
-                };
+                    object requestBody = new { name = queryName, wiql = wiql, isFolder = false };
+                    var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+                    string requestUrl = $"{OrganizationUrl}/{projectName}/_apis/wit/queries/Shared%20Queries?api-version={GlobalConstants.ApiVersion}";
+                    using HttpRequestMessage request = new(HttpMethod.Post, requestUrl) { Content = content };
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+                    if(!response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                        throw new InvalidOperationException($"Failed to create query: {response.StatusCode} - {responseBody}");
+                    }
+                    return true;
+                }, "CreateSharedQuery", OperationType.Create);
 
-                var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
-
-                string requestUrl = $"{OrganizationUrl}/{projectName}/_apis/wit/queries/Shared%20Queries?api-version={GlobalConstants.ApiVersion}";
-
-                using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
-                {
-                    Content = content
-                };
-
-                using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-
-                if(!response.IsSuccessStatusCode)
-                {
-                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure($"Failed to create query: {response.StatusCode} - {responseBody}", Logger);
-                }
-
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                return AzureDevOpsActionResult<bool>.Success(created, Logger);
             }
             catch(Exception ex)
             {
@@ -290,23 +299,97 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                string encodedPath = Uri.EscapeDataString($"Shared Queries/{queryName}");
-                string requestUrl = $"{OrganizationUrl}/{projectName}/_apis/wit/queries/{encodedPath}?api-version={GlobalConstants.ApiVersion}";
-
-                using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
-                using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-
-                if(!response.IsSuccessStatusCode)
+                bool deleted = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    return AzureDevOpsActionResult<bool>.Failure($"Failed to delete query: {response.StatusCode} - {responseBody}", Logger);
-                }
+                    string encodedPath = Uri.EscapeDataString($"Shared Queries/{queryName}");
+                    string requestUrl = $"{OrganizationUrl}/{projectName}/_apis/wit/queries/{encodedPath}?api-version={GlobalConstants.ApiVersion}";
+                    using HttpRequestMessage request = new(HttpMethod.Delete, requestUrl);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+                    if(!response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                        throw new InvalidOperationException($"Failed to delete query: {response.StatusCode} - {responseBody}");
+                    }
+                    return true;
+                }, "DeleteSharedQuery", OperationType.Delete);
 
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                return AzureDevOpsActionResult<bool>.Success(deleted, Logger);
             }
             catch(Exception ex)
             {
                 return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the value of a custom field for a specific work item.
+        /// This method allows accessing custom fields that are not exposed as properties
+        /// on the work item object. Custom fields must be referenced by their logical name.
+        /// </summary>
+        /// <param name="workItemId">The ID of the work item from which to retrieve the custom field value.</param>
+        /// <param name="fieldName">The logical name of the custom field to retrieve (e.g., "Custom.FieldName").</param>
+        /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
+        /// <returns>
+        /// An <see cref="AzureDevOpsActionResult{T}"/> containing the custom field value if successful,
+        /// or error details if the operation fails, the work item is not found, or the field is not present.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when workItemId is invalid or fieldName is null/empty.</exception>
+        /// <exception cref="VssServiceException">Thrown when Azure DevOps service returns an error, such as work item not found.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access the work item or field.</exception>
+        public async Task<AzureDevOpsActionResult<object>> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
+                    if(!itemResult.IsSuccessful)
+                        return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!, Logger);
+
+                    WorkItem item = itemResult.Value;
+                    return item.Fields.TryGetValue(fieldName, out object? value)
+                        ? AzureDevOpsActionResult<object>.Success(value, Logger)
+                        : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.", Logger);
+                }, "GetCustomField", OperationType.Read);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<object>.Failure(ex, Logger);
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the links (relations) of a work item, including parent, child, and sibling links.
+        /// This method helps in understanding the hierarchical and associative structure of work items.
+        /// Links are returned as a collection of relation objects containing URLs and relation types.
+        /// </summary>
+        /// <param name="workItemId">The ID of the work item whose links are to be retrieved.</param>
+        /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
+        /// <returns>
+        /// An <see cref="AzureDevOpsActionResult{T}"/> containing a read-only list of <see cref="WorkItemRelation"/> objects if successful,
+        /// or error details if the operation fails or the work item is not found.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when workItemId is invalid.</exception>
+        /// <exception cref="VssServiceException">Thrown when Azure DevOps service returns an error, such as work item not found.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to access the work item or its links.</exception>
+        public async Task<AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>> GetLinksAsync(int workItemId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
+                    if(!itemResult.IsSuccessful)
+                        return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Failure(itemResult.ErrorMessage!, Logger);
+
+                    WorkItem item = itemResult.Value;
+                    IReadOnlyList<WorkItemRelation> relations = (IReadOnlyList<WorkItemRelation>)(item.Relations ?? []);
+                    return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Success(relations, Logger);
+                }, "GetLinks", OperationType.Read);
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<IReadOnlyList<WorkItemRelation>>.Failure(ex, Logger);
             }
         }
     }

@@ -1,8 +1,5 @@
-using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Tests.Common.Attributes;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
-using Moq;
 
 namespace Dotnet.AzureDevOps.TestPlans.Tests;
 

@@ -1,5 +1,6 @@
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -29,7 +30,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<BoardReference> boards = await _workClient.GetBoardsAsync(teamContext, userState, cancellationToken);
+                IReadOnlyList<BoardReference> boards = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<BoardReference> result = await _workClient.GetBoardsAsync(teamContext, userState, cancellationToken);
+                    return (IReadOnlyList<BoardReference>)result;
+                }, "ListBoards", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<BoardReference>>.Success(boards, Logger);
             }
             catch(Exception ex)
@@ -61,7 +67,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                TeamSettingsIteration iteration = await _workClient.GetTeamIterationAsync(teamContext, iterationId, userState, cancellationToken);
+                TeamSettingsIteration iteration = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workClient.GetTeamIterationAsync(teamContext, iterationId, userState, cancellationToken);
+                }, "GetTeamIteration", OperationType.Read);
+
                 return AzureDevOpsActionResult<TeamSettingsIteration>.Success(iteration, Logger);
             }
             catch(Exception ex)
@@ -93,7 +103,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<TeamSettingsIteration> iterations = await _workClient.GetTeamIterationsAsync(teamContext, timeframe, userState, cancellationToken);
+                IReadOnlyList<TeamSettingsIteration> iterations = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<TeamSettingsIteration> result = await _workClient.GetTeamIterationsAsync(teamContext, timeframe, userState, cancellationToken);
+                    return (IReadOnlyList<TeamSettingsIteration>)result;
+                }, "GetTeamIterations", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, Logger);
             }
             catch(Exception ex)
@@ -125,7 +140,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<BoardColumn> columns = await _workClient.GetBoardColumnsAsync(teamContext, board.ToString(), userState, cancellationToken: cancellationToken);
+                IReadOnlyList<BoardColumn> columns = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<BoardColumn> result = await _workClient.GetBoardColumnsAsync(teamContext, board.ToString(), userState, cancellationToken: cancellationToken);
+                    return (IReadOnlyList<BoardColumn>)result;
+                }, "ListBoardColumns", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<BoardColumn>>.Success(columns, Logger);
             }
             catch(Exception ex)
@@ -155,7 +175,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<BacklogLevelConfiguration> backlogs = await _workClient.GetBacklogsAsync(teamContext, userState, cancellationToken);
+                IReadOnlyList<BacklogLevelConfiguration> backlogs = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<BacklogLevelConfiguration> result = await _workClient.GetBacklogsAsync(teamContext, userState, cancellationToken);
+                    return (IReadOnlyList<BacklogLevelConfiguration>)result;
+                }, "ListBacklogs", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<BacklogLevelConfiguration>>.Success(backlogs, Logger);
             }
             catch(Exception ex)
@@ -187,7 +212,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                BacklogLevelWorkItems items = await _workClient.GetBacklogLevelWorkItemsAsync(teamContext, backlogId, userState, cancellationToken);
+                BacklogLevelWorkItems items = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workClient.GetBacklogLevelWorkItemsAsync(teamContext, backlogId, userState, cancellationToken);
+                }, "ListBacklogWorkItems", OperationType.Read);
+
                 return AzureDevOpsActionResult<BacklogLevelWorkItems>.Success(items, Logger);
             }
             catch(Exception ex)
@@ -220,7 +249,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                PredefinedQuery query = await _workClient.GetPredefinedQueryResultsAsync(ProjectName, queryType, top, includeCompleted, userState, cancellationToken);
+                PredefinedQuery query = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workClient.GetPredefinedQueryResultsAsync(ProjectName, queryType, top, includeCompleted, userState, cancellationToken);
+                }, "ListMyWorkItems", OperationType.Read);
+
                 return AzureDevOpsActionResult<PredefinedQuery>.Success(query, Logger);
             }
             catch(Exception ex)
@@ -252,7 +285,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                IterationWorkItems workItems = await _workClient.GetIterationWorkItemsAsync(teamContext, iterationId, userState, cancellationToken);
+                IterationWorkItems workItems = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workClient.GetIterationWorkItemsAsync(teamContext, iterationId, userState, cancellationToken);
+                }, "GetWorkItemsForIteration", OperationType.Read);
+
                 return AzureDevOpsActionResult<IterationWorkItems>.Success(workItems, Logger);
             }
             catch(Exception ex)
@@ -283,7 +320,12 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                List<TeamSettingsIteration> iterations = await _workClient.GetTeamIterationsAsync(teamContext, timeFrame, userState, cancellationToken: cancellationToken);
+                IReadOnlyList<TeamSettingsIteration> iterations = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<TeamSettingsIteration> result = await _workClient.GetTeamIterationsAsync(teamContext, timeFrame, userState, cancellationToken: cancellationToken);
+                    return (IReadOnlyList<TeamSettingsIteration>)result;
+                }, "ListIterations", OperationType.Read);
+
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(iterations, Logger);
             }
             catch(Exception ex)
@@ -314,38 +356,42 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNullOrWhiteSpace(projectName);
-                ArgumentNullException.ThrowIfNull(iterations);
-
-                var created = new List<WorkItemClassificationNode>();
-
-                foreach(IterationCreateOptions iteration in iterations)
+                IReadOnlyList<WorkItemClassificationNode> created = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    var node = new WorkItemClassificationNode
-                    {
-                        Name = iteration.IterationName,
-                        Attributes = new Dictionary<string, object?>()
-                    };
+                    ArgumentNullException.ThrowIfNullOrWhiteSpace(projectName);
+                    ArgumentNullException.ThrowIfNull(iterations);
+                    var list = new List<WorkItemClassificationNode>();
 
-                    if(iteration.StartDate.HasValue)
+                    foreach(IterationCreateOptions iteration in iterations)
                     {
-                        node.Attributes["startDate"] = iteration.StartDate.Value;
+                        var node = new WorkItemClassificationNode
+                        {
+                            Name = iteration.IterationName,
+                            Attributes = new Dictionary<string, object?>()
+                        };
+
+                        if(iteration.StartDate.HasValue)
+                        {
+                            node.Attributes["startDate"] = iteration.StartDate.Value;
+                        }
+
+                        if(iteration.FinishDate.HasValue)
+                        {
+                            node.Attributes["finishDate"] = iteration.FinishDate.Value;
+                        }
+
+                        WorkItemClassificationNode result = await _workItemClient.CreateOrUpdateClassificationNodeAsync(
+                            postedNode: node,
+                            project: projectName,
+                            structureGroup: TreeStructureGroup.Iterations,
+                            path: null,
+                            cancellationToken: cancellationToken);
+
+                        list.Add(result);
                     }
 
-                    if(iteration.FinishDate.HasValue)
-                    {
-                        node.Attributes["finishDate"] = iteration.FinishDate.Value;
-                    }
-
-                    WorkItemClassificationNode result = await _workItemClient.CreateOrUpdateClassificationNodeAsync(
-                        postedNode: node,
-                        project: projectName,
-                        structureGroup: TreeStructureGroup.Iterations,
-                        path: null,
-                        cancellationToken: cancellationToken);
-
-                    created.Add(result);
-                }
+                    return (IReadOnlyList<WorkItemClassificationNode>)list;
+                }, "CreateIterations", OperationType.Create);
 
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Success(created, Logger);
             }
@@ -354,6 +400,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                 return AzureDevOpsActionResult<IReadOnlyList<WorkItemClassificationNode>>.Failure(ex, Logger);
             }
         }
+
 
         /// <summary>
         /// Assigns multiple iterations to a team based on the provided assignment configuration options.
@@ -376,20 +423,24 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(iterations);
-
-                var assigned = new List<TeamSettingsIteration>();
-                foreach(IterationAssignmentOptions iteration in iterations)
+                IReadOnlyList<TeamSettingsIteration> assigned = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    var data = new TeamSettingsIteration
+                    ArgumentNullException.ThrowIfNull(iterations);
+                    var list = new List<TeamSettingsIteration>();
+                    foreach(IterationAssignmentOptions iteration in iterations)
                     {
-                        Id = iteration.Identifier,
-                        Path = iteration.Path
-                    };
+                        var data = new TeamSettingsIteration
+                        {
+                            Id = iteration.Identifier,
+                            Path = iteration.Path
+                        };
 
-                    TeamSettingsIteration result = await _workClient.PostTeamIterationAsync(data, teamContext, cancellationToken: cancellationToken);
-                    assigned.Add(result);
-                }
+                        TeamSettingsIteration result = await _workClient.PostTeamIterationAsync(data, teamContext, cancellationToken: cancellationToken);
+                        list.Add(result);
+                    }
+
+                    return (IReadOnlyList<TeamSettingsIteration>)list;
+                }, "AssignIterations", OperationType.Update);
 
                 return AzureDevOpsActionResult<IReadOnlyList<TeamSettingsIteration>>.Success(assigned, Logger);
             }
@@ -419,7 +470,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                TeamFieldValues values = await _workClient.GetTeamFieldValuesAsync(teamContext, cancellationToken: cancellationToken);
+                TeamFieldValues values = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workClient.GetTeamFieldValuesAsync(teamContext, cancellationToken: cancellationToken);
+                }, "ListAreas", OperationType.Read);
+
                 return AzureDevOpsActionResult<TeamFieldValues>.Success(values, Logger);
             }
             catch(Exception ex)
@@ -450,7 +505,11 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                Board board = await _workClient.GetBoardAsync(teamContext, boardId, cancellationToken: cancellationToken);
+                Board board = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workClient.GetBoardAsync(teamContext, boardId, cancellationToken: cancellationToken);
+                }, "ExportBoard", OperationType.Read);
+
                 return AzureDevOpsActionResult<Board>.Success(board, Logger);
             }
             catch(Exception ex)

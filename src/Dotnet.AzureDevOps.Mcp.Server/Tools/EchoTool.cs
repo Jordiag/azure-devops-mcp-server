@@ -1,6 +1,5 @@
-using ModelContextProtocol.Server;
 using System.ComponentModel;
-using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.Tools;
 

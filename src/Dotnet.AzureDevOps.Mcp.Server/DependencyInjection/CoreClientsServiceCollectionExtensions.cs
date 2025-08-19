@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text;
 using Dotnet.AzureDevOps.Core.Artifacts;
 using Dotnet.AzureDevOps.Core.Boards;
 using Dotnet.AzureDevOps.Core.Overview;
@@ -6,11 +8,7 @@ using Dotnet.AzureDevOps.Core.ProjectSettings;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Search;
 using Dotnet.AzureDevOps.Core.TestPlans;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.DependencyInjection;
 

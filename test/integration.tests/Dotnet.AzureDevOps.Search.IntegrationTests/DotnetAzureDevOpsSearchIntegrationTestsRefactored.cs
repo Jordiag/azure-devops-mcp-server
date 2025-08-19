@@ -55,7 +55,7 @@ public class DotnetAzureDevOpsSearchIntegrationTestsRefactored : BaseIntegration
         await WaitHelper.WaitUntilAsync(async () =>
         {
             AzureDevOpsActionResult<Guid> createResult = await _overviewClient.CreateWikiAsync(wikiCreateOptions);
-            if (!createResult.IsSuccessful)
+            if(!createResult.IsSuccessful)
                 return false;
             wikiId = createResult.Value;
             return true;
@@ -123,9 +123,9 @@ public class DotnetAzureDevOpsSearchIntegrationTestsRefactored : BaseIntegration
             Core.Common.AzureDevOpsActionResult<string> result = await _searchClient.SearchCodeAsync(codeSearchOptions);
             Assert.Contains("codesearch.cs", result.Value);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        catch(HttpRequestException ex) when(ex.StatusCode == HttpStatusCode.NotFound)
         {
-            if (codeSearchEnabled.Value)
+            if(codeSearchEnabled.Value)
             {
                 throw new Exception("Code search is enabled but returned 404 Not Found.", ex);
             }

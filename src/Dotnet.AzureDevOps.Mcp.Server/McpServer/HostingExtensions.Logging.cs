@@ -1,11 +1,12 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Azure.Monitor.OpenTelemetry.Exporter;
+using OpenTelemetry.Resources;
 
 namespace Dotnet.AzureDevOps.Mcp.Server.McpServer;
 
 internal static class HostingExtensionsLogging
 {
+    private const string ServiceName = "azure-devops-mcp-server";
+
     public static WebApplicationBuilder ConfigureLogging(this WebApplicationBuilder builder)
     {
         McpServerSettings settings = builder.Configuration
@@ -15,13 +16,16 @@ internal static class HostingExtensionsLogging
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
 
-        if (settings.EnableApplicationInsights &&
-            !string.IsNullOrWhiteSpace(settings.ApplicationInsightsConnectionString))
+        if(settings.EnableApplicationInsights)
         {
-            builder.Logging.AddApplicationInsights(configuration =>
+            builder.Logging.AddOpenTelemetry(ot =>
             {
-                configuration.ConnectionString = settings.ApplicationInsightsConnectionString;
-            }, _ => { });
+                ot.IncludeFormattedMessage = true;
+                ot.IncludeScopes = false;
+                ot.ParseStateValues = true;
+                ot.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(ServiceName));
+                ot.AddAzureMonitorLogExporter(); // Connection string will be automatically detected
+            });
         }
 
         builder.Logging.SetMinimumLevel(settings.LogLevel);

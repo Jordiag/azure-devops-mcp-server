@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
@@ -10,6 +11,26 @@ namespace Dotnet.AzureDevOps.Core.Boards
 {
     public partial class WorkItemsClient
     {
+        private const string CreateWorkItemsMultipleCallsOperation = "CreateWorkItemsMultipleCalls";
+        private const string BulkUpdateWorkItemsOperation = "BulkUpdateWorkItems";
+        private const string ExecuteBatchOperation = "ExecuteBatch";
+        private const string UpdateWorkItemsBatchOperation = "UpdateWorkItemsBatch";
+        private const string LinkWorkItemsBatchOperation = "LinkWorkItemsBatch";
+        private const string CloseWorkItemsBatchOperation = "CloseWorkItemsBatch";
+        private const string CloseAndLinkDuplicatesBatchOperation = "CloseAndLinkDuplicatesBatch";
+        private const string GetWorkItemsBatchByIdsOperation = "GetWorkItemsBatchByIds";
+        private const string LinkWorkItemsByNameBatchOperation = "LinkWorkItemsByNameBatch";
+
+        private const string DefaultClosedState = "Closed";
+        private const string DefaultClosedReason = "Duplicate";
+        private const string DefaultLinkComment = "Linked by batch helper";
+        private const string DuplicateLinkComment = "Marked duplicate via batch helper";
+        private const string DuplicateLinkType = "System.LinkTypes.Duplicate-Forward";
+
+        private const string SystemStateFieldPath = "/fields/System.State";
+        private const string SystemReasonFieldPath = "/fields/System.Reason";
+        private const string RelationsPath = "/relations/-";
+
         /// <summary>
         /// Creates multiple work items of the same type using individual API calls for each item.
         /// This method processes each work item creation sequentially, which provides better error isolation
@@ -31,21 +52,25 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                var createdIds = new List<int>();
-                foreach(WorkItemCreateOptions itemOptions in items)
+                IReadOnlyList<int> createdIds = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    AzureDevOpsActionResult<int> id = await CreateWorkItemAsync(workItemType, itemOptions, cancellationToken: cancellationToken);
-                    if(id.IsSuccessful)
+                    var ids = new List<int>();
+                    foreach(WorkItemCreateOptions itemOptions in items)
                     {
-                        createdIds.Add(id.Value);
+                        AzureDevOpsActionResult<int> id = await CreateWorkItemAsync(workItemType, itemOptions, cancellationToken: cancellationToken);
+                        if(id.IsSuccessful)
+                        {
+                            ids.Add(id.Value);
+                        }
                     }
-                }
+                    return (IReadOnlyList<int>)ids;
+                }, CreateWorkItemsMultipleCallsOperation, OperationType.Create);
 
-                return AzureDevOpsActionResult<IReadOnlyList<int>>.Success(createdIds, Logger);
+                return CreateSuccessResult(createdIds);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<int>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<int>>(ex);
             }
         }
 
@@ -69,16 +94,20 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                foreach((int id, WorkItemCreateOptions options) in updates)
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    await UpdateWorkItemAsync(id, options, cancellationToken);
-                }
+                    foreach((int id, WorkItemCreateOptions options) in updates)
+                    {
+                        await UpdateWorkItemAsync(id, options, cancellationToken);
+                    }
+                    return true;
+                }, BulkUpdateWorkItemsOperation, OperationType.Update);
 
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                return CreateSuccessResult(result);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<bool>.Failure(ex, Logger);
+                return CreateFailureResult<bool>(ex);
             }
         }
 
@@ -102,18 +131,23 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(requests);
-                var requestList = requests.ToList();
+                IReadOnlyList<WitBatchResponse> responses = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    ArgumentNullException.ThrowIfNull(requests);
+                    var requestList = requests.ToList();
 
-                List<WitBatchResponse> result = await _workItemClient
-                    .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                    List<WitBatchResponse> result = await _workItemClient
+                        .ExecuteBatchRequest(requestList, cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
 
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Success(result, Logger);
+                    return (IReadOnlyList<WitBatchResponse>)result;
+                }, ExecuteBatchOperation, OperationType.Update);
+
+                return CreateSuccessResult(responses);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WitBatchResponse>>(ex);
             }
         }
 
@@ -143,33 +177,23 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(updates);
-
-                var batch = new List<WitBatchRequest>();
-
-                foreach((int id, WorkItemCreateOptions options) in updates)
+                IReadOnlyList<WitBatchResponse> responses = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    JsonPatchDocument patch = BuildPatchDocument(options);
+                    ArgumentNullException.ThrowIfNull(updates);
 
-                    var request = new WitBatchRequest
-                    {
-                        Method = _patchMethod,
-                        Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}",
-                        Headers = new Dictionary<string, string>
-                        {
-                            { ContentTypeHeader, JsonPatchContentType }
-                        },
-                        Body = JsonSerializer.Serialize(patch)
-                    };
+                    var batch = updates.Select(update =>
+                        CreateWorkItemUpdateRequest(update.id, update.options, suppressNotifications, bypassRules))
+                        .ToList();
 
-                    batch.Add(request);
-                }
+                    AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> inner = await ExecuteBatchAsync(batch, cancellationToken);
+                    return inner.IsSuccessful ? inner.Value : [];
+                }, UpdateWorkItemsBatchOperation, OperationType.Update);
 
-                return await ExecuteBatchAsync(batch, cancellationToken);
+                return CreateSuccessResult(responses);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WitBatchResponse>>(ex);
             }
         }
 
@@ -200,51 +224,25 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(links);
-
-                var batch = new List<WitBatchRequest>();
-
-                foreach((int sourceId, int targetId, string relation) in links)
+                IReadOnlyList<WitBatchResponse> responses = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    if(string.IsNullOrWhiteSpace(relation))
+                    ArgumentNullException.ThrowIfNull(links);
+
+                    var batch = links.Select(link =>
                     {
-                        throw new ArgumentException("Relation cannot be null or whitespace.", nameof(links));
-                    }
+                        ValidateRelation(link.relation);
+                        return CreateLinkRequest(link.sourceId, link.targetId, link.relation, DefaultLinkComment, suppressNotifications, bypassRules);
+                    }).ToList();
 
-                    var patch = new JsonPatchDocument
-                    {
-                        new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = "/relations/-",
-                            Value = new
-                            {
-                                rel = relation,
-                                url = $"vstfs:///WorkItemTracking/WorkItem/{targetId}",
-                                attributes = new { comment = "Linked by batch helper" }
-                            }
-                        }
-                    };
+                    AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> inner = await ExecuteBatchAsync(batch, cancellationToken);
+                    return inner.IsSuccessful ? inner.Value : [];
+                }, LinkWorkItemsBatchOperation, OperationType.Update);
 
-                    var request = new WitBatchRequest
-                    {
-                        Method = _patchMethod,
-                        Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}",
-                        Headers = new Dictionary<string, string>
-                        {
-                            { ContentTypeHeader, JsonPatchContentType }
-                        },
-                        Body = JsonSerializer.Serialize(patch)
-                    };
-
-                    batch.Add(request);
-                }
-
-                return await ExecuteBatchAsync(batch, cancellationToken);
+                return CreateSuccessResult(responses);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WitBatchResponse>>(ex);
             }
         }
 
@@ -270,59 +268,31 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="InvalidOperationException">Thrown when work items don't exist or state transitions are invalid.</exception>
         public async Task<AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>> CloseWorkItemsBatchAsync(
             IEnumerable<int> workItemIds,
-            string closedState = "Closed",
-            string? closedReason = "Duplicate",
+            string closedState = DefaultClosedState,
+            string? closedReason = DefaultClosedReason,
             bool suppressNotifications = true,
             bool bypassRules = false,
             CancellationToken cancellationToken = default)
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(workItemIds);
-
-                var batch = new List<WitBatchRequest>();
-
-                foreach(int id in workItemIds)
+                IReadOnlyList<WitBatchResponse> responses = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    var patch = new JsonPatchDocument
-                    {
-                        new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = "/fields/System.State",
-                            Value = closedState
-                        }
-                    };
+                    ArgumentNullException.ThrowIfNull(workItemIds);
 
-                    if(!string.IsNullOrWhiteSpace(closedReason))
-                    {
-                        patch.Add(new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = "/fields/System.Reason",
-                            Value = closedReason
-                        });
-                    }
+                    var batch = workItemIds.Select(id =>
+                        CreateCloseWorkItemRequest(id, closedState, closedReason))
+                        .ToList();
 
-                    var request = new WitBatchRequest
-                    {
-                        Method = "PATCH",
-                        Uri = $"/_apis/wit/workitems/{id}?api-version={GlobalConstants.ApiVersion}",
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "Content-Type", "application/json-patch+json" }
-                        },
-                        Body = JsonSerializer.Serialize(patch)
-                    };
+                    AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> inner = await ExecuteBatchAsync(batch, cancellationToken);
+                    return inner.IsSuccessful ? inner.Value : [];
+                }, CloseWorkItemsBatchOperation, OperationType.Update);
 
-                    batch.Add(request);
-                }
-
-                return await ExecuteBatchAsync(batch, cancellationToken);
+                return CreateSuccessResult(responses);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WitBatchResponse>>(ex);
             }
         }
 
@@ -352,58 +322,23 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(pairs);
-
-                var batch = new List<WitBatchRequest>();
-
-                foreach((int duplicateId, int canonicalId) in pairs)
+                IReadOnlyList<WitBatchResponse> responses = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    var patch = new JsonPatchDocument
-                    {
-                        new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = "/fields/System.State",
-                            Value = "Closed"
-                        },
-                        new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = "/fields/System.Reason",
-                            Value = "Duplicate"
-                        },
-                        new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = "/relations/-",
-                            Value = new
-                            {
-                                rel = "System.LinkTypes.Duplicate-Forward",
-                                url = $"vstfs:///WorkItemTracking/WorkItem/{canonicalId}",
-                                attributes = new { comment = "Marked duplicate via batch helper" }
-                            }
-                        }
-                    };
+                    ArgumentNullException.ThrowIfNull(pairs);
 
-                    var request = new WitBatchRequest
-                    {
-                        Method = "PATCH",
-                        Uri = $"/_apis/wit/workitems/{duplicateId}?api-version={GlobalConstants.ApiVersion}",
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "Content-Type", "application/json-patch+json" }
-                        },
-                        Body = JsonSerializer.Serialize(patch)
-                    };
+                    var batch = pairs.Select(pair =>
+                        CreateCloseDuplicateRequest(pair.duplicateId, pair.canonicalId))
+                        .ToList();
 
-                    batch.Add(request);
-                }
+                    AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> inner = await ExecuteBatchAsync(batch, cancellationToken);
+                    return inner.IsSuccessful ? inner.Value : [];
+                }, CloseAndLinkDuplicatesBatchOperation, OperationType.Update);
 
-                return await ExecuteBatchAsync(batch, cancellationToken);
+                return CreateSuccessResult(responses);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WitBatchResponse>>(ex);
             }
         }
 
@@ -433,21 +368,25 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(ids);
-
-                var request = new WorkItemBatchGetRequest
+                IReadOnlyList<WorkItem> workItems = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Ids = ids.ToList(),
-                    Expand = expand,
-                    Fields = fields?.ToList()
-                };
+                    ArgumentNullException.ThrowIfNull(ids);
+                    var request = new WorkItemBatchGetRequest
+                    {
+                        Ids = ids.ToList(),
+                        Expand = expand,
+                        Fields = fields?.ToList()
+                    };
 
-                List<WorkItem> workItems = await _workItemClient.GetWorkItemsBatchAsync(request, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Success(workItems, Logger);
+                    List<WorkItem> result = await _workItemClient.GetWorkItemsBatchAsync(request, cancellationToken: cancellationToken);
+                    return (IReadOnlyList<WorkItem>)result;
+                }, GetWorkItemsBatchByIdsOperation, OperationType.Read);
+
+                return CreateSuccessResult(workItems);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WorkItem>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WorkItem>>(ex);
             }
         }
 
@@ -478,49 +417,184 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(links);
-
-                var batch = new List<WitBatchRequest>();
-
-                foreach((int sourceId, int targetId, string type, string? comment) in links)
+                IReadOnlyList<WitBatchResponse> responses = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    string relation = GetRelationFromName(type);
+                    ArgumentNullException.ThrowIfNull(links);
 
-                    var patch = new JsonPatchDocument
+                    var batch = links.Select(link =>
                     {
-                        new JsonPatchOperation
-                        {
-                            Operation = Operation.Add,
-                            Path = Constants.JsonPatchOperationPath,
-                            Value = new
-                            {
-                                rel = relation,
-                                url = $"vstfs:///WorkItemTracking/WorkItem/{targetId}",
-                                attributes = new { comment = comment ?? string.Empty }
-                            }
-                        }
-                    };
+                        string relation = GetRelationFromName(link.type);
+                        return CreateLinkRequest(link.sourceId, link.targetId, relation, link.comment ?? string.Empty, suppressNotifications, bypassRules);
+                    }).ToList();
 
-                    var request = new WitBatchRequest
-                    {
-                        Method = _patchMethod,
-                        Uri = $"/_apis/wit/workitems/{sourceId}?api-version={GlobalConstants.ApiVersion}",
-                        Headers = new Dictionary<string, string>
-                        {
-                            { ContentTypeHeader, JsonPatchContentType }
-                        },
-                        Body = JsonSerializer.Serialize(patch)
-                    };
+                    AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>> inner = await ExecuteBatchAsync(batch, cancellationToken);
+                    return inner.IsSuccessful ? inner.Value : [];
+                }, LinkWorkItemsByNameBatchOperation, OperationType.Update);
 
-                    batch.Add(request);
-                }
-
-                return await ExecuteBatchAsync(batch, cancellationToken);
+                return CreateSuccessResult(responses);
             }
             catch(Exception ex)
             {
-                return AzureDevOpsActionResult<IReadOnlyList<WitBatchResponse>>.Failure(ex, Logger);
+                return CreateFailureResult<IReadOnlyList<WitBatchResponse>>(ex);
             }
+        }
+
+        // Helper methods to reduce duplication while preserving try-catch blocks
+
+        private AzureDevOpsActionResult<T> CreateSuccessResult<T>(T value)
+        {
+            return AzureDevOpsActionResult<T>.Success(value, Logger);
+        }
+
+        private AzureDevOpsActionResult<T> CreateFailureResult<T>(Exception ex)
+        {
+            return AzureDevOpsActionResult<T>.Failure(ex, Logger);
+        }
+
+        private WitBatchRequest CreateWorkItemUpdateRequest(int workItemId, WorkItemCreateOptions options, bool suppressNotifications, bool bypassRules)
+        {
+            JsonPatchDocument patch = BuildPatchDocument(options);
+
+            return new WitBatchRequest
+            {
+                Method = Constants.PatchMethod,
+                Uri = BuildWorkItemApiUrl(workItemId, suppressNotifications, bypassRules),
+                Headers = CreateJsonPatchHeaders(),
+                Body = JsonSerializer.Serialize(patch)
+            };
+        }
+
+        private static WitBatchRequest CreateLinkRequest(int sourceId, int targetId, string relation, string comment, bool suppressNotifications, bool bypassRules)
+        {
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = RelationsPath,
+                    Value = new
+                    {
+                        rel = relation,
+                        url = BuildWorkItemTrackingUrl(targetId),
+                        attributes = new { comment }
+                    }
+                }
+            };
+
+            return new WitBatchRequest
+            {
+                Method = Constants.PatchMethod,
+                Uri = BuildWorkItemApiUrlWithParams(sourceId, suppressNotifications, bypassRules),
+                Headers = CreateJsonPatchHeaders(),
+                Body = JsonSerializer.Serialize(patch)
+            };
+        }
+
+        private static WitBatchRequest CreateCloseWorkItemRequest(int workItemId, string closedState, string? closedReason)
+        {
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = SystemStateFieldPath,
+                    Value = closedState
+                }
+            };
+
+            if(!string.IsNullOrWhiteSpace(closedReason))
+            {
+                patch.Add(new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = SystemReasonFieldPath,
+                    Value = closedReason
+                });
+            }
+
+            return new WitBatchRequest
+            {
+                Method = Constants.PatchMethod,
+                Uri = BuildWorkItemApiUrl(workItemId),
+                Headers = CreateJsonPatchHeaders(),
+                Body = JsonSerializer.Serialize(patch)
+            };
+        }
+
+        private static WitBatchRequest CreateCloseDuplicateRequest(int duplicateId, int canonicalId)
+        {
+            var patch = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = SystemStateFieldPath,
+                    Value = DefaultClosedState
+                },
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = SystemReasonFieldPath,
+                    Value = DefaultClosedReason
+                },
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = RelationsPath,
+                    Value = new
+                    {
+                        rel = DuplicateLinkType,
+                        url = BuildWorkItemTrackingUrl(canonicalId),
+                        attributes = new { comment = DuplicateLinkComment }
+                    }
+                }
+            };
+
+            return new WitBatchRequest
+            {
+                Method = Constants.PatchMethod,
+                Uri = BuildWorkItemApiUrl(duplicateId),
+                Headers = CreateJsonPatchHeaders(),
+                Body = JsonSerializer.Serialize(patch)
+            };
+        }
+
+        private static void ValidateRelation(string relation)
+        {
+            if(string.IsNullOrWhiteSpace(relation))
+            {
+                throw new ArgumentException("links array parameter has a Relation that cannot be null or whitespace.", relation);
+            }
+        }
+
+        private static Dictionary<string, string> CreateJsonPatchHeaders()
+        {
+            return new Dictionary<string, string>
+            {
+                { Constants.ContentTypeHeader, Constants.JsonPatchContentType }
+            };
+        }
+
+        private static string BuildWorkItemApiUrl(int workItemId, bool suppressNotifications = false, bool bypassRules = false)
+        {
+            string baseUrl = $"/_apis/wit/workitems/{workItemId}?api-version={GlobalConstants.ApiVersion}";
+            
+            if(!suppressNotifications || !bypassRules)
+            {
+                return baseUrl;
+            }
+
+            return $"{baseUrl}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}";
+        }
+
+        private static string BuildWorkItemApiUrlWithParams(int workItemId, bool suppressNotifications, bool bypassRules)
+        {
+            return $"/_apis/wit/workitems/{workItemId}?api-version={GlobalConstants.ApiVersion}&bypassRules={bypassRules.ToString().ToLowerInvariant()}&suppressNotifications={suppressNotifications.ToString().ToLowerInvariant()}";
+        }
+
+        private static string BuildWorkItemTrackingUrl(int workItemId)
+        {
+            return $"vstfs:///WorkItemTracking/WorkItem/{workItemId}";
         }
 
         private static string GetRelationFromName(string name)

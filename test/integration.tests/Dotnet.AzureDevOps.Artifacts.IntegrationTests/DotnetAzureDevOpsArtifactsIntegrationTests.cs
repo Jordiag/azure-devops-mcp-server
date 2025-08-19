@@ -67,7 +67,7 @@ namespace Dotnet.AzureDevOps.Artifacts.IntegrationTests
         }
 
         [Fact]
-        public async Task ListPackages_Empty_ForNewFeed()
+        public async Task ListPackages_Empty_ForNewFeedAsync()
         {
             var feedCreateOptions = new FeedCreateOptions
             {

@@ -76,7 +76,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
 
             _ = await _overviewClient.DeleteWikiAsync(id);
             _createdWikis.Remove(id);
-            
+
             WikiV2? afterDelete = null;
             await WaitHelper.WaitUntilAsync(async () =>
             {
@@ -250,6 +250,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             };
 
             AzureDevOpsActionResult<int> pageIdActionResult = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+            Assert.Null(pageIdActionResult.ErrorMessage);
             Assert.True(pageIdActionResult.IsSuccessful, "Expected page creation to be successful.");
 
             AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;
@@ -257,7 +258,7 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             {
                 pageResult = await _overviewClient.GetPageAsync(wikiId, wikiPath);
                 return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
-            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+            }, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(1));
 
             string needlessText = "Searchable";
             AzureDevOpsActionResult<string>? textResult = null;

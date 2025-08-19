@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos
@@ -9,18 +10,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                var refUpdate = new GitRefUpdate
+                List<GitRefUpdateResult> result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Name = newRefName,
-                    OldObjectId = "0000000000000000000000000000000000000000",
-                    NewObjectId = baseCommitSha
-                };
-
-                List<GitRefUpdateResult> result = await _gitHttpClient.UpdateRefsAsync(
+                    var refUpdate = new GitRefUpdate { Name = newRefName, OldObjectId = "0000000000000000000000000000000000000000", NewObjectId = baseCommitSha };
+                    return await _gitHttpClient.UpdateRefsAsync(
                     refUpdates: new[] { refUpdate },
                     repositoryId: repositoryId,
                     project: ProjectName,
                     cancellationToken: cancellationToken);
+                }, "CreateBranch", OperationType.Create);
 
                 return AzureDevOpsActionResult<List<GitRefUpdateResult>>.Success(result, Logger);
             }
@@ -34,11 +32,14 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                IReadOnlyList<GitRef> refs = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
                     project: ProjectName,
                     filter: "heads/",
                     cancellationToken: cancellationToken);
+                }, "ListBranches", OperationType.Read);
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Success(refs, Logger);
             }
@@ -52,12 +53,16 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                IReadOnlyList<GitRef> refs = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
                     project: ProjectName,
                     includeMyBranches: true,
                     latestStatusesOnly: true,
                     cancellationToken: cancellationToken);
+
+                }, "ListMyBranches", OperationType.Read);
 
                 return AzureDevOpsActionResult<IReadOnlyList<GitRef>>.Success(refs, Logger);
             }
@@ -71,16 +76,20 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                GitRef branch = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
                     repositoryId: repositoryId,
                     project: ProjectName,
                     filter: $"heads/{branchName}",
                     cancellationToken: cancellationToken);
 
-                if(refs.Count == 0)
-                    return AzureDevOpsActionResult<GitRef>.Failure($"Branch '{branchName}' not found.", Logger);
+                    if(refs.Count == 0)
+                        throw new InvalidOperationException($"Branch '{branchName}' not found.");
+                    return refs[0];
+                }, "GetBranch", OperationType.Read);
 
-                return AzureDevOpsActionResult<GitRef>.Success(refs[0], Logger);
+                return AzureDevOpsActionResult<GitRef>.Success(branch, Logger);
             }
             catch(Exception ex)
             {

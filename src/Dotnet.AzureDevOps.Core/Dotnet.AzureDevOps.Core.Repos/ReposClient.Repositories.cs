@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
 namespace Dotnet.AzureDevOps.Core.Repos
@@ -9,15 +10,18 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                var newRepositoryOptions = new GitRepositoryCreateOptions { Name = newRepositoryName };
-
-                GitRepository repo = await _gitHttpClient.CreateRepositoryAsync(
+                Guid id = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    var newRepositoryOptions = new GitRepositoryCreateOptions { Name = newRepositoryName };
+                    GitRepository repo = await _gitHttpClient.CreateRepositoryAsync(
                     gitRepositoryToCreate: newRepositoryOptions,
                     project: ProjectName,
                     cancellationToken: cancellationToken
                 );
+                    return repo.Id;
+                }, "CreateRepository", OperationType.Create);
 
-                return AzureDevOpsActionResult<Guid>.Success(repo.Id, Logger);
+                return AzureDevOpsActionResult<Guid>.Success(id, Logger);
             }
             catch(Exception ex)
             {
@@ -29,12 +33,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                await _gitHttpClient.DeleteRepositoryAsync(
+                bool deleted = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    await _gitHttpClient.DeleteRepositoryAsync(
                     repositoryId: repositoryId,
                     project: ProjectName,
                     cancellationToken: cancellationToken
                 );
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                    return true;
+                }, "DeleteRepository", OperationType.Delete);
+
+                return AzureDevOpsActionResult<bool>.Success(deleted, Logger);
             }
             catch(Exception ex)
             {
@@ -51,6 +60,7 @@ namespace Dotnet.AzureDevOps.Core.Repos
                     project: ProjectName,
                     cancellationToken: cancellationToken
                 );
+
                 return AzureDevOpsActionResult<GitRepository>.Success(repo, Logger);
             }
             catch(Exception ex)
@@ -63,11 +73,15 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitRepository repo = await _gitHttpClient.GetRepositoryAsync(
+                GitRepository repo = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _gitHttpClient.GetRepositoryAsync(
                     repositoryId: repositoryName,
                     project: ProjectName,
                     cancellationToken: cancellationToken
                 );
+                }, "GetRepositoryByName", OperationType.Read);
+
                 return AzureDevOpsActionResult<GitRepository>.Success(repo, Logger);
             }
             catch(Exception ex)
@@ -80,8 +94,12 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                IReadOnlyList<GitRepository> result = await _gitHttpClient.GetRepositoriesAsync(project: ProjectName, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<IReadOnlyList<GitRepository>>.Success(result, Logger);
+                IReadOnlyList<GitRepository> repos = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _gitHttpClient.GetRepositoriesAsync(project: ProjectName, cancellationToken: cancellationToken);
+                }, "ListRepositories", OperationType.Read);
+
+                return AzureDevOpsActionResult<IReadOnlyList<GitRepository>>.Success(repos, Logger);
             }
             catch(Exception ex)
             {

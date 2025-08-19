@@ -1,5 +1,6 @@
 using Dotnet.AzureDevOps.Core.Boards.Options;
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
@@ -26,11 +27,20 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when workItemCreateOptions is invalid or missing required fields.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create work items.</exception>
-        public Task<AzureDevOpsActionResult<int>> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync(
-                workItemType: "Epic",
-                options: workItemCreateOptions,
-                cancellationToken: cancellationToken);
+        public async Task<AzureDevOpsActionResult<int>> CreateEpicAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await CreateWorkItemAsync(workItemType: "Epic", options: workItemCreateOptions, cancellationToken: cancellationToken),
+                    "CreateEpic", OperationType.Create);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Creates a new Feature work item in Azure DevOps.
@@ -47,11 +57,23 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when workItemCreateOptions is invalid or missing required fields.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create work items.</exception>
-        public Task<AzureDevOpsActionResult<int>> CreateFeatureAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync(
-                workItemType: "Feature",
-                options: workItemCreateOptions,
-                cancellationToken: cancellationToken);
+        public async Task<AzureDevOpsActionResult<int>> CreateFeatureAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await CreateWorkItemAsync(
+                        workItemType: "Feature",
+                        options: workItemCreateOptions,
+                        cancellationToken: cancellationToken),
+                    "CreateFeature", OperationType.Create);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Creates a new User Story work item in Azure DevOps.
@@ -68,11 +90,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when workItemCreateOptions is invalid or missing required fields.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create work items.</exception>
-        public Task<AzureDevOpsActionResult<int>> CreateUserStoryAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync(
-                workItemType: "User Story",
+        public async Task<AzureDevOpsActionResult<int>> CreateUserStoryAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await CreateWorkItemAsync(workItemType: "User Story",
                 options: workItemCreateOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken),
+                    "CreateUserStory", OperationType.Create);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Creates a new Task work item in Azure DevOps.
@@ -89,11 +122,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when workItemCreateOptions is invalid or missing required fields.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to create work items.</exception>
-        public Task<AzureDevOpsActionResult<int>> CreateTaskAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default) =>
-            CreateWorkItemAsync(
-                workItemType: "Task",
+        public async Task<AzureDevOpsActionResult<int>> CreateTaskAsync(WorkItemCreateOptions workItemCreateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await CreateWorkItemAsync(workItemType: "Task",
                 options: workItemCreateOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken),
+                    "CreateTask", OperationType.Create);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Updates an existing Epic work item with new field values and properties.
@@ -111,11 +155,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when epicId is invalid or updateOptions contains invalid data.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to modify the epic.</exception>
-        public Task<AzureDevOpsActionResult<int>> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(
-                workItemId: epicId,
+        public async Task<AzureDevOpsActionResult<int>> UpdateEpicAsync(int epicId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await UpdateWorkItemAsync(workItemId: epicId,
                 options: updateOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken),
+                    "UpdateEpic", OperationType.Update);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Updates an existing Feature work item with new field values and properties.
@@ -133,11 +188,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when featureId is invalid or updateOptions contains invalid data.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to modify the feature.</exception>
-        public Task<AzureDevOpsActionResult<int>> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(
-                workItemId: featureId,
+        public async Task<AzureDevOpsActionResult<int>> UpdateFeatureAsync(int featureId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await UpdateWorkItemAsync(workItemId: featureId,
                 options: updateOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken),
+                    "UpdateFeature", OperationType.Update);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Updates an existing User Story work item with new field values and properties.
@@ -155,11 +221,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when userStoryId is invalid or updateOptions contains invalid data.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to modify the user story.</exception>
-        public Task<AzureDevOpsActionResult<int>> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(
-                workItemId: userStoryId,
+        public async Task<AzureDevOpsActionResult<int>> UpdateUserStoryAsync(int userStoryId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await UpdateWorkItemAsync(workItemId: userStoryId,
                 options: updateOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken),
+                    "UpdateUserStory", OperationType.Update);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Updates an existing Task work item with new field values and properties.
@@ -177,11 +254,22 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="ArgumentException">Thrown when taskId is invalid or updateOptions contains invalid data.</exception>
         /// <exception cref="HttpRequestException">Thrown when the API request fails.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to modify the task.</exception>
-        public Task<AzureDevOpsActionResult<int>> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default) =>
-            UpdateWorkItemAsync(
-                workItemId: taskId,
+        public async Task<AzureDevOpsActionResult<int>> UpdateTaskAsync(int taskId, WorkItemCreateOptions updateOptions, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                AzureDevOpsActionResult<int> inner = await ExecuteWithExceptionHandlingAsync(async () =>
+                    await UpdateWorkItemAsync(workItemId: taskId,
                 options: updateOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken),
+                    "UpdateTask", OperationType.Update);
+                return inner;
+            }
+            catch(Exception ex)
+            {
+                return AzureDevOpsActionResult<int>.Failure(ex, Logger);
+            }
+        }
 
         /// <summary>
         /// Permanently deletes a work item from Azure DevOps.
@@ -203,8 +291,13 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
-                return AzureDevOpsActionResult<bool>.Success(true, Logger);
+                bool result = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    await _workItemClient.DeleteWorkItemAsync(id: workItemId, cancellationToken: cancellationToken);
+                    return true;
+                }, "DeleteWorkItem", OperationType.Delete);
+
+                return AzureDevOpsActionResult<bool>.Success(result, Logger);
             }
             catch(Exception ex)
             {
@@ -217,22 +310,27 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                JsonPatchDocument patchDocument = BuildPatchDocument(options);
+                int id = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    JsonPatchDocument patchDocument = BuildPatchDocument(options);
 
-                WorkItem newWorkItem = await _workItemClient.CreateWorkItemAsync(
-                    document: patchDocument,
-                    project: ProjectName,
-                    type: workItemType,
-                    validateOnly: validateOnly,
-                    bypassRules: bypassRules,
-                    suppressNotifications: suppressNotifications,
-                    expand: expand,
-                    cancellationToken: cancellationToken
-                );
+                    WorkItem newWorkItem = await _workItemClient.CreateWorkItemAsync(
+                        document: patchDocument,
+                        project: ProjectName,
+                        type: workItemType,
+                        validateOnly: validateOnly,
+                        bypassRules: bypassRules,
+                        suppressNotifications: suppressNotifications,
+                        expand: expand,
+                        cancellationToken: cancellationToken);
 
-                return newWorkItem.Id.HasValue
-                    ? AzureDevOpsActionResult<int>.Success(newWorkItem.Id.Value, Logger)
-                    : AzureDevOpsActionResult<int>.Failure("Work item creation returned null identifier.", Logger);
+                    if(!newWorkItem.Id.HasValue)
+                        throw new InvalidOperationException("Work item creation returned null identifier.");
+
+                    return newWorkItem.Id.Value;
+                }, $"CreateWorkItem-{workItemType}", OperationType.Create);
+
+                return AzureDevOpsActionResult<int>.Success(id, Logger);
             }
             catch(Exception ex)
             {
@@ -244,56 +342,45 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                JsonPatchDocument patchDocument = BuildPatchDocument(options);
-
-                WorkItem updatedWorkItem = await _workItemClient.UpdateWorkItemAsync(
-                    document: patchDocument,
-                    id: workItemId,
-                    cancellationToken: cancellationToken
-                );
-
-                if(updatedWorkItem.Id.HasValue)
+                int id = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    return AzureDevOpsActionResult<int>.Success(updatedWorkItem.Id.Value, Logger);
-                }
+                    JsonPatchDocument patchDocument = BuildPatchDocument(options);
 
-                return AzureDevOpsActionResult<int>.Failure("Work item update returned null identifier.", Logger);
+                    WorkItem updatedWorkItem = await _workItemClient.UpdateWorkItemAsync(
+                        document: patchDocument,
+                        id: workItemId,
+                        cancellationToken: cancellationToken);
+
+                    if(!updatedWorkItem.Id.HasValue)
+                        throw new InvalidOperationException("Work item update returned null identifier.");
+
+                    return updatedWorkItem.Id.Value;
+                }, "UpdateWorkItem", OperationType.Update);
+
+                return AzureDevOpsActionResult<int>.Success(id, Logger);
             }
             catch(Exception ex)
             {
                 return AzureDevOpsActionResult<int>.Failure(ex, Logger);
             }
         }
-
         /// <summary>
         /// Adds a string field to the patch document if it's not null/whitespace.
         /// </summary>
         private static void AddStringField(JsonPatchDocument patchDocument, string? value, string fieldPath)
         {
             if(!string.IsNullOrWhiteSpace(value))
-                patchDocument.Add(new JsonPatchOperation
-                {
-                    Operation = Operation.Add,
-                    Path = fieldPath,
-                    Value = value
-                });
+                patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = fieldPath, Value = value });
         }
 
         /// <summary>
         /// Adds a numeric field to the patch document if it has a non-null value.
         /// </summary>
-        private static void AddNumericField<T>(JsonPatchDocument patchDocument, T? value, string fieldPath)
-            where T : struct
+        private static void AddNumericField<T>(JsonPatchDocument patchDocument, T? value, string fieldPath) where T : struct
         {
             if(value.HasValue)
-                patchDocument.Add(new JsonPatchOperation
-                {
-                    Operation = Operation.Add,
-                    Path = fieldPath,
-                    Value = value.Value
-                });
+                patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = fieldPath, Value = value.Value });
         }
-
         /// <summary>
         /// Builds a JSON Patch document from work item creation options for Azure DevOps API operations.
         /// This method converts the structured WorkItemCreateOptions into the JSON Patch format required
@@ -314,8 +401,6 @@ namespace Dotnet.AzureDevOps.Core.Boards
         private JsonPatchDocument BuildPatchDocument(WorkItemCreateOptions workItemCreateOptions)
         {
             var patchDocument = new JsonPatchDocument();
-
-            // Strings
             AddStringField(patchDocument, workItemCreateOptions.Title, "/fields/System.Title");
             AddStringField(patchDocument, workItemCreateOptions.Description, "/fields/System.Description");
             AddStringField(patchDocument, workItemCreateOptions.AssignedTo, "/fields/System.AssignedTo");
@@ -324,16 +409,14 @@ namespace Dotnet.AzureDevOps.Core.Boards
             AddStringField(patchDocument, workItemCreateOptions.AcceptanceCriteria, "/fields/Microsoft.VSTS.Common.AcceptanceCriteria");
             AddStringField(patchDocument, workItemCreateOptions.AreaPath, "/fields/System.AreaPath");
             AddStringField(patchDocument, workItemCreateOptions.IterationPath, "/fields/System.IterationPath");
-
-            // Numerics
             AddNumericField(patchDocument, workItemCreateOptions.Priority, "/fields/Microsoft.VSTS.Common.Priority");
             AddNumericField(patchDocument, workItemCreateOptions.StoryPoints, "/fields/Microsoft.VSTS.Scheduling.StoryPoints");
             AddNumericField(patchDocument, workItemCreateOptions.Effort, "/fields/Microsoft.VSTS.Scheduling.Effort");
             AddNumericField(patchDocument, workItemCreateOptions.RemainingWork, "/fields/Microsoft.VSTS.Scheduling.RemainingWork");
             AddNumericField(patchDocument, workItemCreateOptions.OriginalEstimate, "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate");
 
-            // Parent link
             if(workItemCreateOptions.ParentId.HasValue)
+            {
                 patchDocument.Add(new JsonPatchOperation
                 {
                     Operation = Operation.Add,
@@ -345,7 +428,7 @@ namespace Dotnet.AzureDevOps.Core.Boards
                         attributes = new { comment = "Linking to parent" }
                     }
                 });
-
+            }
             return patchDocument;
         }
 
@@ -371,36 +454,26 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentException.ThrowIfNullOrWhiteSpace(workItemType);
-                ArgumentNullException.ThrowIfNull(fields);
-
-                var patchDocument = new JsonPatchDocument();
-
-                foreach(WorkItemFieldValue field in fields)
+                WorkItem workItem = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    patchDocument.Add(new JsonPatchOperation
-                    {
-                        Operation = Operation.Add,
-                        Path = $"/fields/{field.Name}",
-                        Value = field.Value
-                    });
+                    ArgumentException.ThrowIfNullOrWhiteSpace(workItemType);
+                    ArgumentNullException.ThrowIfNull(fields);
 
-                    if(!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
+                    var patchDocument = new JsonPatchDocument();
+                    foreach(WorkItemFieldValue field in fields)
                     {
-                        patchDocument.Add(new JsonPatchOperation
+                        patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = $"/fields/{field.Name}", Value = field.Value });
+                        if(!string.IsNullOrWhiteSpace(field.Format) && field.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && field.Value.Length > 50)
                         {
-                            Operation = Operation.Add,
-                            Path = $"/multilineFieldsFormat/{field.Name}",
-                            Value = field.Format
-                        });
+                            patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = $"/multilineFieldsFormat/{field.Name}", Value = field.Format });
+                        }
                     }
-                }
 
-                WorkItem workItem = await _workItemClient.CreateWorkItemAsync(
-                    document: patchDocument,
+                    return await _workItemClient.CreateWorkItemAsync(document: patchDocument,
                     project: ProjectName,
                     type: workItemType,
                     cancellationToken: cancellationToken);
+                }, $"CreateWorkItemGeneric-{workItemType}", OperationType.Create);
 
                 return AzureDevOpsActionResult<WorkItem>.Success(workItem, Logger);
             }
@@ -432,35 +505,23 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                ArgumentNullException.ThrowIfNull(updates);
-
-                var patchDocument = new JsonPatchDocument();
-
-                foreach(WorkItemFieldUpdate update in updates)
+                WorkItem result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    patchDocument.Add(new JsonPatchOperation
+                    ArgumentNullException.ThrowIfNull(updates);
+                    var patchDocument = new JsonPatchDocument();
+                    foreach(WorkItemFieldUpdate update in updates)
                     {
-                        Operation = update.Operation,
-                        Path = update.Path,
-                        Value = update.Value
-                    });
-
-                    if(!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
-                    {
-                        string formatPath = $"/multilineFieldsFormat{update.Path.Replace("/fields", string.Empty, StringComparison.OrdinalIgnoreCase)}";
-                        patchDocument.Add(new JsonPatchOperation
+                        patchDocument.Add(new JsonPatchOperation { Operation = update.Operation, Path = update.Path, Value = update.Value });
+                        if(!string.IsNullOrWhiteSpace(update.Format) && update.Format.Equals("Markdown", StringComparison.OrdinalIgnoreCase) && update.Value != null && update.Value.Length > 50)
                         {
-                            Operation = Operation.Add,
-                            Path = formatPath,
-                            Value = update.Format
-                        });
+                            string formatPath = $"/multilineFieldsFormat{update.Path.Replace("/fields", string.Empty, StringComparison.OrdinalIgnoreCase)}";
+                            patchDocument.Add(new JsonPatchOperation { Operation = Operation.Add, Path = formatPath, Value = update.Format });
+                        }
                     }
-                }
-
-                WorkItem result = await _workItemClient.UpdateWorkItemAsync(
-                    document: patchDocument,
+                    return await _workItemClient.UpdateWorkItemAsync(document: patchDocument,
                     id: workItemId,
                     cancellationToken: cancellationToken);
+                }, "UpdateWorkItemGeneric", OperationType.Update);
 
                 return AzureDevOpsActionResult<WorkItem>.Success(result, Logger);
             }
@@ -468,37 +529,6 @@ namespace Dotnet.AzureDevOps.Core.Boards
             {
                 return AzureDevOpsActionResult<WorkItem>.Failure(ex, Logger);
             }
-        }
-
-        /// <summary>
-        /// Retrieves the value of a custom field from a specific work item by field name.
-        /// This method provides access to custom fields that have been added to work item types
-        /// beyond the standard system fields. Useful for accessing organization-specific data
-        /// or custom tracking information stored in work items.
-        /// </summary>
-        /// <param name="workItemId">The ID of the work item from which to retrieve the custom field value.</param>
-        /// <param name="fieldName">The name or reference name of the custom field to retrieve.</param>
-        /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
-        /// <returns>
-        /// An <see cref="AzureDevOpsActionResult{T}"/> containing the custom field value,
-        /// or error details if the work item or field doesn't exist.
-        /// </returns>
-        /// <exception cref="ArgumentException">Thrown when workItemId is invalid or fieldName is null/empty.</exception>
-        /// <exception cref="HttpRequestException">Thrown when the API request fails or returns an error status.</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown when the user lacks permission to read work item fields.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the work item doesn't exist or the field is not found.</exception>
-        public async Task<AzureDevOpsActionResult<object>> GetCustomFieldAsync(int workItemId, string fieldName, CancellationToken cancellationToken = default)
-        {
-            AzureDevOpsActionResult<WorkItem> itemResult = await GetWorkItemAsync(workItemId, cancellationToken);
-            if(!itemResult.IsSuccessful)
-            {
-                return AzureDevOpsActionResult<object>.Failure(itemResult.ErrorMessage!, Logger);
-            }
-
-            WorkItem item = itemResult.Value;
-            return item.Fields.TryGetValue(fieldName, out object? value)
-                ? AzureDevOpsActionResult<object>.Success(value, Logger)
-                : AzureDevOpsActionResult<object>.Failure($"Field '{fieldName}' not found in work item {workItemId}.", Logger);
         }
 
         /// <summary>
@@ -513,17 +543,15 @@ namespace Dotnet.AzureDevOps.Core.Boards
         {
             try
             {
-                var patch = new JsonPatchDocument
+                WorkItem result = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    new JsonPatchOperation
+                    var patch = new JsonPatchDocument
                     {
-                        Operation = Operation.Replace,
-                        Path = $"/fields/{fieldName}",
-                        Value = value
-                    }
-                };
+                        new JsonPatchOperation { Operation = Operation.Replace, Path = $"/fields/{fieldName}", Value = value }
+                    };
+                    return await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
+                }, "SetCustomField", OperationType.Update);
 
-                WorkItem result = await _workItemClient.UpdateWorkItemAsync(patch, workItemId, cancellationToken: cancellationToken);
                 return AzureDevOpsActionResult<WorkItem>.Success(result, Logger);
             }
             catch(Exception ex)
@@ -553,27 +581,19 @@ namespace Dotnet.AzureDevOps.Core.Boards
         /// <exception cref="InvalidOperationException">Thrown when the field type is invalid or field creation rules are violated.</exception>
         public async Task<AzureDevOpsActionResult<WorkItemField2>> CreateCustomFieldIfDoesntExistAsync(string fieldName, string referenceName, Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.FieldType type, string? description = null, CancellationToken cancellationToken = default)
         {
-            var field = new WorkItemField2
-            {
-                Name = fieldName,
-                ReferenceName = referenceName,
-                Type = type,
-                Description = description,
-                Usage = FieldUsage.WorkItem
-            };
-
+            var field = new WorkItemField2 { Name = fieldName, ReferenceName = referenceName, Type = type, Description = description, Usage = FieldUsage.WorkItem };
             try
             {
-                WorkItemField2 created = await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
+                WorkItemField2 created = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await _workItemClient.CreateWorkItemFieldAsync(field, cancellationToken: cancellationToken);
+                }, "CreateCustomField", OperationType.Create);
                 return AzureDevOpsActionResult<WorkItemField2>.Success(created, Logger);
             }
             catch(VssServiceException ex)
             {
                 if(ex.Message.Contains("is already", StringComparison.OrdinalIgnoreCase))
-                {
                     return AzureDevOpsActionResult<WorkItemField2>.Success(field, Logger);
-                }
-
                 return AzureDevOpsActionResult<WorkItemField2>.Failure(ex, Logger);
             }
             catch(Exception ex)

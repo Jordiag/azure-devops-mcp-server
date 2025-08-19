@@ -444,8 +444,10 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             string repoName = $"it-repo-{UtcStamp()}";
             AzureDevOpsActionResult<Guid> newRepoIdResult = await _reposClient.CreateRepositoryAsync(repoName);
             Guid newRepoId = newRepoIdResult.Value;
+            Assert.True(newRepoIdResult.IsSuccessful);
 
             AzureDevOpsActionResult<GitRepository> createdResult = await _reposClient.GetRepositoryAsync(newRepoId);
+            Assert.True(createdResult.IsSuccessful);
             GitRepository? created = createdResult.Value;
             Assert.NotNull(created);
 

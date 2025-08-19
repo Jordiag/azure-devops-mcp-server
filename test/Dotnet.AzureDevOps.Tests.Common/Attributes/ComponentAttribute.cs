@@ -1,4 +1,3 @@
-using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Dotnet.AzureDevOps.Tests.Common.Attributes;

@@ -11,12 +11,12 @@ public class AzureDevOpsActionResult<T>
 
     private AzureDevOpsActionResult(bool isSuccess, T value, string? errorMessage)
     {
-        if (!isSuccess && value is not null)
+        if(!isSuccess && value is not null)
         {
             Value = default!;
         }
 
-        if (isSuccess && value is null)
+        if(isSuccess && value is null)
         {
             throw new ArgumentNullException(nameof(value), "Success result must contain a non-null value.");
         }
@@ -44,6 +44,13 @@ public class AzureDevOpsActionResult<T>
         return new(false, default!, $"the request ended raising an error exception: {exception.DumpFullException()}");
     }
 
+    public static AzureDevOpsActionResult<T> Failure(Exception exception, string? errorMessage, ILogger? logger = null)
+    {
+        string combinedMessage = $"Request failed with error: {errorMessage}. Exception: {exception.DumpFullException()}";
+        logger?.LogError(exception, "Request failed with error: {ErrorMessage}. Exception details logged.", errorMessage);
+        return new(false, default!, combinedMessage);
+    }
+
     public static AzureDevOpsActionResult<T> Failure(string errorMessage, ILogger? logger = null)
     {
         logger?.LogError("Request failed with error: {ErrorMessage}", errorMessage);
@@ -52,12 +59,12 @@ public class AzureDevOpsActionResult<T>
 
     public T EnsureSuccess(ILogger? logger = null)
     {
-        if (!IsSuccessful)
+        if(!IsSuccessful)
         {
             logger?.LogError("Operation failed: {ErrorMessage}", ErrorMessage);
             throw new InvalidOperationException(ErrorMessage ?? "Operation failed");
         }
-        
+
         logger?.LogDebug("Operation succeeded");
         return Value;
     }

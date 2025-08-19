@@ -1,8 +1,7 @@
 using System.ComponentModel;
+using Dotnet.AzureDevOps.Core.Common;
 using Dotnet.AzureDevOps.Core.Repos;
 using Dotnet.AzureDevOps.Core.Repos.Options;
-using Dotnet.AzureDevOps.Core.Common;
-using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using ModelContextProtocol.Server;
@@ -56,11 +55,11 @@ public class ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
         (await _reposClient.DeleteRepositoryAsync(repositoryId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves all branches from an Azure DevOps Git repository. Returns branch information including names, commit SHAs, and whether they are the default branch. Useful for understanding the repository's branch structure before creating pull requests or new branches.")]
-    public async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId, CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<GitRef>> ListBranchesAsync(string repositoryId, CancellationToken cancellationToken = default) =>
         (await _reposClient.ListBranchesAsync(repositoryId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Retrieves branches created by the current authenticated user from an Azure DevOps Git repository. This filters branches to show only those where the user is the creator. Useful for finding your own feature branches or personal development work.")]
-    public async Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string repositoryId, CancellationToken cancellationToken = default) => 
+    public async Task<IReadOnlyList<GitRef>> ListMyBranchesAsync(string repositoryId, CancellationToken cancellationToken = default) =>
         (await _reposClient.ListMyBranchesAsync(repositoryId, cancellationToken)).EnsureSuccess(_logger);
 
     [McpServerTool, Description("Creates a new branch in an Azure DevOps Git repository based on a specific commit SHA. The new branch will point to the specified commit and can be used for feature development or pull requests. Returns the result of the branch creation operation including success status.")]

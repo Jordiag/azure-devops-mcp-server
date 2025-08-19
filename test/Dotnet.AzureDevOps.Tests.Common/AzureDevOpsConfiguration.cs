@@ -26,7 +26,7 @@ namespace Dotnet.AzureDevOps.Tests.Common
         public static AzureDevOpsConfiguration FromEnvironment()
             => FromConfiguration(TestConfiguration.Configuration);
 
-        public static AzureDevOpsConfiguration FromConfiguration(IConfiguration config) 
+        public static AzureDevOpsConfiguration FromConfiguration(IConfiguration config)
             => new()
             {
                 Organisation = config.GetRequiredSection("AZURE_DEVOPS_ORG").Value!,

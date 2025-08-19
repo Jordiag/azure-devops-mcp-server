@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 
@@ -25,7 +26,11 @@ namespace Dotnet.AzureDevOps.Core.Overview
         {
             try
             {
-                TeamProject project = await this._projectHttpClient.GetProject(this.ProjectName, includeCapabilities: true, includeHistory: false, userState: null);
+                TeamProject project = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    return await this._projectHttpClient.GetProject(this.ProjectName, includeCapabilities: true, includeHistory: false, userState: null);
+                }, "GetProjectSummary", OperationType.Read);
+
                 return AzureDevOpsActionResult<TeamProject>.Success(project, this.Logger);
             }
             catch(Exception ex)

@@ -1,4 +1,5 @@
 using Dotnet.AzureDevOps.Core.Common;
+using Dotnet.AzureDevOps.Core.Common.Services;
 using Dotnet.AzureDevOps.Core.Repos.Options;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
@@ -6,32 +7,24 @@ namespace Dotnet.AzureDevOps.Core.Repos
 {
     public partial class ReposClient
     {
-        public async Task<AzureDevOpsActionResult<GitCommitDiffs>> GetCommitDiffAsync(
-            string repositoryId, string baseSha, string targetSha, CancellationToken cancellationToken = default)
+        public async Task<AzureDevOpsActionResult<GitCommitDiffs>> GetCommitDiffAsync(string repositoryId, string baseSha, string targetSha, CancellationToken cancellationToken = default)
         {
             try
             {
-                var baseDesc = new GitBaseVersionDescriptor
+                GitCommitDiffs diffs = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    Version = baseSha,
-                    VersionType = GitVersionType.Commit
-                };
-
-                var targetDesc = new GitTargetVersionDescriptor
-                {
-                    Version = targetSha,
-                    VersionType = GitVersionType.Commit
-                };
-
-                GitCommitDiffs result = await _gitHttpClient.GetCommitDiffsAsync(
+                    var baseDesc = new GitBaseVersionDescriptor { Version = baseSha, VersionType = GitVersionType.Commit };
+                    var targetDesc = new GitTargetVersionDescriptor { Version = targetSha, VersionType = GitVersionType.Commit };
+                    return await _gitHttpClient.GetCommitDiffsAsync(
                     repositoryId: repositoryId,
                     project: ProjectName,
                     diffCommonCommit: true,
                     baseVersionDescriptor: baseDesc,
                     targetVersionDescriptor: targetDesc,
                     cancellationToken: cancellationToken);
+                }, "GetCommitDiff", OperationType.Read);
 
-                return AzureDevOpsActionResult<GitCommitDiffs>.Success(result, Logger);
+                return AzureDevOpsActionResult<GitCommitDiffs>.Success(diffs, Logger);
             }
             catch(Exception ex)
             {
@@ -43,24 +36,23 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                var searchCriteria = new GitQueryCommitsCriteria
+                IReadOnlyList<GitCommitRef> commits = await ExecuteWithExceptionHandlingAsync(async () =>
                 {
-                    IncludeWorkItems = false,
-                    ItemVersion = new GitVersionDescriptor
+                    var searchCriteria = new GitQueryCommitsCriteria
                     {
-                        Version = branchName,
-                        VersionType = GitVersionType.Branch
-                    },
-                    Top = top
-                };
-
-                IReadOnlyList<GitCommitRef> result = await _gitHttpClient.GetCommitsAsync(
+                        IncludeWorkItems = false,
+                        ItemVersion = new GitVersionDescriptor { Version = branchName, VersionType = GitVersionType.Branch },
+                        Top = top
+                    };
+                    return await _gitHttpClient.GetCommitsAsync(
                     repositoryId: repositoryName,
                     searchCriteria: searchCriteria,
                     project: projectName,
                     cancellationToken: cancellationToken);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, Logger);
+                }, "GetLatestCommits", OperationType.Read);
+
+                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(commits, Logger);
             }
             catch(Exception ex)
             {
@@ -72,15 +64,17 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                searchCriteria.Top = top;
-
-                IReadOnlyList<GitCommitRef> result = await _gitHttpClient.GetCommitsAsync(
+                IReadOnlyList<GitCommitRef> commits = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    searchCriteria.Top = top;
+                    return await _gitHttpClient.GetCommitsAsync(
                     repositoryId: repositoryId,
                     searchCriteria: searchCriteria,
                     project: ProjectName,
                     cancellationToken: cancellationToken);
+                }, "SearchCommits", OperationType.Read);
 
-                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(result, Logger);
+                return AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>>.Success(commits, Logger);
             }
             catch(Exception ex)
             {
@@ -92,52 +86,32 @@ namespace Dotnet.AzureDevOps.Core.Repos
         {
             try
             {
-                GitRef branch = await _gitHttpClient.GetRefsAsync(
+                string commitId = await ExecuteWithExceptionHandlingAsync(async () =>
+                {
+                    GitRef branch = await _gitHttpClient.GetRefsAsync(
                     repositoryId: fileCommitOptions.RepositoryName,
                     project: ProjectName,
                     filter: $"heads/{fileCommitOptions.BranchName}",
                     cancellationToken: cancellationToken)
                     .ContinueWith(task => task.Result.Single());
 
-                var change = new GitChange
-                {
-                    ChangeType = VersionControlChangeType.Add,
-                    Item = new GitItem { Path = fileCommitOptions.FilePath },
-                    NewContent = new ItemContent
+
+                    var change = new GitChange
                     {
-                        Content = fileCommitOptions.Content,
-                        ContentType = ItemContentType.RawText
-                    }
-                };
+                        ChangeType = VersionControlChangeType.Add,
+                        Item = new GitItem { Path = fileCommitOptions.FilePath },
+                        NewContent = new ItemContent { Content = fileCommitOptions.Content, ContentType = ItemContentType.RawText }
+                    };
 
-                var commit = new GitCommitRef
-                {
-                    Comment = fileCommitOptions.CommitMessage,
-                    Changes = [change]
-                };
+                    var commit = new GitCommitRef { Comment = fileCommitOptions.CommitMessage, Changes = [change] };
+                    var referenceUpdate = new GitRefUpdate { Name = $"refs/heads/{fileCommitOptions.BranchName}", OldObjectId = branch.ObjectId };
+                    var push = new GitPush { RefUpdates = [referenceUpdate], Commits = [commit] };
 
-                var referenceUpdate = new GitRefUpdate
-                {
-                    Name = $"refs/heads/{fileCommitOptions.BranchName}",
-                    OldObjectId = branch.ObjectId
-                };
+                    GitPush result = await _gitHttpClient.CreatePushAsync(push, project: ProjectName, repositoryId: fileCommitOptions.RepositoryName, userState: null, cancellationToken: cancellationToken);
+                    return result.Commits.Last().CommitId;
+                }, "CommitAddFile", OperationType.Create);
 
-                var push = new GitPush
-                {
-                    RefUpdates = [referenceUpdate],
-                    Commits = [commit]
-                };
-
-                GitPush result = await _gitHttpClient.CreatePushAsync(
-                    push,
-                    project: ProjectName,
-                    repositoryId: fileCommitOptions.RepositoryName,
-                    userState: null,
-                    cancellationToken: cancellationToken
-                );
-
-                GitCommitRef pushedCommit = result.Commits.Last();
-                return AzureDevOpsActionResult<string>.Success(pushedCommit.CommitId, Logger);
+                return AzureDevOpsActionResult<string>.Success(commitId, Logger);
             }
             catch(Exception ex)
             {
