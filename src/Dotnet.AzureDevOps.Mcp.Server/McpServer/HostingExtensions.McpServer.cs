@@ -12,8 +12,8 @@ internal static class HostingExtensionsMcpServer
     private const string StartupValidationCorrelationId = "StartupValidation";
     private const string AzDevOpsProjectNameEnvVar = "AZURE_DEVOPS_PROJECT_NAME";
     private const string AzDevOpsPatEnvVar = "AZURE_DEVOPS_PAT";
-    private const string AzDevOpsOrganizationUrlEnvVar = "AZURE_DEVOPS_ORGANIZATION_URL";
-    private const string AzDevOpsSearchOrganizationUrlEnvVar = "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL";
+    private const string AzDevOpsOrganizationUrlEnvVar = "AZURE_DEVOPS_ORG_URL";
+    private const string AzDevOpsSearchOrganizationUrlEnvVar = "AZURE_DEVOPS_SEARCH_ORG_URL";
 
     public static WebApplicationBuilder ConfigureMcpServer(this WebApplicationBuilder builder)
     {
@@ -58,12 +58,12 @@ internal static class HostingExtensionsMcpServer
         string? orgUrl = configuration[AzDevOpsOrganizationUrlEnvVar];
         if(string.IsNullOrWhiteSpace(orgUrl))
             throw new AzureDevOpsConfigurationException(
-                "AZURE_DEVOPS_ORGANIZATION_URL environment variable is required and cannot be null or empty.",
+                "AZURE_DEVOPS_ORG_URL environment variable is required and cannot be null or empty.",
                 ConfigurationOperationName,
                 StartupValidationCorrelationId);
         if(!Uri.TryCreate(orgUrl, UriKind.Absolute, out Uri? orgUri) || orgUri.Scheme != "https")
             throw new AzureDevOpsConfigurationException(
-                "AZURE_DEVOPS_ORGANIZATION_URL must be a valid HTTPS URL.",
+                "AZURE_DEVOPS_ORG_URL must be a valid HTTPS URL.",
                 ConfigurationOperationName,
                 StartupValidationCorrelationId);
         options.OrganizationUrl = orgUrl;
@@ -74,12 +74,12 @@ internal static class HostingExtensionsMcpServer
         string? searchOrgUrl = configuration[AzDevOpsSearchOrganizationUrlEnvVar];
         if(string.IsNullOrWhiteSpace(searchOrgUrl))
             throw new AzureDevOpsConfigurationException(
-                "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL environment variable is required and cannot be null or empty.",
+                "AZURE_DEVOPS_SEARCH_ORG_URL environment variable is required and cannot be null or empty.",
                 ConfigurationOperationName,
                 StartupValidationCorrelationId);
         if(!Uri.TryCreate(searchOrgUrl, UriKind.Absolute, out Uri? searchUri) || searchUri.Scheme != "https")
             throw new AzureDevOpsConfigurationException(
-                "AZURE_DEVOPS_SEARCH_ORGANIZATION_URL must be a valid HTTPS URL.",
+                "AZURE_DEVOPS_SEARCH_ORG_URL must be a valid HTTPS URL.",
                 ConfigurationOperationName,
                 StartupValidationCorrelationId);
         options.SearchOrganizationUrl = searchOrgUrl;
