@@ -37,5 +37,5 @@ public record PullRequestCreateOptions
     public bool IsDraft { get; init; } = false;
 
     // You could add a list of reviewers, labels, etc. here if needed.
-    public List<string>? Reviewers { get; init; }
+    public string[]? Reviewers { get; init; }
 }
