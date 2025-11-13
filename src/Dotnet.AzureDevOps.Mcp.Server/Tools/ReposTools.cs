@@ -14,7 +14,7 @@ public class ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
     private readonly IReposClient _reposClient = reposClient;
     private readonly ILogger<ReposTools> _logger = logger;
 
-    [McpServerTool, Description("Creates a new pull request in Azure DevOps to propose code changes from a source branch to a target branch. Requires repository name/ID, title, description, source branch, target branch, and optionally whether it's a draft. Returns the unique pull request ID. The pull request will be in Active status and available for review.")]
+    [McpServerTool, Description("Creates a new pull request in Azure DevOps to propose code changes from a source branch to a target branch. Requires repository name/ID, title, description, source branch, target branch, and optionally whether it's a draft. Returns the unique pull request ID. The pull request will be in Active status and available for review. All parameters are mandatory.")]
     public async Task<int> CreatePullRequestAsync(PullRequestCreateOptions options, CancellationToken cancellationToken = default) =>
         (await _reposClient.CreatePullRequestAsync(options, cancellationToken)).EnsureSuccess(_logger);
 
