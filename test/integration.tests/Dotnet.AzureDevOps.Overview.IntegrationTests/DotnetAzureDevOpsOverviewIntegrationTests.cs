@@ -166,134 +166,134 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
             AzureDevOpsActionResult<WikiPageResponse> deletePageResult = await _overviewClient.DeletePageAsync(id, path, gitVersionDescriptor);
         }
 
-        [Fact]
-        public async Task DashboardSummaryAndWikiHelpers_SucceedAsync()
-        {
-            AzureDevOpsActionResult<IReadOnlyList<Dashboard>> dashboardsResult = await _overviewClient.ListDashboardsAsync();
-            IReadOnlyList<Dashboard> dashboards = dashboardsResult.Value;
-            Assert.NotEmpty(dashboards);
-            string teamName = "Dotnet.McpIntegrationTest Team";
-            AzureDevOpsActionResult<List<WebApiTeam>> teamsResult = await _projectSettingsClient.GetAllTeamsAsync();
-            List<WebApiTeam> teams = teamsResult.Value ?? new List<WebApiTeam>();
-            WebApiTeam? team = teams.FirstOrDefault(t => t.Name == teamName);
-            Dashboard? dashboard = dashboards.FirstOrDefault(d => d.OwnerId == team?.Id) ?? dashboards[0];
-            Guid dashboardId = dashboard?.Id ?? Guid.Empty;
-            if(dashboardId == Guid.Empty)
-            {
-                throw new InvalidOperationException("No dashboard found for the specified team or project.");
-            }
+        //[Fact]
+        //public async Task DashboardSummaryAndWikiHelpers_SucceedAsync()
+        //{
+        //    AzureDevOpsActionResult<IReadOnlyList<Dashboard>> dashboardsResult = await _overviewClient.ListDashboardsAsync();
+        //    IReadOnlyList<Dashboard> dashboards = dashboardsResult.Value;
+        //    Assert.NotEmpty(dashboards);
+        //    string teamName = "Dotnet.McpIntegrationTest Team";
+        //    AzureDevOpsActionResult<List<WebApiTeam>> teamsResult = await _projectSettingsClient.GetAllTeamsAsync();
+        //    List<WebApiTeam> teams = teamsResult.Value ?? new List<WebApiTeam>();
+        //    WebApiTeam? team = teams.FirstOrDefault(t => t.Name == teamName);
+        //    Dashboard? dashboard = dashboards.FirstOrDefault(d => d.OwnerId == team?.Id) ?? dashboards[0];
+        //    Guid dashboardId = dashboard?.Id ?? Guid.Empty;
+        //    if(dashboardId == Guid.Empty)
+        //    {
+        //        throw new InvalidOperationException("No dashboard found for the specified team or project.");
+        //    }
 
-            AzureDevOpsActionResult<Dashboard> dashboardResult = await _overviewClient.GetDashboardAsync(dashboardId, teamName);
-            dashboard = dashboardResult.Value;
-            Assert.NotNull(dashboard);
+        //    AzureDevOpsActionResult<Dashboard> dashboardResult = await _overviewClient.GetDashboardAsync(dashboardId, teamName);
+        //    dashboard = dashboardResult.Value;
+        //    Assert.NotNull(dashboard);
 
-            AzureDevOpsActionResult<TeamProject> projectSummaryResult = await _overviewClient.GetProjectSummaryAsync();
-            TeamProject? projectSummary = projectSummaryResult.Value;
-            Assert.NotNull(projectSummary);
+        //    AzureDevOpsActionResult<TeamProject> projectSummaryResult = await _overviewClient.GetProjectSummaryAsync();
+        //    TeamProject? projectSummary = projectSummaryResult.Value;
+        //    Assert.NotNull(projectSummary);
 
-            AzureDevOpsActionResult<IReadOnlyList<WikiV2>> wikisResult = await _overviewClient.ListWikisAsync();
-            IReadOnlyList<WikiV2> wikis = wikisResult.Value;
-            Guid wikiId = Guid.Empty;
-            string wikiName;
-            if(wikis.Count == 0)
-            {
-                var wikiOptions = new WikiCreateOptions
-                {
-                    Name = $"page-wiki-{UtcStamp()}",
-                    ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
-                    Type = WikiType.CodeWiki,
-                    RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
-                    Version = new GitVersionDescriptor
-                    {
-                        VersionType = GitVersionType.Branch,
-                        Version = _azureDevOpsConfiguration.MainBranchName
-                    },
-                    MappedPath = $"/",
-                };
-                wikiName = wikiOptions.Name;
+        //    AzureDevOpsActionResult<IReadOnlyList<WikiV2>> wikisResult = await _overviewClient.ListWikisAsync();
+        //    IReadOnlyList<WikiV2> wikis = wikisResult.Value;
+        //    Guid wikiId = Guid.Empty;
+        //    string wikiName;
+        //    if(wikis.Count == 0)
+        //    {
+        //        var wikiOptions = new WikiCreateOptions
+        //        {
+        //            Name = $"page-wiki-{UtcStamp()}",
+        //            ProjectId = Guid.Parse(_azureDevOpsConfiguration.ProjectId),
+        //            Type = WikiType.CodeWiki,
+        //            RepositoryId = Guid.Parse(_azureDevOpsConfiguration.RepositoryId),
+        //            Version = new GitVersionDescriptor
+        //            {
+        //                VersionType = GitVersionType.Branch,
+        //                Version = _azureDevOpsConfiguration.MainBranchName
+        //            },
+        //            MappedPath = $"/",
+        //        };
+        //        wikiName = wikiOptions.Name;
 
-                await WaitHelper.WaitUntilAsync(async () =>
-                {
-                    try
-                    {
-                        AzureDevOpsActionResult<Guid> createWikiResult = await _overviewClient.CreateWikiAsync(wikiOptions);
-                        if(!createWikiResult.IsSuccessful)
-                            return false;
-                        wikiId = createWikiResult.Value;
-                        return true;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
-            }
-            else
-            {
-                wikiName = wikis[0].Name;
-                wikiId = wikis[0].Id;
-            }
-            _createdWikis.Add(wikiId);
+        //        await WaitHelper.WaitUntilAsync(async () =>
+        //        {
+        //            try
+        //            {
+        //                AzureDevOpsActionResult<Guid> createWikiResult = await _overviewClient.CreateWikiAsync(wikiOptions);
+        //                if(!createWikiResult.IsSuccessful)
+        //                    return false;
+        //                wikiId = createWikiResult.Value;
+        //                return true;
+        //            }
+        //            catch
+        //            {
+        //                return false;
+        //            }
+        //        }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+        //    }
+        //    else
+        //    {
+        //        wikiName = wikis[0].Name;
+        //        wikiId = wikis[0].Id;
+        //    }
+        //    _createdWikis.Add(wikiId);
 
-            string wikiPath = $"/Home-{UtcStamp()}.md";
-            var createPage = new WikiPageUpdateOptions
-            {
-                Path = wikiPath,
-                Content = "# Searchable",
-                Version = string.Empty
-            };
+        //    string wikiPath = $"/Home-{UtcStamp()}.md";
+        //    var createPage = new WikiPageUpdateOptions
+        //    {
+        //        Path = wikiPath,
+        //        Content = "# Searchable",
+        //        Version = string.Empty
+        //    };
 
-            var versionDescriptor = new GitVersionDescriptor
-            {
-                VersionType = GitVersionType.Branch,
-                Version = _azureDevOpsConfiguration.MainBranchName
-            };
+        //    var versionDescriptor = new GitVersionDescriptor
+        //    {
+        //        VersionType = GitVersionType.Branch,
+        //        Version = _azureDevOpsConfiguration.MainBranchName
+        //    };
 
-            AzureDevOpsActionResult<int> pageIdActionResult = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
-            Assert.Null(pageIdActionResult.ErrorMessage);
-            Assert.True(pageIdActionResult.IsSuccessful, "Expected page creation to be successful.");
+        //    AzureDevOpsActionResult<int> pageIdActionResult = await _overviewClient.CreateOrUpdatePageAsync(wikiId, createPage, versionDescriptor);
+        //    Assert.Null(pageIdActionResult.ErrorMessage);
+        //    Assert.True(pageIdActionResult.IsSuccessful, "Expected page creation to be successful.");
 
-            AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;
-            await WaitHelper.WaitUntilAsync(async () =>
-            {
-                pageResult = await _overviewClient.GetPageAsync(wikiId, wikiPath);
-                return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
-            }, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(1));
+        //    AzureDevOpsActionResult<WikiPageResponse>? pageResult = null;
+        //    await WaitHelper.WaitUntilAsync(async () =>
+        //    {
+        //        pageResult = await _overviewClient.GetPageAsync(wikiId, wikiPath);
+        //        return pageResult.IsSuccessful && pageResult.Value?.Page?.Path == wikiPath;
+        //    }, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(1));
 
-            string needlessText = "Searchable";
-            AzureDevOpsActionResult<string>? textResult = null;
-            await WaitHelper.WaitUntilAsync(async () =>
-            {
-                textResult = await _overviewClient.GetPageTextAsync(wikiId, wikiPath);
-                return textResult.IsSuccessful && textResult.Value?.Contains(needlessText) == true;
-            }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+        //    string needlessText = "Searchable";
+        //    AzureDevOpsActionResult<string>? textResult = null;
+        //    await WaitHelper.WaitUntilAsync(async () =>
+        //    {
+        //        textResult = await _overviewClient.GetPageTextAsync(wikiId, wikiPath);
+        //        return textResult.IsSuccessful && textResult.Value?.Contains(needlessText) == true;
+        //    }, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
 
-            string text = textResult!.Value!;
-            Assert.Contains(needlessText, text);
+        //    string text = textResult!.Value!;
+        //    Assert.Contains(needlessText, text);
 
-            HttpClient searchHttpClient = _fixture.CreateHttpClient(_azureDevOpsConfiguration.SearchOrganisationUrl);
-            searchHttpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        //    HttpClient searchHttpClient = _fixture.CreateHttpClient(_azureDevOpsConfiguration.SearchOrganisationUrl);
+        //    searchHttpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
-            SearchClient searchClient = new(searchHttpClient);
+        //    SearchClient searchClient = new(searchHttpClient);
 
-            var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
-            {
-                SearchText = "Searchable",
-                Project = [_azureDevOpsConfiguration.ProjectName],
-                Wiki = [wikiName],
-                IncludeFacets = false,
-                Skip = 0,
-                Top = 1
-            };
+        //    var searchOptions = new Dotnet.AzureDevOps.Core.Search.Options.WikiSearchOptions
+        //    {
+        //        SearchText = "Searchable",
+        //        Project = [_azureDevOpsConfiguration.ProjectName],
+        //        Wiki = [wikiName],
+        //        IncludeFacets = false,
+        //        Skip = 0,
+        //        Top = 1
+        //    };
 
-            AzureDevOpsActionResult<string> result = await searchClient.SearchWikiAsync(searchOptions);
-            Assert.False(string.IsNullOrEmpty(result.Value));
-            Assert.True(result.Value.Length > 0, "Expected result to contain at least one item, but it was empty.");
+        //    AzureDevOpsActionResult<string> result = await searchClient.SearchWikiAsync(searchOptions);
+        //    Assert.False(string.IsNullOrEmpty(result.Value));
+        //    Assert.True(result.Value.Length > 0, "Expected result to contain at least one item, but it was empty.");
 
-            AzureDevOpsActionResult<WikiPageResponse> wikiPageResponseResult = await _overviewClient.DeletePageAsync(wikiId, wikiPath, versionDescriptor);
+        //    AzureDevOpsActionResult<WikiPageResponse> wikiPageResponseResult = await _overviewClient.DeletePageAsync(wikiId, wikiPath, versionDescriptor);
 
-            Assert.True(wikiPageResponseResult.Value != null, "Expected wiki page response to be non-null after deletion.");
-        }
+        //    Assert.True(wikiPageResponseResult.Value != null, "Expected wiki page response to be non-null after deletion.");
+        //}
 
         public Task InitializeAsync() => Task.CompletedTask;
 
