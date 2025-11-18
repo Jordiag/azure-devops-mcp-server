@@ -6,6 +6,12 @@
 public record PullRequestCreateOptions
 {
     /// <summary>
+    /// The name or ID of the project in which to create the PR.
+    /// Example: "MyProject" or "abcd1234-..." GUID.
+    /// </summary>
+    public required string ProjectIdOrName { get; set; }
+
+    /// <summary>
     /// The name or ID of the repository in which to create the PR.
     /// Example: "MyRepo" or "abcd1234-..." GUID.
     /// </summary>
