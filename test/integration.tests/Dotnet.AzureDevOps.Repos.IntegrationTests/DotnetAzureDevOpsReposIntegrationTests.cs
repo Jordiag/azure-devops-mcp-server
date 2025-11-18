@@ -42,6 +42,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         {
             var createOptions = new PullRequestCreateOptions
             {
+                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
                 RepositoryIdOrName = _repoName,
                 Title = $"Advanced PR {UtcStamp()}",
                 Description = "PR exercising advanced APIs",
@@ -72,6 +73,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
 
             var pullRequestCreateOptions = new PullRequestCreateOptions
             {
+                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
                 RepositoryIdOrName = _repoName,
                 Title = $"Integration PR {DateTime.UtcNow:yyyyMMddHHmmss}",
                 Description = "Created by automated test",
@@ -120,6 +122,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         {
             var pullRequestCreateOptions = new PullRequestCreateOptions
             {
+                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
                 RepositoryIdOrName = _repoName,
                 Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
                 Description = "PR created by integration test",
@@ -192,6 +195,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             // create PR
             var pullRequestCreateOptions = new PullRequestCreateOptions
             {
+                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
                 RepositoryIdOrName = _repoName,
                 Title = $"Tier2 PR {DateTime.UtcNow:yyyyMMddHHmmss}",
                 Description = "Tier-2 labels/comments test",
@@ -469,6 +473,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         {
             var createOptions = new PullRequestCreateOptions
             {
+                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
                 RepositoryIdOrName = _repoName,
                 Title = $"Update PR {UtcStamp()}",
                 Description = "PR to exercise update and iteration APIs",

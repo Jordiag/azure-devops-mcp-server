@@ -668,6 +668,7 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
 
             var prOptions = new PullRequestCreateOptions
             {
+                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
                 RepositoryIdOrName = _repositoryName,
                 Title = $"IT PR {DateTime.UtcNow:yyyyMMddHHmmss}",
                 Description = "PR for link test",
