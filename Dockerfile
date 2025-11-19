@@ -1,5 +1,5 @@
-# Use the official .NET 9 runtime as the base image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+# Use the official .NET 10 runtime as the base image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 
 # Create a non-root user for security with consistent UID/GID for Kubernetes
 RUN adduser --disabled-password --gecos "" --home /app --shell /bin/bash --uid 1001 appuser && \
@@ -8,8 +8,8 @@ RUN adduser --disabled-password --gecos "" --home /app --shell /bin/bash --uid 1
 WORKDIR /app
 EXPOSE 5050
 
-# Use the .NET 9 SDK for building
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# Use the .NET 10 SDK for building
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy solution file and project files
