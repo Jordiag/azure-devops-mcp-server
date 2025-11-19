@@ -626,7 +626,7 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         //    Assert.NotEmpty(foundCommits[0].CommitId);
         //}
 
-        //public Task InitializeAsync() => Task.CompletedTask;
+        public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync()
         {
