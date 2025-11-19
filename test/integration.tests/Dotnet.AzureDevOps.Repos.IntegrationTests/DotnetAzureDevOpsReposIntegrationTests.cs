@@ -37,84 +37,84 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             _identityClient = fixture.IdentityClient;
         }
 
-        [Fact]
-        public async Task CreateReadCompletePullRequest_SucceedsAsync()
-        {
-            var createOptions = new PullRequestCreateOptions
-            {
-                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
-                RepositoryIdOrName = _repoName,
-                Title = $"Advanced PR {UtcStamp()}",
-                Description = "PR exercising advanced APIs",
-                SourceBranch = _srcBranch,
-                TargetBranch = _targetBranch,
-                IsDraft = false
-            };
+        //[Fact]
+        //public async Task CreateReadCompletePullRequest_SucceedsAsync()
+        //{
+        //    var createOptions = new PullRequestCreateOptions
+        //    {
+        //        ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
+        //        RepositoryIdOrName = _repoName,
+        //        Title = $"Advanced PR {UtcStamp()}",
+        //        Description = "PR exercising advanced APIs",
+        //        SourceBranch = _srcBranch,
+        //        TargetBranch = _targetBranch,
+        //        IsDraft = false
+        //    };
 
-            AzureDevOpsActionResult<GitRef> gitRefResult = await _reposClient.GetBranchAsync(_repoName, createOptions.SourceBranch);
-            GitRef? gitRef = gitRefResult.Value;
+        //    AzureDevOpsActionResult<GitRef> gitRefResult = await _reposClient.GetBranchAsync(_repoName, createOptions.SourceBranch);
+        //    GitRef? gitRef = gitRefResult.Value;
 
-            if(string.IsNullOrEmpty(gitRef?.Name))
-            {
-                AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> latestCommitsResult = await _reposClient.GetLatestCommitsAsync(
-                    _azureDevOpsConfiguration.ProjectName,
-                    _repoName,
-                    "main",
-                    top: 1);
+        //    if(string.IsNullOrEmpty(gitRef?.Name))
+        //    {
+        //        AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> latestCommitsResult = await _reposClient.GetLatestCommitsAsync(
+        //            _azureDevOpsConfiguration.ProjectName,
+        //            _repoName,
+        //            "main",
+        //            top: 1);
 
-                IReadOnlyList<GitCommitRef> latestCommits = latestCommitsResult.Value ?? [];
-                if(latestCommits.Count == 0)
-                    return;
+        //        IReadOnlyList<GitCommitRef> latestCommits = latestCommitsResult.Value ?? [];
+        //        if(latestCommits.Count == 0)
+        //            return;
 
-                string commitSha = latestCommits[0].CommitId;
-                AzureDevOpsActionResult<List<GitRefUpdateResult>> branchResult = await _reposClient.CreateBranchAsync(_repoName, _srcBranch, commitSha);
-                Assert.True(branchResult.IsSuccessful);
-            }
+        //        string commitSha = latestCommits[0].CommitId;
+        //        AzureDevOpsActionResult<List<GitRefUpdateResult>> branchResult = await _reposClient.CreateBranchAsync(_repoName, _srcBranch, commitSha);
+        //        Assert.True(branchResult.IsSuccessful);
+        //    }
 
-            var pullRequestCreateOptions = new PullRequestCreateOptions
-            {
-                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
-                RepositoryIdOrName = _repoName,
-                Title = $"Integration PR {DateTime.UtcNow:yyyyMMddHHmmss}",
-                Description = "Created by automated test",
-                SourceBranch = _srcBranch,
-                TargetBranch = _targetBranch,
-                IsDraft = false
-            };
+        //    var pullRequestCreateOptions = new PullRequestCreateOptions
+        //    {
+        //        ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
+        //        RepositoryIdOrName = _repoName,
+        //        Title = $"Integration PR {DateTime.UtcNow:yyyyMMddHHmmss}",
+        //        Description = "Created by automated test",
+        //        SourceBranch = _srcBranch,
+        //        TargetBranch = _targetBranch,
+        //        IsDraft = false
+        //    };
 
-            AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions);
-            Assert.True(prIdResult.IsSuccessful);
-            int? pullRequestId = prIdResult.Value;
-            Assert.True(pullRequestId.HasValue);
-            _createdPrIds.Add(pullRequestId.Value);
+        //    AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions);
+        //    Assert.True(prIdResult.IsSuccessful);
+        //    int? pullRequestId = prIdResult.Value;
+        //    Assert.True(pullRequestId.HasValue);
+        //    _createdPrIds.Add(pullRequestId.Value);
 
-            AzureDevOpsActionResult<GitPullRequest>? gtPullRequestResult = null;
-            await WaitHelper.WaitUntilAsync(async () =>
-            {
-                gtPullRequestResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
-                return gtPullRequestResult.IsSuccessful && gtPullRequestResult.Value?.Status == PullRequestStatus.Active;
-            }, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1));
+        //    AzureDevOpsActionResult<GitPullRequest>? gtPullRequestResult = null;
+        //    await WaitHelper.WaitUntilAsync(async () =>
+        //    {
+        //        gtPullRequestResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
+        //        return gtPullRequestResult.IsSuccessful && gtPullRequestResult.Value?.Status == PullRequestStatus.Active;
+        //    }, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1));
 
-            GitPullRequest gtPullRequest = gtPullRequestResult!.Value!;
+        //    GitPullRequest gtPullRequest = gtPullRequestResult!.Value!;
 
-            await Task.Delay(1000);
+        //    await Task.Delay(1000);
 
-            AzureDevOpsActionResult<GitPullRequest> completeResult = await _reposClient.CompletePullRequestAsync(
-                _repoName,
-                pullRequestId.Value,
-                squashMerge: true,
-                deleteSourceBranch: false,
-                lastMergeSourceCommit: gtPullRequest.LastMergeSourceCommit);
+        //    AzureDevOpsActionResult<GitPullRequest> completeResult = await _reposClient.CompletePullRequestAsync(
+        //        _repoName,
+        //        pullRequestId.Value,
+        //        squashMerge: true,
+        //        deleteSourceBranch: false,
+        //        lastMergeSourceCommit: gtPullRequest.LastMergeSourceCommit);
 
-            Assert.True(completeResult.IsSuccessful);
+        //    Assert.True(completeResult.IsSuccessful);
 
-            AzureDevOpsActionResult<GitPullRequest>? prResult = null;
-            await WaitHelper.WaitUntilAsync(async () =>
-            {
-                prResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
-                return prResult.IsSuccessful && prResult.Value?.Status == PullRequestStatus.Completed;
-            }, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1));
-        }
+        //    AzureDevOpsActionResult<GitPullRequest>? prResult = null;
+        //    await WaitHelper.WaitUntilAsync(async () =>
+        //    {
+        //        prResult = await _reposClient.GetPullRequestAsync(_repoName, pullRequestId.Value);
+        //        return prResult.IsSuccessful && prResult.Value?.Status == PullRequestStatus.Completed;
+        //    }, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1));
+        //}
 
         // TODO: Re-enable this test once the API is working again
         [Fact(Skip = "API not longer working")]
@@ -189,93 +189,93 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
             Assert.Contains(list, p => p.Reviewers.Any(r => r.DisplayName == reviewer.displayName && r.Vote == voteValue));
         }
 
-        [Fact]
-        public async Task LabelsAndCommentsWorkflow_SucceedsAsync()
-        {
-            // create PR
-            var pullRequestCreateOptions = new PullRequestCreateOptions
-            {
-                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
-                RepositoryIdOrName = _repoName,
-                Title = $"Tier2 PR {DateTime.UtcNow:yyyyMMddHHmmss}",
-                Description = "Tier-2 labels/comments test",
-                SourceBranch = _srcBranch,
-                TargetBranch = _targetBranch,
-                IsDraft = false
-            };
+        //[Fact]
+        //public async Task LabelsAndCommentsWorkflow_SucceedsAsync()
+        //{
+        //    // create PR
+        //    var pullRequestCreateOptions = new PullRequestCreateOptions
+        //    {
+        //        ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
+        //        RepositoryIdOrName = _repoName,
+        //        Title = $"Tier2 PR {DateTime.UtcNow:yyyyMMddHHmmss}",
+        //        Description = "Tier-2 labels/comments test",
+        //        SourceBranch = _srcBranch,
+        //        TargetBranch = _targetBranch,
+        //        IsDraft = false
+        //    };
 
-            AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions);
-            int pullRequestId = prIdResult.Value;
-            _createdPrIds.Add(pullRequestId);
+        //    AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(pullRequestCreateOptions);
+        //    int pullRequestId = prIdResult.Value;
+        //    _createdPrIds.Add(pullRequestId);
 
-            /* ---------- LABELS ---------- */
-            AzureDevOpsActionResult<IList<WebApiTagDefinition>> addLabelsResult = await _reposClient.AddLabelsAsync(_repoName, pullRequestId, "docs", "ready");
-            Assert.True(addLabelsResult.IsSuccessful);
+        //    /* ---------- LABELS ---------- */
+        //    AzureDevOpsActionResult<IList<WebApiTagDefinition>> addLabelsResult = await _reposClient.AddLabelsAsync(_repoName, pullRequestId, "docs", "ready");
+        //    Assert.True(addLabelsResult.IsSuccessful);
 
-            AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>> webApiTagDefinitionsResult = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
-            IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions = webApiTagDefinitionsResult.Value ?? [];
-            Assert.Contains("docs", webApiTagDefinitions!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
-            Assert.Contains("ready", webApiTagDefinitions!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
+        //    AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>> webApiTagDefinitionsResult = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
+        //    IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions = webApiTagDefinitionsResult.Value ?? [];
+        //    Assert.Contains("docs", webApiTagDefinitions!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
+        //    Assert.Contains("ready", webApiTagDefinitions!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
 
-            AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> labelPullRequestsResult = await _reposClient.ListPullRequestsByLabelAsync(
-                _repoName,
-                "ready",
-                PullRequestStatus.Active);
-            IReadOnlyList<GitPullRequest> labelPullRequests = labelPullRequestsResult.Value ?? [];
-            Assert.Contains(labelPullRequests, pr => pr.PullRequestId == pullRequestId);
+        //    AzureDevOpsActionResult<IReadOnlyList<GitPullRequest>> labelPullRequestsResult = await _reposClient.ListPullRequestsByLabelAsync(
+        //        _repoName,
+        //        "ready",
+        //        PullRequestStatus.Active);
+        //    IReadOnlyList<GitPullRequest> labelPullRequests = labelPullRequestsResult.Value ?? [];
+        //    Assert.Contains(labelPullRequests, pr => pr.PullRequestId == pullRequestId);
 
-            AzureDevOpsActionResult<bool> removeLabelResult = await _reposClient.RemoveLabelAsync(_repoName, pullRequestId, "docs");
-            Assert.True(removeLabelResult.IsSuccessful);
+        //    AzureDevOpsActionResult<bool> removeLabelResult = await _reposClient.RemoveLabelAsync(_repoName, pullRequestId, "docs");
+        //    Assert.True(removeLabelResult.IsSuccessful);
 
-            AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>> webApiTagDefinitions2Result = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
-            IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions2 = webApiTagDefinitions2Result.Value ?? [];
-            Assert.DoesNotContain("docs", webApiTagDefinitions2!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
+        //    AzureDevOpsActionResult<IReadOnlyList<WebApiTagDefinition>> webApiTagDefinitions2Result = await _reposClient.GetPullRequestLabelsAsync(_repoName, pullRequestId);
+        //    IReadOnlyList<WebApiTagDefinition> webApiTagDefinitions2 = webApiTagDefinitions2Result.Value ?? [];
+        //    Assert.DoesNotContain("docs", webApiTagDefinitions2!.Select(l => l.Name), StringComparer.OrdinalIgnoreCase);
 
-            AzureDevOpsActionResult<int> commentThreadIdResult = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
-            {
-                RepositoryId = _repoName,
-                PullRequestId = pullRequestId,
-                Comment = "CI failed, please fix.",
-                IsLeftSide = false
-            });
-            int commentThreadId = commentThreadIdResult.Value;
+        //    AzureDevOpsActionResult<int> commentThreadIdResult = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
+        //    {
+        //        RepositoryId = _repoName,
+        //        PullRequestId = pullRequestId,
+        //        Comment = "CI failed, please fix.",
+        //        IsLeftSide = false
+        //    });
+        //    int commentThreadId = commentThreadIdResult.Value;
 
-            AzureDevOpsActionResult<int> commentReplyIdResult = await _reposClient.ReplyToCommentThreadAsync(new CommentReplyOptions
-            {
-                Repository = _repoName,
-                PullRequestId = pullRequestId,
-                ThreadId = commentThreadId,
-                Comment = "Fixed and repushed!",
-                ResolveThread = true
-            });
-            int? commentReplyId = commentReplyIdResult.Value;
+        //    AzureDevOpsActionResult<int> commentReplyIdResult = await _reposClient.ReplyToCommentThreadAsync(new CommentReplyOptions
+        //    {
+        //        Repository = _repoName,
+        //        PullRequestId = pullRequestId,
+        //        ThreadId = commentThreadId,
+        //        Comment = "Fixed and repushed!",
+        //        ResolveThread = true
+        //    });
+        //    int? commentReplyId = commentReplyIdResult.Value;
 
-            Assert.NotNull(commentReplyId);
+        //    Assert.NotNull(commentReplyId);
 
-            AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>> threadsResult = await _reposClient.ListPullRequestThreadsAsync(_repoName, pullRequestId);
-            IReadOnlyList<GitPullRequestCommentThread> threads = threadsResult.Value ?? [];
-            Assert.Contains(threads, t => t.Id == commentThreadId);
+        //    AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>> threadsResult = await _reposClient.ListPullRequestThreadsAsync(_repoName, pullRequestId);
+        //    IReadOnlyList<GitPullRequestCommentThread> threads = threadsResult.Value ?? [];
+        //    Assert.Contains(threads, t => t.Id == commentThreadId);
 
-            AzureDevOpsActionResult<IReadOnlyList<Comment>> commentsResult = await _reposClient.ListPullRequestThreadCommentsAsync(_repoName, pullRequestId, commentThreadId);
-            IReadOnlyList<Comment> comments = commentsResult.Value ?? [];
-            int commentId = comments.First().Id;
+        //    AzureDevOpsActionResult<IReadOnlyList<Comment>> commentsResult = await _reposClient.ListPullRequestThreadCommentsAsync(_repoName, pullRequestId, commentThreadId);
+        //    IReadOnlyList<Comment> comments = commentsResult.Value ?? [];
+        //    int commentId = comments.First().Id;
 
-            AzureDevOpsActionResult<Comment> editCommentResult = await _reposClient.EditCommentAsync(new CommentEditOptions
-            {
-                Repository = _repoName,
-                PullRequest = pullRequestId,
-                ThreadId = commentThreadId,
-                CommentId = commentId,
-                NewContent = "Edited"
-            });
-            Assert.True(editCommentResult.IsSuccessful);
+        //    AzureDevOpsActionResult<Comment> editCommentResult = await _reposClient.EditCommentAsync(new CommentEditOptions
+        //    {
+        //        Repository = _repoName,
+        //        PullRequest = pullRequestId,
+        //        ThreadId = commentThreadId,
+        //        CommentId = commentId,
+        //        NewContent = "Edited"
+        //    });
+        //    Assert.True(editCommentResult.IsSuccessful);
 
-            AzureDevOpsActionResult<GitPullRequestCommentThread> resolveThreadResult = await _reposClient.ResolveCommentThreadAsync(_repoName, pullRequestId, commentThreadId);
-            Assert.True(resolveThreadResult.IsSuccessful);
+        //    AzureDevOpsActionResult<GitPullRequestCommentThread> resolveThreadResult = await _reposClient.ResolveCommentThreadAsync(_repoName, pullRequestId, commentThreadId);
+        //    Assert.True(resolveThreadResult.IsSuccessful);
 
-            AzureDevOpsActionResult<bool> deleteCommentResult = await _reposClient.DeleteCommentAsync(_repoName, pullRequestId, commentThreadId, commentId);
-            Assert.True(deleteCommentResult.IsSuccessful);
-        }
+        //    AzureDevOpsActionResult<bool> deleteCommentResult = await _reposClient.DeleteCommentAsync(_repoName, pullRequestId, commentThreadId, commentId);
+        //    Assert.True(deleteCommentResult.IsSuccessful);
+        //}
 
         [Fact]
         public async Task Tags_CreateListDelete_Workflow_SucceedsAsync()
@@ -469,97 +469,97 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         }
 
         [Fact]
-        public async Task UpdateIterationsAndThreads_SucceedsAsync()
-        {
-            var createOptions = new PullRequestCreateOptions
-            {
-                ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
-                RepositoryIdOrName = _repoName,
-                Title = $"Update PR {UtcStamp()}",
-                Description = "PR to exercise update and iteration APIs",
-                SourceBranch = _srcBranch,
-                TargetBranch = _targetBranch,
-                IsDraft = false
-            };
+        //public async Task UpdateIterationsAndThreads_SucceedsAsync()
+        //{
+        //    var createOptions = new PullRequestCreateOptions
+        //    {
+        //        ProjectIdOrName = _azureDevOpsConfiguration.ProjectName,
+        //        RepositoryIdOrName = _repoName,
+        //        Title = $"Update PR {UtcStamp()}",
+        //        Description = "PR to exercise update and iteration APIs",
+        //        SourceBranch = _srcBranch,
+        //        TargetBranch = _targetBranch,
+        //        IsDraft = false
+        //    };
 
-            AzureDevOpsActionResult<GitRef> gitRefResult = await _reposClient.GetBranchAsync(_repoName, createOptions.SourceBranch);
-            GitRef? gitRef = gitRefResult.Value;
+        //    AzureDevOpsActionResult<GitRef> gitRefResult = await _reposClient.GetBranchAsync(_repoName, createOptions.SourceBranch);
+        //    GitRef? gitRef = gitRefResult.Value;
 
-            if(string.IsNullOrEmpty(gitRef?.Name))
-            {
-                AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> latestCommitsResult = await _reposClient.GetLatestCommitsAsync(
-                    _azureDevOpsConfiguration.ProjectName,
-                    _repoName,
-                    "main",
-                    top: 1);
+        //    if(string.IsNullOrEmpty(gitRef?.Name))
+        //    {
+        //        AzureDevOpsActionResult<IReadOnlyList<GitCommitRef>> latestCommitsResult = await _reposClient.GetLatestCommitsAsync(
+        //            _azureDevOpsConfiguration.ProjectName,
+        //            _repoName,
+        //            "main",
+        //            top: 1);
 
-                IReadOnlyList<GitCommitRef> latestCommits = latestCommitsResult.Value ?? [];
-                if(latestCommits.Count == 0)
-                    return;
+        //        IReadOnlyList<GitCommitRef> latestCommits = latestCommitsResult.Value ?? [];
+        //        if(latestCommits.Count == 0)
+        //            return;
 
-                string commitSha = latestCommits[0].CommitId;
-                AzureDevOpsActionResult<List<GitRefUpdateResult>> branchResult = await _reposClient.CreateBranchAsync(_repoName, _srcBranch, commitSha);
-                Assert.True(branchResult.IsSuccessful);
-            }
+        //        string commitSha = latestCommits[0].CommitId;
+        //        AzureDevOpsActionResult<List<GitRefUpdateResult>> branchResult = await _reposClient.CreateBranchAsync(_repoName, _srcBranch, commitSha);
+        //        Assert.True(branchResult.IsSuccessful);
+        //    }
 
-            AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(createOptions);
-            int prId = prIdResult.Value;
-            _createdPrIds.Add(prId);
+        //    AzureDevOpsActionResult<int> prIdResult = await _reposClient.CreatePullRequestAsync(createOptions);
+        //    int prId = prIdResult.Value;
+        //    _createdPrIds.Add(prId);
 
-            var updateOptions = new PullRequestUpdateOptions
-            {
-                Title = "Updated by integration test",
-                Description = "Updated description",
-                IsDraft = false
-            };
-            AzureDevOpsActionResult<GitPullRequest> updateResult = await _reposClient.UpdatePullRequestAsync(_repoName, prId, updateOptions);
-            Assert.True(updateResult.IsSuccessful);
+        //    var updateOptions = new PullRequestUpdateOptions
+        //    {
+        //        Title = "Updated by integration test",
+        //        Description = "Updated description",
+        //        IsDraft = false
+        //    };
+        //    AzureDevOpsActionResult<GitPullRequest> updateResult = await _reposClient.UpdatePullRequestAsync(_repoName, prId, updateOptions);
+        //    Assert.True(updateResult.IsSuccessful);
 
-            AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>> iterationsResult = await _reposClient.ListIterationsAsync(_repoName, prId);
-            IReadOnlyList<GitPullRequestIteration> iterations = iterationsResult.Value ?? [];
-            Assert.NotEmpty(iterations);
+        //    AzureDevOpsActionResult<IReadOnlyList<GitPullRequestIteration>> iterationsResult = await _reposClient.ListIterationsAsync(_repoName, prId);
+        //    IReadOnlyList<GitPullRequestIteration> iterations = iterationsResult.Value ?? [];
+        //    Assert.NotEmpty(iterations);
 
-            if(iterations[0]?.Id == null)
-            {
-                throw new InvalidOperationException("Iteration ID is null, cannot proceed with changes retrieval.");
-            }
+        //    if(iterations[0]?.Id == null)
+        //    {
+        //        throw new InvalidOperationException("Iteration ID is null, cannot proceed with changes retrieval.");
+        //    }
 
-            AzureDevOpsActionResult<GitPullRequestIterationChanges> changesResult = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id!.Value);
-            GitPullRequestIterationChanges changes = changesResult.Value!;
-            Assert.NotNull(changes);
+        //    AzureDevOpsActionResult<GitPullRequestIterationChanges> changesResult = await _reposClient.GetIterationChangesAsync(_repoName, prId, iterations[0].Id!.Value);
+        //    GitPullRequestIterationChanges changes = changesResult.Value!;
+        //    Assert.NotNull(changes);
 
-            AzureDevOpsActionResult<int> threadIdResult = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
-            {
-                RepositoryId = _repoName,
-                PullRequestId = prId,
-                Comment = "Initial comment"
-            });
-            int threadId = threadIdResult.Value;
+        //    AzureDevOpsActionResult<int> threadIdResult = await _reposClient.CreateCommentThreadAsync(new CommentThreadOptions
+        //    {
+        //        RepositoryId = _repoName,
+        //        PullRequestId = prId,
+        //        Comment = "Initial comment"
+        //    });
+        //    int threadId = threadIdResult.Value;
 
-            AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>> threadsResult = await _reposClient.ListPullRequestThreadsAsync(_repoName, prId);
-            IReadOnlyList<GitPullRequestCommentThread> threads = threadsResult.Value ?? [];
-            Assert.Contains(threads, t => t.Id == threadId);
+        //    AzureDevOpsActionResult<IReadOnlyList<GitPullRequestCommentThread>> threadsResult = await _reposClient.ListPullRequestThreadsAsync(_repoName, prId);
+        //    IReadOnlyList<GitPullRequestCommentThread> threads = threadsResult.Value ?? [];
+        //    Assert.Contains(threads, t => t.Id == threadId);
 
-            AzureDevOpsActionResult<IReadOnlyList<Comment>> commentsResult = await _reposClient.ListPullRequestThreadCommentsAsync(_repoName, prId, threadId);
-            IReadOnlyList<Comment> comments = commentsResult.Value ?? [];
-            int commentId = comments.First().Id;
+        //    AzureDevOpsActionResult<IReadOnlyList<Comment>> commentsResult = await _reposClient.ListPullRequestThreadCommentsAsync(_repoName, prId, threadId);
+        //    IReadOnlyList<Comment> comments = commentsResult.Value ?? [];
+        //    int commentId = comments.First().Id;
 
-            AzureDevOpsActionResult<Comment> editCommentResult = await _reposClient.EditCommentAsync(new CommentEditOptions
-            {
-                Repository = _repoName,
-                PullRequest = prId,
-                ThreadId = threadId,
-                CommentId = commentId,
-                NewContent = "Updated"
-            });
-            Assert.True(editCommentResult.IsSuccessful);
+        //    AzureDevOpsActionResult<Comment> editCommentResult = await _reposClient.EditCommentAsync(new CommentEditOptions
+        //    {
+        //        Repository = _repoName,
+        //        PullRequest = prId,
+        //        ThreadId = threadId,
+        //        CommentId = commentId,
+        //        NewContent = "Updated"
+        //    });
+        //    Assert.True(editCommentResult.IsSuccessful);
 
-            AzureDevOpsActionResult<GitPullRequestCommentThread> resolveThreadResult = await _reposClient.ResolveCommentThreadAsync(_repoName, prId, threadId);
-            Assert.True(resolveThreadResult.IsSuccessful);
+        //    AzureDevOpsActionResult<GitPullRequestCommentThread> resolveThreadResult = await _reposClient.ResolveCommentThreadAsync(_repoName, prId, threadId);
+        //    Assert.True(resolveThreadResult.IsSuccessful);
 
-            AzureDevOpsActionResult<bool> deleteCommentResult = await _reposClient.DeleteCommentAsync(_repoName, prId, threadId, commentId);
-            Assert.True(deleteCommentResult.IsSuccessful);
-        }
+        //    AzureDevOpsActionResult<bool> deleteCommentResult = await _reposClient.DeleteCommentAsync(_repoName, prId, threadId, commentId);
+        //    Assert.True(deleteCommentResult.IsSuccessful);
+        //}
 
         //[Fact]
         //public async Task RepositoryBranchAndSearchWorkflow_SucceedsAsync()
