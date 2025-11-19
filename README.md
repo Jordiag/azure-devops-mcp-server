@@ -26,7 +26,7 @@ If you choose to build on top of this project during the preview phase, be prepa
 ## Overview
 
 The repository contains multiple C# projects that wrap the Microsoft Azure DevOps SDK and REST APIs. Each Azure DevOps tab—Boards, Repos, Pipelines, Artifacts and others—has a project under `/src/` exposing a simplified client interface. These thin wrappers are consumed by `Dotnet.AzureDevOps.Mcp.Server` to surface Model Context Protocol (MCP) tools. While most calls forward to the official SDKs or, when necessary, the REST endpoints, this layer keeps the MCP server decoupled from Azure DevOps so it can evolve independently or swap implementations in the future.
-The solution is organized as a multi‑project workspace targeting **.NET 9**. Each service area of Azure DevOps has its own client library:
+The solution is organized as a multi‑project workspace targeting **.NET 10**. Each service area of Azure DevOps has its own client library:
 
 * <img width="30px" align="center" alt="Azure Devops Overview" src="https://cdn.vsassets.io/ext/ms.vss-tfs-web/platform-content/Nav-Dashboard.S24hPD.png"/> **Overview** – manage wikis and pages.
   - Create, read, list and delete wikis
@@ -76,7 +76,7 @@ Integration tests exercise each client against a real Azure DevOps organization.
 
 ### Prerequisites
 
-1. Install the latest [.NET 9](https://dotnet.microsoft.com/) release.
+1. Install the latest [.NET 10](https://dotnet.microsoft.com/) release.
 2. Clone this repository.
 
 ### Quick Start
@@ -124,14 +124,14 @@ new console application can reproduce the same workflow:
 
 ### Prerequisites
 
-- .NET 9 SDK installed
+- .NET 10 SDK installed
 - A running MCP server accessible via URL
 - An OpenAI API key and model name
 - Environment variables configured:
   - `MCP_SERVER_URL`
   - `OPENAI_API_KEY`
   - `OPENAI_MODEL`
-
+  
 ```bash
 dotnet new console -n MyMcpClient
 cd MyMcpClient
