@@ -58,6 +58,11 @@ jobs:
           fetch-depth: 0  # Required for SonarCloud analysis
           fetch-tags: true
 
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          
       - name: Determine numeric version from tag
         id: ver
         shell: bash
