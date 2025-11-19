@@ -14,7 +14,7 @@ jobs:
       # ──────────────── .NET SDK setup ────────────────
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'  # Adjust for your project
+          dotnet-version: '10.0.x'  # Adjust for your project
 
       # ──────────────── Cache NuGet packages ────────────────
       - name: Set cache key with date and lock hash
