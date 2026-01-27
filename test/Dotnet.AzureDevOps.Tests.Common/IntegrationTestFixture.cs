@@ -45,7 +45,7 @@ public partial class IntegrationTestFixture : IAsyncLifetime
         return client;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         Configuration = AzureDevOpsConfiguration.FromEnvironment();
 
@@ -107,7 +107,7 @@ public partial class IntegrationTestFixture : IAsyncLifetime
             Configuration.ProjectName,
             Configuration.PersonalAccessToken);
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private static void ConfigureAuthentication(HttpClient client, string personalAccessToken)
@@ -117,11 +117,11 @@ public partial class IntegrationTestFixture : IAsyncLifetime
         client.DefaultRequestHeaders.Add("User-Agent", "azure-devops-mcp-server");
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         if(_serviceProvider is IDisposable disposable)
             disposable.Dispose();
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }
 

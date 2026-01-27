@@ -115,9 +115,9 @@ public abstract class BaseIntegrationTestFixture(IntegrationTestFixture fixture)
     /// </summary>
     protected static string GenerateTestId(string prefix = "test") => $"{prefix}-{UtcStampShort()}";
 
-    public virtual Task InitializeAsync() => Task.CompletedTask;
+    public virtual ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-    public virtual async Task DisposeAsync()
+    public virtual async ValueTask DisposeAsync()
     {
         await CleanupResourcesAsync();
     }

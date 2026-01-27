@@ -1130,13 +1130,13 @@ namespace Dotnet.AzureDevOps.Boards.IntegrationTests
         /// xUnit method for async initialization before any tests run.
         /// Not needed here, so we return a completed task.
         /// </summary>
-        public Task InitializeAsync() => Task.CompletedTask;
+        public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
         /// <summary>
         /// xUnit method for async cleanup after all tests have finished.
         /// We delete all created work items in reverse order.
         /// </summary>
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             foreach(int id in _createdWorkItemIds.AsEnumerable().Reverse())
             {

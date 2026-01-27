@@ -626,9 +626,9 @@ namespace Dotnet.AzureDevOps.Repos.IntegrationTests
         //    Assert.NotEmpty(foundCommits[0].CommitId);
         //}
 
-        public Task InitializeAsync() => Task.CompletedTask;
+        public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             for(int i = _createdPrIds.Count - 1; i >= 0; i--)
             {

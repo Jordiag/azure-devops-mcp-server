@@ -112,8 +112,8 @@ namespace Dotnet.AzureDevOps.Core.ProjectSettings.IntegrationTests
         private static string UtcStamp() =>
             DateTime.UtcNow.ToString("yyyyMMddHHmmss");
 
-        public Task InitializeAsync() => Task.CompletedTask;
+        public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-        public Task DisposeAsync() => Task.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
