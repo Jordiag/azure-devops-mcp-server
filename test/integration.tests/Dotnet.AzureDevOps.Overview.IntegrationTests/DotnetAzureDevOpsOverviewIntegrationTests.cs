@@ -295,9 +295,9 @@ namespace Dotnet.AzureDevOps.Overview.IntegrationTests
         //    Assert.True(wikiPageResponseResult.Value != null, "Expected wiki page response to be non-null after deletion.");
         //}
 
-        public Task InitializeAsync() => Task.CompletedTask;
+        public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             foreach(Guid id in _createdWikis.AsEnumerable().Reverse())
             {

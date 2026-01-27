@@ -169,9 +169,9 @@ namespace Dotnet.AzureDevOps.TestPlans.IntegrationTests
         private static string UtcStamp() =>
             DateTime.UtcNow.ToString("yyyyMMddHHmmss");
 
-        public Task InitializeAsync() => Task.CompletedTask;
+        public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             foreach(int id in _createdPlanIds.AsEnumerable().Reverse())
             {
