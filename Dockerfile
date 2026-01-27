@@ -2,7 +2,10 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 
 # Create a non-root user for security with consistent UID/GID for Kubernetes
-RUN adduser --disabled-password --gecos "" --home /app --shell /bin/bash --uid 1001 appuser && \
+# Using useradd instead of adduser for Azure Linux (CBL-Mariner) based images
+RUN groupadd --gid 1001 appuser && \
+    useradd --uid 1001 --gid 1001 --no-create-home --shell /bin/false appuser && \
+    mkdir -p /app && \
     chown -R appuser:appuser /app
 
 WORKDIR /app
