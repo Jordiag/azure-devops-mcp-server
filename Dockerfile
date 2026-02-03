@@ -1,5 +1,5 @@
 # Use the official .NET 10 runtime as the base image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.2 AS base
 
 # Create a non-root user for security with consistent UID/GID for Kubernetes
 # Using useradd instead of adduser for Azure Linux (CBL-Mariner) based images
