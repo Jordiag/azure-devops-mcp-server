@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
+    <PackageReference Include="System.Data.SqlClient" />
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core.Common\Dotnet.AzureDevOps.Core.Common.csproj" />
   </ItemGroup>
 

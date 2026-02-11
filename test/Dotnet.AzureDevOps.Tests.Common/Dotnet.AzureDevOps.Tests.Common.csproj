@@ -13,6 +13,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
         <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="System.Data.SqlClient" />
         <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
 
