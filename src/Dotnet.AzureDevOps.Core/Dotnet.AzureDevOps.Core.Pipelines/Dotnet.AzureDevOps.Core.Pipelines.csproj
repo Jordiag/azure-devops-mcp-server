@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
+    <PackageReference Include="System.Data.SqlClient" />
   </ItemGroup>
 
   <ItemGroup>

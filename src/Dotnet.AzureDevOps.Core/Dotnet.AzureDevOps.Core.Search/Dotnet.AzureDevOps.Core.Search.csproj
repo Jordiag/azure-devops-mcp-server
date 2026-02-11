@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Data.SqlClient" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dotnet.AzureDevOps.Core.Common\Dotnet.AzureDevOps.Core.Common.csproj" />
   </ItemGroup>
