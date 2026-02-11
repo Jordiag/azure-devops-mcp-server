@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" />
     <PackageReference Include="Polly.Extensions" />
+    <PackageReference Include="System.Data.SqlClient" />
   </ItemGroup>
 
 </Project>
