@@ -429,6 +429,21 @@ namespace Dotnet.AzureDevOps.Core.Boards
                     }
                 });
             }
+
+            if(workItemCreateOptions.PredecessorId.HasValue)
+            {
+                patchDocument.Add(new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = Constants.JsonPatchOperationPath,
+                    Value = new
+                    {
+                        rel = "System.LinkTypes.Dependency-Reverse",
+                        url = $"{OrganizationUrl}/{ProjectName}/_apis/wit/workItems/{workItemCreateOptions.PredecessorId}",
+                        attributes = new { comment = "Linking to predecessor" }
+                    }
+                });
+            }
             return patchDocument;
         }
 
