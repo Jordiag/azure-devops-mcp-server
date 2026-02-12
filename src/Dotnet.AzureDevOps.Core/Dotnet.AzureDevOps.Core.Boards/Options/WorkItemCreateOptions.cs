@@ -32,4 +32,6 @@ public record WorkItemCreateOptions
     public string? AcceptanceCriteria { get; init; }
 
     public int? ParentId { get; init; }
+
+    public int? PredecessorId { get; init; }
 }
