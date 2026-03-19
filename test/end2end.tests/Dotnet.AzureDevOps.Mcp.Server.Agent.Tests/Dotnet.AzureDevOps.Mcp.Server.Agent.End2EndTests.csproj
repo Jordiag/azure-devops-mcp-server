@@ -17,6 +17,8 @@
         <PackageReference Include="Microsoft.SemanticKernel" />
         <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
         <PackageReference Include="ModelContextProtocol.Core" />
+        <PackageReference Include="System.Drawing.Common" />
+        <PackageReference Include="System.Security.Cryptography.Xml" />
         <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

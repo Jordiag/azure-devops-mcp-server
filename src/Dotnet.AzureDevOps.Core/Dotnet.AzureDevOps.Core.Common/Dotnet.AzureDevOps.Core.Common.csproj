@@ -8,10 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client" />
+      <PackageReference Include="Microsoft.VisualStudio.Services.Client" />
     <PackageReference Include="Polly.Extensions" />
       <PackageReference Include="System.Configuration.ConfigurationManager" />
-      <PackageReference Include="System.Security.Cryptography.Xml"</ItemGroup>
+      <PackageReference Include="System.Security.Cryptography.Xml" />
+    </ItemGroup>
 
 </Project>

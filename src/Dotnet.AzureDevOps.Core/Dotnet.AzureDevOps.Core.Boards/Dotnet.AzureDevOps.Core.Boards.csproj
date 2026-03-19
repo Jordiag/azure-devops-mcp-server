@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Data.SqlClient" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
   </ItemGroup>
 
   <ItemGroup>
