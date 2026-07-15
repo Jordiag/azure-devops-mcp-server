@@ -105,13 +105,24 @@ namespace Dotnet.AzureDevOps.Core.Repos
                             MergeCommitMessage = commitMessage
                         }
                     };
-                    return await _gitHttpClient.UpdatePullRequestAsync(
-                    gitPullRequestToUpdate: pullRequestUpdate,
-                    project: ProjectName,
-                    repositoryId: repositoryId,
-                    pullRequestId: pullRequestId,
-                    cancellationToken: cancellationToken
-                );
+                    GitPullRequest completedPullRequest = await _gitHttpClient.UpdatePullRequestAsync(
+                        gitPullRequestToUpdate: pullRequestUpdate,
+                        project: ProjectName,
+                        repositoryId: repositoryId,
+                        pullRequestId: pullRequestId,
+                        cancellationToken: cancellationToken);
+
+                    if(deleteSourceBranch)
+                    {
+                        if(string.IsNullOrWhiteSpace(completedPullRequest.SourceRefName))
+                            throw new InvalidOperationException("The completed pull request did not identify its source branch.");
+                        await EnsureBranchDeletedAsync(
+                            repositoryId,
+                            completedPullRequest.SourceRefName,
+                            cancellationToken);
+                    }
+
+                    return completedPullRequest;
                 }, "CompletePullRequest", OperationType.Update);
 
                 return AzureDevOpsActionResult<GitPullRequest>.Success(result, Logger);

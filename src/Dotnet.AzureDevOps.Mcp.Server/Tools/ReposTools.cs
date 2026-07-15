@@ -22,7 +22,7 @@ public class ReposTools(IReposClient reposClient, ILogger<ReposTools> logger)
     public async Task<GitPullRequest> GetPullRequestAsync(string repositoryId, int pullRequestId, CancellationToken cancellationToken = default) =>
         (await _reposClient.GetPullRequestAsync(repositoryId, pullRequestId, cancellationToken)).EnsureSuccess(_logger);
 
-    [McpServerTool, Description("Completes (merges) an active pull request in Azure DevOps, integrating the source branch changes into the target branch. Options include squash merge (combines all commits into one), delete source branch after merge, and custom commit message. The pull request status changes to Completed after successful merge.")]
+    [McpServerTool, Description("Completes (merges) an active pull request in Azure DevOps, integrating the source branch changes into the target branch. Options include squash merge (combines all commits into one), verified source-branch deletion after merge, and custom commit message. When source-branch deletion is requested, the operation fails explicitly if the completed pull request does not identify the branch or the branch still exists after deletion.")]
     public async Task<GitPullRequest> CompletePullRequestAsync(string repositoryId, int pullRequestId, bool squashMerge = false, bool deleteSourceBranch = false, GitCommitRef? lastMergeSourceCommit = null, string? commitMessage = null, CancellationToken cancellationToken = default) =>
         (await _reposClient.CompletePullRequestAsync(repositoryId, pullRequestId, squashMerge, deleteSourceBranch, lastMergeSourceCommit, commitMessage, cancellationToken)).EnsureSuccess(_logger);
 

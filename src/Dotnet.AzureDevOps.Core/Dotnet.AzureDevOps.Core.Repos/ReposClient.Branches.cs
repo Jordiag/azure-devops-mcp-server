@@ -96,6 +96,48 @@ namespace Dotnet.AzureDevOps.Core.Repos
                 return AzureDevOpsActionResult<GitRef>.Failure(ex, Logger);
             }
         }
+
+        private async Task EnsureBranchDeletedAsync(
+            string repositoryId,
+            string sourceRefName,
+            CancellationToken cancellationToken)
+        {
+            const string refsPrefix = "refs/";
+            string filter = sourceRefName.StartsWith(refsPrefix, StringComparison.Ordinal)
+                ? sourceRefName[refsPrefix.Length..]
+                : sourceRefName;
+            List<GitRef> refs = await _gitHttpClient.GetRefsAsync(
+                repositoryId: repositoryId,
+                project: ProjectName,
+                filter: filter,
+                cancellationToken: cancellationToken);
+            GitRef? sourceRef = refs.SingleOrDefault(candidate =>
+                candidate.Name.Equals(sourceRefName, StringComparison.Ordinal));
+            if(sourceRef is null)
+                return;
+
+            GitRefUpdate deleteUpdate = new()
+            {
+                Name = sourceRef.Name,
+                OldObjectId = sourceRef.ObjectId,
+                NewObjectId = "0000000000000000000000000000000000000000"
+            };
+            List<GitRefUpdateResult> results = await _gitHttpClient.UpdateRefsAsync(
+                refUpdates: [deleteUpdate],
+                repositoryId: repositoryId,
+                project: ProjectName,
+                cancellationToken: cancellationToken);
+            if(results.Count != 1 || !results[0].Success)
+                throw new InvalidOperationException($"Pull request completed, but source branch '{sourceRefName}' could not be deleted.");
+
+            List<GitRef> remainingRefs = await _gitHttpClient.GetRefsAsync(
+                repositoryId: repositoryId,
+                project: ProjectName,
+                filter: filter,
+                cancellationToken: cancellationToken);
+            if(remainingRefs.Any(candidate => candidate.Name.Equals(sourceRefName, StringComparison.Ordinal)))
+                throw new InvalidOperationException($"Pull request completed, but source branch '{sourceRefName}' still exists after deletion.");
+        }
     }
 }
 
